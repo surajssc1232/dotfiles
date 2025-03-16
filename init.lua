@@ -111,4 +111,3 @@ vim.keymap.set('v', '<leader>y', '"+y', { noremap = true, silent = true })
 vim.keymap.set('v', '<leader>p', '"+p', { noremap = true, silent = true })
 vim.keymap.set('n','<leader>r',':PackerSync<CR>',{noremap= true, silent=true})
 vim.cmd[[colorscheme tokyonight]]
-
