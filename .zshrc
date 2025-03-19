@@ -83,5 +83,5 @@ if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] &&
   exec tmux
 fi
 
-fastfetch --config examples/22.jsonc
+fastfetch --config examples/14.jsonc
 
