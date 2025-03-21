@@ -61,10 +61,6 @@ bindkey -s '^N' 'vimfzf\n'
 # Environment variables
 export PATH=$PATH:/home/suraj/.spicetify:/home/suraj/.local/bin
 export MANPAGER="sh -c 'col -bx | bat -l man -p'"
-export TWITTER_API_KEY="NSiKHak9YwFelIJPghkuILHW8"
-export TWITTER_API_SECRET_KEY="3DKb7WyIBwMZ6cnlKWXk40MjFim2ZiXIyIprOgt1vJKZIsJ3V0"
-export TWITTER_ACCESS_TOKEN="1744343566116368384-JlekTlKxMc7xoIRsrwDpEd5nxIUNtw"
-export TWITTER_ACCESS_TOKEN_SECRET="KyLLrxStL2surzm4s5IzcVd6UO30529J7UjDl5rmGeBwN"
 
 # Prompt customization
 PROMPT_COMMAND='echo "----------------------------------------"'
@@ -84,4 +80,4 @@ if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] &&
 fi
 
 fastfetch --config examples/14.jsonc
-
+source ~/tweet_api.zsh
