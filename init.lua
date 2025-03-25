@@ -49,14 +49,11 @@ vim.api.nvim_create_autocmd("CursorHold", {
     end
 })
 
---autopairs
-
-
 -- Plugin Management with Packer
 require('packer').startup(function(use)
     -- Packer manages itself
     use 'wbthomason/packer.nvim'
-    
+
     use{
         'windwp/nvim-autopairs',
         event='InsertEnter',
@@ -68,11 +65,12 @@ require('packer').startup(function(use)
                 map_cr=true,
                 map_bs=true,
             })
-            
+
         end
     }
     -- File Explorer
     use 'nvim-tree/nvim-tree.lua'
+
 
     -- Telescope (Fuzzy Finder)
     use 'nvim-telescope/telescope.nvim'
@@ -103,6 +101,7 @@ require('packer').startup(function(use)
     use 'scottmckendry/cyberdream.nvim'
     use 'shaunsingh/nord.nvim'
     use 'folke/tokyonight.nvim'
+    use 'folke/trouble.nvim'
 end)
 
 -- Indent Blankline Configuration
@@ -116,7 +115,7 @@ require('ibl').setup({
 
 -- Treesitter Configuration
 require('nvim-treesitter.configs').setup({
-    ensure_installed = { "c", "cpp", "python", "javascript", "typescript", "rust", "lua", "html", "css" },
+    ensure_installed = { "c", "cpp", "python", "javascript", "typescript", "lua", "html", "css","rust","java" },
     highlight = { enable = true },
     indent = { enable = true },
     autotag = { enable = true },
@@ -216,6 +215,8 @@ require("mason-lspconfig").setup_handlers({
     end,
 })
 
+
+
 -- ToggleTerm Configuration
 require("toggleterm").setup({
     size = 20,
@@ -255,3 +256,10 @@ vim.keymap.set("n", "<leader>xd", "<cmd>TroubleToggle document_diagnostics<cr>",
 -- Colorscheme
 vim.cmd([[colorscheme cyberdream]])
 vim.cmd([[filetype plugin indent on]])
+
+vim.api.nvim_create_autocmd("BufWritePre", {
+    pattern = "*",
+    command = "silent! :%s/\\s\\+$//e | silent! :normal! G$"
+})
+
+
