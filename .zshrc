@@ -26,8 +26,7 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=8,bold"
 # Aliases
 alias c='clear'
 alias q='exit'
-alias l='exa -l'
-alias ls='exa --icons --group-directories-first'
+alias l='exa --icons'
 
 # Custom function for opening files with nvim via fzf
 function nvfzf() {
@@ -81,3 +80,19 @@ fi
 
 fastfetch --config examples/14.jsonc
 source ~/tweet_api.zsh
+alias tt="tweet"
+
+export JAVA_HOME=/usr/lib/jvm/java-21-openjdk/bin/java
+export PATH=$JAVA_HOME/bin:$PATH
+
+alias nvimc="nvim ~/.config/nvim/init.lua"
+
+ls() {
+    if [[ "$1" == "-t" && $# -eq 1 ]]; then
+        tree
+    else
+        command ls "$@"
+    fi
+}
+
+
