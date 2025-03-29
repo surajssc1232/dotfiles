@@ -39,6 +39,10 @@ vim.api.nvim_create_autocmd("CursorHold", {
 -- Plugin Management with Packer
 require("packer").startup(function(use)
     use "wbthomason/packer.nvim"
+	use {"akinsho/toggleterm.nvim", tag = '*', config = function()
+  		require("toggleterm").setup()
+	end}
+
     use {
         "windwp/nvim-autopairs",
         event = "InsertEnter",
@@ -99,6 +103,16 @@ require("mason-lspconfig").setup_handlers({
     end,
 })
 
+require('toggleterm').setup({
+  open_mapping = "<C-\\>",  -- Key mapping for toggling
+  direction = "float",      -- Floating window
+  size = 20,
+  dir = "current",          -- This ensures the terminal opens in the current directory
+  float_opts = {
+    winblend = 10,           -- Set transparency (0-100)
+  }
+})
+
 -- Autocompletion Setup
 local cmp = require("cmp")
 local lspkind = require("lspkind")
@@ -131,6 +145,5 @@ vim.keymap.set("n", "<leader>w", ":w<CR>", { noremap = true, silent = true })
 vim.keymap.set("v", "<leader>y", '"+y', { noremap = true, silent = true })
 vim.keymap.set("v", "<leader>p", '"+p', { noremap = true, silent = true })
 vim.keymap.set("n", "<leader>r", ":PackerSync<CR>", { noremap = true, silent = true })
-
 -- Colorscheme
 vim.cmd([[colorscheme cyberdream]])
