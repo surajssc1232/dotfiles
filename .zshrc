@@ -10,12 +10,12 @@ autoload -Uz compinit
 compinit
 # End of lines added by compinstall
 
-export FZF_DEFAULT_OPTS=" \
---color=bg+:#363a4f,bg:#24273a,spinner:#f4dbd6,hl:#ed8796 \
---color=fg:#cad3f5,header:#ed8796,info:#c6a0f6,pointer:#f4dbd6 \
---color=marker:#b7bdf8,fg+:#cad3f5,prompt:#c6a0f6,hl+:#ed8796 \
---color=selected-bg:#494d64 \
---color=border:#363a4f,label:#cad3f5"
+# export FZF_DEFAULT_OPTS=" \
+# --color=bg+:#363a4f,bg:#24273a,spinner:#f4dbd6,hl:#ed8796 \
+# --color=fg:#cad3f5,header:#ed8796,info:#c6a0f6,pointer:#f4dbd6 \
+# --color=marker:#b7bdf8,fg+:#cad3f5,prompt:#c6a0f6,hl+:#ed8796 \
+# --color=selected-bg:#494d64 \
+# --color=border:#363a4f,label:#cad3f5"
 
 eval "$(starship init zsh)"
 
@@ -87,12 +87,17 @@ export PATH=$JAVA_HOME/bin:$PATH
 
 alias nvimc="nvim ~/.config/nvim/init.lua"
 
-ls() {
-    if [[ "$1" == "-t" && $# -eq 1 ]]; then
-        tree
-    else
-        command ls "$@"
-    fi
+# Remove any existing alias for 'l'
+unalias l 2>/dev/null
+
+# Define 'l' as a function
+l() {
+  if [[ "$1" == "-t" ]]; then
+    tree "$@"  # Run tree with arguments when -t is passed
+  else
+    exa --icons "$@"  # Run exa with icons for other arguments
+  fi
 }
+
 
 
