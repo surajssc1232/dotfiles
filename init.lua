@@ -7,19 +7,21 @@ vim.opt.shiftwidth = 4
 vim.opt.tabstop = 4
 vim.opt.clipboard = "unnamedplus"
 vim.opt.wrap = true
+vim.opt.updatetime=200 
+
 
 -- Diagnostics Configuration (hover on cursor hold)
 vim.diagnostic.config({
-    virtual_text = false,
     float = {
         focusable = false,
         style = "minimal",
         border = "rounded",
-        source = false,
-        header = "",
-        prefix = "",
-    },
-    signs = false,
+        source = "false",
+        header = "", -- Add a custom header
+    	prefix = ""
+	},
+	signs=false,
+
 })
 
 vim.api.nvim_create_autocmd("CursorHold", {
