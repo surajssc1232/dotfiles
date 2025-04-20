@@ -1,6 +1,7 @@
 -- Leader Key and General Setting-- Leader Key and General Settings
 vim.g.mapleader = " "
 vim.opt.number = true
+vim.opt.fillchars:append { eob = " " }
 vim.opt.cursorline = true
 vim.opt.laststatus = 0
 vim.opt.shiftwidth = 4
@@ -44,6 +45,7 @@ require("packer").startup(function(use)
 	use {"akinsho/toggleterm.nvim", tag = '*', config = function()
   		require("toggleterm").setup()
 	end}
+	use "ellisonleao/gruvbox.nvim"
 
     use {
         "windwp/nvim-autopairs",
@@ -148,4 +150,4 @@ vim.keymap.set("v", "<leader>y", '"+y', { noremap = true, silent = true })
 vim.keymap.set("v", "<leader>p", '"+p', { noremap = true, silent = true })
 vim.keymap.set("n", "<leader>r", ":PackerSync<CR>", { noremap = true, silent = true })
 -- Colorscheme
-vim.cmd([[colorscheme cyberdream]])
+vim.cmd([[colorscheme gruvbox]])
