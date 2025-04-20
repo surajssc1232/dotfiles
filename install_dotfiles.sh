@@ -1,11 +1,13 @@
 #!/bin/bash
 
+
 # installing packer
 git clone --depth 1 https://github.com/wbthomason/packer.nvim\
  ~/.local/share/nvim/site/pack/packer/start/packer.nvim
 
 # installing tpm
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+
 # Define the dotfiles directory (it will be the current directory after cloning)
 DOTFILES_DIR="$(pwd)"
 

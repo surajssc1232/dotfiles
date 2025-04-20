@@ -79,7 +79,6 @@ if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] &&
 fi
 
 fastfetch --config examples/14.jsonc
-source ~/tweet_api.zsh
 alias tt="tweet"
 
 export JAVA_HOME=/usr/lib/jvm/java-21-openjdk/bin/java
@@ -100,4 +99,15 @@ l() {
 }
 
 
+alias gc="nvim ~/.config/ghostty/config"
 
+export JAVA_HOME="/usr/lib/jvm/java-24-openjdk/"
+
+export INSTA_RAPIDAPI_KEY="779c19efccmsh6d0190d61a9be00p1c2bc3jsn7fcbde842cc3"
+
+# bun completions
+[ -s "/home/suraj/.bun/_bun" ] && source "/home/suraj/.bun/_bun"
+alias geminif="gemini --model models/gemini-2.0-flash"
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
