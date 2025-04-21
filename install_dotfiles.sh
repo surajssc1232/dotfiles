@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # installing packer
 git clone --depth 1 https://github.com/wbthomason/packer.nvim\
  ~/.local/share/nvim/site/pack/packer/start/packer.nvim
@@ -31,3 +30,7 @@ cp -f "$DOTFILES_DIR/ghostty/config" "$TARGET_GHOSTTY_DIR/config"
 
 echo "Dotfiles have been placed successfully!"
 
+echo "---------------------------------------"
+
+echo "lets download apps"
+sudo pacman -S ghostty neovim fastfetch starship tmux zsh wl-clipboard 
