@@ -1,6 +1,13 @@
 #!/bin/bash
 sudo pacman -S zsh git zathura
 
+echo "installing aur helper"
+sudo pacman -S --needed base-devel
+git clone https://aur.archlinux.org/paru.git
+cd paru
+makepkg -si
+
+
 # installing packer
 git clone --depth 1 https://github.com/wbthomason/packer.nvim\
  ~/.local/share/nvim/site/pack/packer/start/packer.nvim
@@ -40,13 +47,5 @@ echo "Now lets install necessary fonts"
 sudo pacman -S noto-fonts-cjk noto-fonts-emoji noto-fonts
 
 echo "some more fonts"
-yay -S ttf-freefont ttf-ms-fonts ttf-linux-libertine ttf-dejavu ttf-inconsolata ttf-ubuntu-font-family
-
-
-echo "installing aur helper"
-sudo pacman -S --needed base-devel
-git clone https://aur.archlinux.org/paru.git
-cd paru
-makepkg -si
-
+paru -S ttf-freefont ttf-ms-fonts ttf-linux-libertine ttf-dejavu ttf-inconsolata ttf-ubuntu-font-family auto-cpufreq capitain-cursors 
 
