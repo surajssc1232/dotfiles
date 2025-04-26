@@ -1,4 +1,5 @@
 #!/bin/bash
+sudo pacman -S zsh git zathura
 
 # installing packer
 git clone --depth 1 https://github.com/wbthomason/packer.nvim\
@@ -33,4 +34,19 @@ echo "Dotfiles have been placed successfully!"
 echo "---------------------------------------"
 
 echo "lets download apps"
-sudo pacman -S ghostty neovim fastfetch starship tmux zsh wl-clipboard 
+sudo pacman -S ghostty neovim fastfetch starship tmux wl-clipboard
+
+echo "Now lets install necessary fonts"
+sudo pacman -S noto-fonts-cjk noto-fonts-emoji noto-fonts
+
+echo "some more fonts"
+yay -S ttf-freefont ttf-ms-fonts ttf-linux-libertine ttf-dejavu ttf-inconsolata ttf-ubuntu-font-family
+
+
+echo "installing aur helper"
+sudo pacman -S --needed base-devel
+git clone https://aur.archlinux.org/paru.git
+cd paru
+makepkg -si
+
+
