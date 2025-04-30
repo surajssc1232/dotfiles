@@ -22,19 +22,25 @@ echo "Installing additional AUR fonts and utilities..."
 paru -S --needed ttf-freefont ttf-ms-fonts ttf-linux-libertine ttf-dejavu \
     ttf-inconsolata ttf-ubuntu-font-family auto-cpufreq capitaine-cursors --noconfirm
 
-# Install packer.nvim for Neovim plugin management
+# Install Neovim plugin manager: packer.nvim
 echo "Installing packer.nvim..."
 git clone --depth 1 https://github.com/wbthomason/packer.nvim \
     ~/.local/share/nvim/site/pack/packer/start/packer.nvim
 
-# Install TPM (Tmux Plugin Manager)
+# Install Tmux Plugin Manager (TPM)
 echo "Installing Tmux Plugin Manager (TPM)..."
 mkdir -p ~/.tmux/plugins
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
+# Install Zsh plugins
+echo "Installing Zsh plugins..."
+mkdir -p ~/.zsh
+git clone https://github.com/Aloxaf/fzf-tab ~/.zsh/fzf-tab
+git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
+
 # Define target config directories
-TARGET_ZSHRC_DIR="$HOME"
 TARGET_NEOVIM_DIR="$HOME/.config/nvim"
+TARGET_ZSHRC_DIR="$HOME"
 TARGET_STARSHIP_DIR="$HOME/.config"
 TARGET_TMUX_DIR="$HOME"
 TARGET_GHOSTTY_DIR="$HOME/.config/ghostty"
