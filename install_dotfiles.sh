@@ -1,51 +1,64 @@
 #!/bin/bash
-sudo pacman -S zsh git zathura
 
-echo "installing aur helper"
-sudo pacman -S --needed base-devel
-git clone https://aur.archlinux.org/paru.git
-cd paru
-makepkg -si
-
-
-# installing packer
-git clone --depth 1 https://github.com/wbthomason/packer.nvim\
- ~/.local/share/nvim/site/pack/packer/start/packer.nvim
-
-# installing tpm
-git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-
-# Define the dotfiles directory (it will be the current directory after cloning)
+# Set up dotfiles directory
 DOTFILES_DIR="$(pwd)"
 
-# Define the target directories where the dotfiles should go
+# Update and install base packages
+echo "Updating system and installing base dependencies..."
+sudo pacman -Syu --noconfirm
+sudo pacman -S --needed zsh git zathura base-devel neovim tmux wl-clipboard \
+    ghostty starship fastfetch noto-fonts noto-fonts-cjk noto-fonts-emoji \
+    tree exa fzf --noconfirm
+
+# Install AUR helper (paru)
+echo "Installing AUR helper (paru)..."
+git clone https://aur.archlinux.org/paru.git
+cd paru || exit
+makepkg -si --noconfirm
+cd .. || exit
+
+# Install additional AUR fonts and tools
+echo "Installing additional AUR fonts and utilities..."
+paru -S --needed ttf-freefont ttf-ms-fonts ttf-linux-libertine ttf-dejavu \
+    ttf-inconsolata ttf-ubuntu-font-family auto-cpufreq capitaine-cursors --noconfirm
+
+# Install packer.nvim for Neovim plugin management
+echo "Installing packer.nvim..."
+git clone --depth 1 https://github.com/wbthomason/packer.nvim \
+    ~/.local/share/nvim/site/pack/packer/start/packer.nvim
+
+# Install TPM (Tmux Plugin Manager)
+echo "Installing Tmux Plugin Manager (TPM)..."
+mkdir -p ~/.tmux/plugins
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+
+# Define target config directories
 TARGET_ZSHRC_DIR="$HOME"
-TARGET_LUA_DIR="$HOME/.config/nvim"  # Change this if you store init.lua somewhere else
-TARGET_STARSHIP_DIR="$HOME/.config"  # Change this if necessary
+TARGET_NEOVIM_DIR="$HOME/.config/nvim"
+TARGET_STARSHIP_DIR="$HOME/.config"
 TARGET_TMUX_DIR="$HOME"
 TARGET_GHOSTTY_DIR="$HOME/.config/ghostty"
 
-# Ensure the target directories exist
-mkdir -p "$TARGET_LUA_DIR"
+# Ensure config directories exist
+mkdir -p "$TARGET_NEOVIM_DIR"
 mkdir -p "$TARGET_STARSHIP_DIR"
+mkdir -p "$TARGET_TMUX_DIR"
 mkdir -p "$TARGET_GHOSTTY_DIR"
-# Copy the files, replacing any existing files
-cp -f "$DOTFILES_DIR/init.lua" "$TARGET_LUA_DIR/init.lua"
-cp -f "$DOTFILES_DIR/.zshrc" "$TARGET_ZSHRC_DIR/.zshrc"
-cp -f "$DOTFILES_DIR/starship.toml" "$TARGET_STARSHIP_DIR/starship.toml"
-cp -f "$DOTFILES_DIR/.tmux.conf" "$TARGET_TMUX_DIR/.tmux.conf"
-cp -f "$DOTFILES_DIR/ghostty/config" "$TARGET_GHOSTTY_DIR/config"
 
-echo "Dotfiles have been placed successfully!"
+# Copy dotfiles (replace existing ones)
+echo "Copying dotfiles..."
+cp -f "$DOTFILES_DIR/init.lua" "$TARGET_NEOVIM_DIR/"
+cp -f "$DOTFILES_DIR/.zshrc" "$TARGET_ZSHRC_DIR/"
+cp -f "$DOTFILES_DIR/starship.toml" "$TARGET_STARSHIP_DIR/"
+cp -f "$DOTFILES_DIR/.tmux.conf" "$TARGET_TMUX_DIR/"
+cp -f "$DOTFILES_DIR/ghostty/config" "$TARGET_GHOSTTY_DIR/"
 
-echo "---------------------------------------"
+echo "Dotfiles copied successfully!"
 
-echo "lets download apps"
-sudo pacman -S ghostty neovim fastfetch starship tmux wl-clipboard
+# Optional: Change shell to zsh
+if [ "$SHELL" != "/bin/zsh" ]; then
+    echo "Changing default shell to zsh..."
+    chsh -s /bin/zsh
+fi
 
-echo "Now lets install necessary fonts"
-sudo pacman -S noto-fonts-cjk noto-fonts-emoji noto-fonts
-
-echo "some more fonts"
-paru -S ttf-freefont ttf-ms-fonts ttf-linux-libertine ttf-dejavu ttf-inconsolata ttf-ubuntu-font-family auto-cpufreq capitain-cursors 
-
+echo "Installation complete! You may need to restart your shell or source .zshrc."
