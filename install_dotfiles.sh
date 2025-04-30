@@ -62,14 +62,14 @@ safe_clone() {
 # Main Installation Steps
 # ---------------------------
 
-# Step 1: Update system and install base dependencies
+# Step 1: Update system and check/install base packages
 echo "Updating system and checking base packages..."
 sudo pacman -Syu --noconfirm
 
-# List of main packages grouped for clarity
+# List of main packages including qbittorrent
 PACMAN_PKGS=(
     zsh git zathura base-devel neovim tmux wl-clipboard ghostty starship fastfetch
-    noto-fonts noto-fonts-cjk noto-fonts-emoji tree exa fzf
+    noto-fonts noto-fonts-cjk noto-fonts-emoji tree exa fzf qbittorrent
 )
 
 install_pacman_pkgs "${PACMAN_PKGS[@]}"
