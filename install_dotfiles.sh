@@ -7,7 +7,6 @@ DOTFILES_DIR="$(pwd)"
 # Helper Functions
 # ---------------------------
 
-# Check and install packages via pacman (if not already installed)
 install_pacman_pkgs() {
     local missing_pkgs=()
     for pkg in "$@"; do
@@ -23,7 +22,6 @@ install_pacman_pkgs() {
     fi
 }
 
-# Check and install AUR packages via paru
 install_aur_pkgs() {
     if ! command -v paru &>/dev/null; then
         echo "Error: paru is not installed yet." >&2
@@ -45,7 +43,6 @@ install_aur_pkgs() {
     fi
 }
 
-# Clone repo if target dir doesn't exist
 safe_clone() {
     local repo_url="$1"
     local target_dir="$2"
@@ -62,21 +59,17 @@ safe_clone() {
 # Main Installation Steps
 # ---------------------------
 
-# Step 1: Update system and check/install base packages
 echo "Updating system and checking base packages..."
 sudo pacman -Syu --noconfirm
 
-# List of main packages including qbittorrent
 PACMAN_PKGS=(
     zsh git zathura base-devel neovim tmux wl-clipboard ghostty starship fastfetch
     noto-fonts noto-fonts-cjk noto-fonts-emoji tree exa fzf qbittorrent
 )
-
 install_pacman_pkgs "${PACMAN_PKGS[@]}"
 
-# Step 2: Install paru (AUR helper), if not already present
 if ! command -v paru &>/dev/null; then
-    echo "paru not found. Installing paru..."
+    echo "Installing AUR helper (paru)..."
     git clone https://aur.archlinux.org/paru.git
     cd paru || exit
     makepkg -si --noconfirm
@@ -85,47 +78,38 @@ else
     echo "paru is already installed."
 fi
 
-# Step 3: Install AUR packages
+# Install AUR packages including zen-browser-bin
 AUR_PKGS=(
     ttf-freefont ttf-ms-fonts ttf-linux-libertine ttf-dejavu
     ttf-inconsolata ttf-ubuntu-font-family auto-cpufreq capitaine-cursors
+    zen-browser-bin
 )
-
 install_aur_pkgs "${AUR_PKGS[@]}"
 
-# Step 4: Install Neovim plugin manager (packer.nvim), if not already installed
+# Install Neovim plugin manager
 safe_clone \
     https://github.com/wbthomason/packer.nvim \
     ~/.local/share/nvim/site/pack/packer/start/packer.nvim
 
-# Step 5: Install Tmux Plugin Manager (TPM), if not already installed
+# Install Tmux Plugin Manager
 safe_clone \
     https://github.com/tmux-plugins/tpm \
     ~/.tmux/plugins/tpm
 
-# Step 6: Install Zsh plugins, if not already cloned
+# Install Zsh plugins
 ZSH_PLUGINS_DIR=~/.zsh
 mkdir -p "$ZSH_PLUGINS_DIR"
+safe_clone https://github.com/Aloxaf/fzf-tab "$ZSH_PLUGINS_DIR/fzf-tab"
+safe_clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_PLUGINS_DIR/zsh-autosuggestions"
 
-safe_clone \
-    https://github.com/Aloxaf/fzf-tab \
-    "$ZSH_PLUGINS_DIR/fzf-tab"
-
-safe_clone \
-    https://github.com/zsh-users/zsh-autosuggestions \
-    "$ZSH_PLUGINS_DIR/zsh-autosuggestions"
-
-# Step 7: Copy dotfiles
+# Copy dotfiles
 TARGET_NEOVIM_DIR="$HOME/.config/nvim"
 TARGET_ZSHRC_DIR="$HOME"
 TARGET_STARSHIP_DIR="$HOME/.config"
 TARGET_TMUX_DIR="$HOME"
 TARGET_GHOSTTY_DIR="$HOME/.config/ghostty"
 
-mkdir -p "$TARGET_NEOVIM_DIR"
-mkdir -p "$TARGET_STARSHIP_DIR"
-mkdir -p "$TARGET_TMUX_DIR"
-mkdir -p "$TARGET_GHOSTTY_DIR"
+mkdir -p "$TARGET_NEOVIM_DIR" "$TARGET_STARSHIP_DIR" "$TARGET_TMUX_DIR" "$TARGET_GHOSTTY_DIR"
 
 echo "Copying dotfiles (overwriting existing ones)..."
 cp -f "$DOTFILES_DIR/init.lua" "$TARGET_NEOVIM_DIR/"
@@ -134,9 +118,7 @@ cp -f "$DOTFILES_DIR/starship.toml" "$TARGET_STARSHIP_DIR/"
 cp -f "$DOTFILES_DIR/.tmux.conf" "$TARGET_TMUX_DIR/"
 cp -f "$DOTFILES_DIR/ghostty/config" "$TARGET_GHOSTTY_DIR/"
 
-echo "Dotfiles copied successfully!"
-
-# Step 8: Optionally change shell to zsh
+# Change shell to zsh if needed
 if [ "$SHELL" != "/bin/zsh" ]; then
     echo "Changing default shell to zsh..."
     chsh -s /bin/zsh
@@ -144,4 +126,4 @@ else
     echo "Default shell is already zsh."
 fi
 
-echo "✅ Installation complete! You may need to restart your shell or source .zshrc."
+echo "✅ Installation complete! You may need to restart your shell or run 'source ~/.zshrc'."
