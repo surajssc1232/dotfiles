@@ -65,6 +65,8 @@ sudo pacman -Syu --noconfirm
 PACMAN_PKGS=(
     zsh git zathura base-devel neovim tmux wl-clipboard ghostty starship fastfetch
     noto-fonts noto-fonts-cjk noto-fonts-emoji tree exa fzf qbittorrent
+    xdg-desktop-portal xdg-desktop-portal-wlr polkit brightnessctl pavucontrol
+    grim slurp wf-recorder wayland xwayland wlroots
 )
 install_pacman_pkgs "${PACMAN_PKGS[@]}"
 
@@ -78,11 +80,10 @@ else
     echo "paru is already installed."
 fi
 
-# Install AUR packages including zen-browser-bin
 AUR_PKGS=(
     ttf-freefont ttf-ms-fonts ttf-linux-libertine ttf-dejavu
     ttf-inconsolata ttf-ubuntu-font-family auto-cpufreq capitaine-cursors
-    zen-browser-bin
+    zen-browser-bin hyprland swaync waybar rofi
 )
 install_aur_pkgs "${AUR_PKGS[@]}"
 
@@ -102,23 +103,37 @@ mkdir -p "$ZSH_PLUGINS_DIR"
 safe_clone https://github.com/Aloxaf/fzf-tab "$ZSH_PLUGINS_DIR/fzf-tab"
 safe_clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_PLUGINS_DIR/zsh-autosuggestions"
 
-# Copy dotfiles
-TARGET_NEOVIM_DIR="$HOME/.config/nvim"
-TARGET_ZSHRC_DIR="$HOME"
-TARGET_STARSHIP_DIR="$HOME/.config"
-TARGET_TMUX_DIR="$HOME"
-TARGET_GHOSTTY_DIR="$HOME/.config/ghostty"
-
-mkdir -p "$TARGET_NEOVIM_DIR" "$TARGET_STARSHIP_DIR" "$TARGET_TMUX_DIR" "$TARGET_GHOSTTY_DIR"
+# ---------------------------
+# Copy Dotfiles
+# ---------------------------
 
 echo "Copying dotfiles (overwriting existing ones)..."
-cp -f "$DOTFILES_DIR/init.lua" "$TARGET_NEOVIM_DIR/"
-cp -f "$DOTFILES_DIR/.zshrc" "$TARGET_ZSHRC_DIR/"
-cp -f "$DOTFILES_DIR/starship.toml" "$TARGET_STARSHIP_DIR/"
-cp -f "$DOTFILES_DIR/.tmux.conf" "$TARGET_TMUX_DIR/"
-cp -f "$DOTFILES_DIR/ghostty/config" "$TARGET_GHOSTTY_DIR/"
 
-# Change shell to zsh if needed
+# Main dotfiles
+mkdir -p ~/.config/nvim ~/.config ~/.config/ghostty
+cp -f "$DOTFILES_DIR/init.lua" ~/.config/nvim/
+cp -f "$DOTFILES_DIR/.zshrc" ~/
+cp -f "$DOTFILES_DIR/starship.toml" ~/.config/
+cp -f "$DOTFILES_DIR/.tmux.conf" ~/
+cp -f "$DOTFILES_DIR/ghostty/config" ~/.config/ghostty/
+
+# Hyprland configs
+mkdir -p ~/.config/hypr
+cp -r "$DOTFILES_DIR/hypr/"* ~/.config/hypr/
+
+# swaync configs
+mkdir -p ~/.config/swaync
+cp -r "$DOTFILES_DIR/swaync/"* ~/.config/swaync/
+
+# waybar configs
+mkdir -p ~/.config/waybar
+cp -r "$DOTFILES_DIR/waybar/"* ~/.config/waybar/
+
+# rofi configs
+mkdir -p ~/.config/rofi
+cp -r "$DOTFILES_DIR/rofi/"* ~/.config/rofi/
+
+# Change shell to zsh
 if [ "$SHELL" != "/bin/zsh" ]; then
     echo "Changing default shell to zsh..."
     chsh -s /bin/zsh
@@ -126,4 +141,5 @@ else
     echo "Default shell is already zsh."
 fi
 
-echo "✅ Installation complete! You may need to restart your shell or run 'source ~/.zshrc'."
+echo "✅ Hyprland setup complete! You can now log in using the Hyprland session."
+
