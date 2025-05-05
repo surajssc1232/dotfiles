@@ -1,0 +1,243 @@
+// r4ppz
+
+{
+  // General Waybar configuration
+  "layer": "top",
+  "height": 21,
+  "spacing": 0,
+  "margin-top": 0,
+  "margin-right": 0,
+  "margin-left": 0,
+
+  // Module placement
+  "modules-left": [
+    "hyprland/workspaces"
+    ,"custom/web-links",
+     "custom/playerctl"
+  ],
+  "modules-center": [
+    "clock"
+  ],
+  "modules-right": [
+    "memory",
+    "cpu",
+    "temperature",
+    "disk",
+    "pulseaudio",
+    "backlight",
+    "battery",
+    "power-profiles-daemon",
+    "tray",
+    "custom/power-button"
+  ],
+
+  // -------------------------------------------------------------------------
+  // Modules configuration
+  // -------------------------------------------------------------------------
+
+  // Hyprland Workspaces module
+  "hyprland/workspaces": {
+    "active-only": false,
+    "all-outputs": true,
+    "warp-on-scroll": false,
+    "format": "{icon}",
+    "format-icons": {
+      "1": "1",
+      "2": "2",
+      "3": "3",
+      "4": "4",
+      "5": "5",
+      "6": "6",
+      "7": "7",
+      "8": "8",
+      "9": "9",
+      "10": "10"
+    },
+    "persistent-workspaces": {
+      "*": 5
+    },
+     "on-scroll-up": "hyprctl dispatch workspace e+1",
+    "on-scroll-down": "hyprctl dispatch workspace e-1"
+  },
+
+  // System Tray module
+  "tray": {
+    "icon-size": 12,
+    "spacing": 8
+  },
+
+  // Disk module (commented out in modules-right)
+  "disk": {
+    "format": " 󰣆  {free}",
+    "interval": 20
+  },
+
+  // CPU module
+  "cpu": {
+    "format": "   {usage}%",
+    "tooltip": true,
+    "tooltip-format": "CPU Usage: {usage}%",
+    "interval": 2
+  },
+
+  // Memory module
+  "memory": {
+    "format": "   {used} GiB ({percentage}%)",
+    "tooltip": false,
+    "interval": 10,
+    "on-click-right": "kitty -e btop"
+  },
+
+  // Temperature module
+  "temperature": {
+    "tooltip": false,
+    "thermal-zone": 6,
+    "critical-threshold": 70,
+    "interval": 2,
+    "format": "   {temperatureC}°C",
+    "format-critical": "   {temperatureC}°C"
+  },
+
+  // Backlight module
+  "backlight": {
+    // "device": "acpi_video1",
+    "format": " {icon}  {percent}%",
+    "format-icons": [
+      "󰃚", // 0-14%
+      "󰃛", // 15-29%
+      "󰃜", // 30-44%
+      "󰃝", // 45-59%
+      "󰃞", // 60-74%
+      "󰃟", // 75-89%
+      "󰃠" // 90-100%
+    ],
+    "on-scroll-up": "brightnessctl set +1%",
+    "on-scroll-down": "brightnessctl set 1%-",
+    "smooth-scrolling-threshold": 1,
+    "tooltip": false,
+    "tooltip-format": "Brightness: {percent}%"
+  },
+
+  // PulseAudio module
+  "pulseaudio": {
+    "scroll-step": 1,
+    "format": "{icon} {volume}%",
+    "format-muted": "<span color='#cc241d'>󰝟</span> {volume}%",
+    "format-bluetooth": "<span color='#458588'>󰂰</span> {volume}%",
+    "format-bluetooth-muted": "<span color='#cc241d'>󰂲</span> {volume}%",
+    "format-source": "<span color='#458588'>󰍬</span> {volume}%",
+    "format-source-muted": "<span color='#cc241d'>󰍭</span>",
+    "format-icons": {
+      "headphone": "<span color='#458588'>󰋋</span>",
+      "headset": "<span color='#458588'>󰋎</span>",
+      "phone": "<span color='#458588'>󰏲</span>",
+      "portable": "<span color='#458588'>󰦥</span>",
+      "car": "<span color='#458588'>󰄋</span>",
+      "default": [
+        "<span color='#458588'>󰕿</span>",
+        "<span color='#458588'>󰖀</span>",
+        "<span color='#458588'>󰕾</span>"
+      ]
+    },
+    "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+    "on-click-right": "pavucontrol",
+    "on-scroll-up": "pactl set-sink-volume @DEFAULT_SINK@ +1%",
+    "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -1%",
+    "tooltip": false,
+    "tooltip-format": "{desc} - {volume}%",
+    "max-volume": 130
+  },
+
+  // Battery module
+  "battery": {
+    "interval": 10,
+    "states": {
+      "good": 99,
+      "warning": 30,
+      "critical": 20
+    },
+    "format-icons": [
+      "󰂎",
+      "󰁺",
+      "󰁻",
+      "󰁽",
+      "󰁾",
+      "󰁿",
+      "󰂀",
+      "󰂁",
+      "󰂂",
+      "󰁹"
+    ],
+    "format": "<span color='#98971a'> {icon} </span> {capacity}%",
+    "format-critical": "<span color='#cc241d'> {icon} </span> {capacity}%!!",
+    "format-warning": "<span color='#d79921'> {icon} </span> {capacity}%",
+    "format-full": "<span color='#98971a'> {icon} </span> {capacity}%",
+    "format-charging": "<span color='#98971a'> 󰂅 </span> {capacity}%",
+    "format-charging-warning": "<span color='#d79921'> 󰢝 </span> {capacity}%",
+    "format-charging-critical": "<span color='#cc241d'> 󰢜 </span> {capacity}%",
+    "format-plugged": "<span color='#98971a'> 󰂅 </span> {capacity}%",
+    "format-alt": "<span color='#98971a'> 󱧥 </span> {time}",
+    "tooltip": false
+  },
+
+  // Clock module
+  "clock": {
+    // "timezone": "America/New_York",
+    "format": "<span color='#689d6a'>  </span> {:%a %d %b %I:%M:%S %p}",
+    "format-alt": "<span color='#689d6a'>  </span> {:%Y-%m-%d}",
+    "tooltip": true,
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    // "on-click": "gsimplecal",
+    "on-click-right": "gsimplecal",
+    "interval": 1
+  },
+
+  // Power Profiles Daemon module (commented out in modules-right)
+  "power-profiles-daemon": {
+    "format": "{icon}",
+    "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
+    "tooltip": true,
+    "format-icons": {
+      "default": "",
+      "performance": "",
+      "balanced": "",
+      "power-saver": ""
+    }
+  },
+
+  // Custom Rofi launcher module (not used in modules lists)
+  "custom/rofi": {
+    "format": "󰣇",
+    "on-click": "/home/r4ppz/.config/rofi/scripts/launcher_t4", // Rofi
+    "on-click-right": "/home/r4ppz/.config/rofi/powermenu/type-3/powermenu.sh", // Rofi
+    "escape": true,
+    "tooltip": false
+  },
+
+  // Custom Power Button module
+  "custom/power-button": {
+    "format": "  ",
+    "on-click": "/home/r4ppz/.config/rofi/powermenu/type-3/powermenu.sh", // Rofi
+    "tooltip": false
+  },
+
+  // Custom Web Links module (commented out in modules-left)
+  "custom/web-links": {
+    "format": "  ",
+    "on-click": "~/.config/rofi/applets/bin/quicklinks.sh",
+    "tooltip": false
+  },
+
+  // Custom Playerctl module (commented out in modules-left)
+  "custom/playerctl": {
+    "return-type": "json",
+    "max-length": 30,
+    "exec": "playerctl -a metadata --format '{\"text\": \"{{title}}\", \"tooltip\": \"{{playerName}}: {{artist}} - {{title}}\\n{{album}}\"}' 2>/dev/null || echo ''",
+    "on-click": "playerctl play-pause",
+    "on-click-right": "playerctl next",
+    "on-click-middle": "playerctl previous",
+    "tooltip": true,
+    "tooltip-format": "<b>{playerName}</b>\nArtist: {artist}\nTitle: {title}\nAlbum: {album}",
+    "interval": 2
+  }
+}
