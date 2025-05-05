@@ -66,7 +66,7 @@ PACMAN_PKGS=(
     zsh git zathura base-devel neovim tmux wl-clipboard ghostty starship fastfetch
     noto-fonts noto-fonts-cjk noto-fonts-emoji tree exa fzf qbittorrent
     xdg-desktop-portal xdg-desktop-portal-wlr polkit brightnessctl pavucontrol
-    grim slurp wf-recorder wayland xwayland wlroots
+    grim slurp wf-recorder wayland xwayland wlroots pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber
 )
 install_pacman_pkgs "${PACMAN_PKGS[@]}"
 
