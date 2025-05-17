@@ -1,0 +1,254 @@
+// r4ppz
+
+{
+  // General Waybar configuration
+  "opacity":0.5,
+  // "layer": "top",
+  "height": 21,
+  "spacing": 0,
+  "margin-top": 0,
+  "margin-right": 0,
+  "margin-left": 0,
+
+  // Module placement
+  "modules-left": [
+    "hyprland/workspaces"
+  ],
+  "modules-center": [
+    "clock",
+	"custom/media"
+  ],
+  "modules-right": [
+	"custom/hyprpicker",
+	"bluetooth",
+	"temperature",
+	"pulseaudio",
+	"backlight",
+	"network",
+	"battery",
+	"power-profiles-daemon",
+	"custom/power-button"
+  ],
+
+  // -------------------------------------------------------------------------
+  // Modules configuration
+  // -------------------------------------------------------------------------
+
+"network": {
+    "format": " ",
+    "format-wifi": " ",
+    "format-ethernet": "{ipaddr}/{cidr} 󰊗",
+    "format-disconnected": "", //An empty format will hide the module.
+    "tooltip-format": "{ifname} via {gwaddr} 󰊗",
+    "tooltip-format-wifi": "{essid} ({signalStrength}%) ",
+    "tooltip-format-ethernet": "{ifname} ",
+    "tooltip-format-disconnected": "Disconnected",
+    "max-length": 50,
+	"on-click":"~/.config/rofi/applets/bin/wifi.sh"
+},
+  "bluetooth": {
+	"format": "",
+	"format-disabled": "", // an empty format will hide the module
+	"format-connected": " {device_alias} connected",
+	"tooltip":false,
+	"tooltip-format": "{controller_alias}\t{controller_address}",
+	"tooltip-format-connected": "{controller_alias}\t{controller_address}\n\n{device_enumerate}",
+	"tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
+	"on-click": "rofi-bluetooth"
+},
+
+  // Hyprland Workspaces module
+  "hyprland/workspaces": {
+    "active-only": false,
+    "all-outputs": true,
+    "warp-on-scroll": false,
+    "format": "{icon}",
+    "format-icons": {
+      "1": "I",
+      "2": "II",
+      "3": "III",
+      "4": "IV",
+      "5": "V",
+      "6": "VI",
+      "7": "VII",
+      "8": "VIII",
+      "9": "IX",
+      "10": "X"
+    },
+    "persistent-workspaces": {
+      "*": 5
+    },
+     "on-scroll-up": "hyprctl dispatch workspace e+1",
+    "on-scroll-down": "hyprctl dispatch workspace e-1"
+  },
+
+  // System Tray module
+  "tray": {
+    "icon-size": 12,
+    "spacing": 8
+  },
+
+  // Disk module (commented out in modules-right)
+  "disk": {
+    "format": " 󰣆  {free}",
+    "interval": 20
+  },
+
+  // CPU module
+  "cpu": {
+    "format": "   {usage}%",
+    "tooltip": true,
+    "tooltip-format": "CPU Usage: {usage}%",
+    "interval": 2
+  },
+
+  // Memory module
+  "memory": {
+    "format": "   {used} GiB ({percentage}%)",
+    "tooltip": false,
+    "interval": 10,
+    "on-click-right": "kitty -e btop"
+  },
+
+  // Temperature module
+  "temperature": {
+    "tooltip": false,
+    "thermal-zone": 6,
+    "critical-threshold": 70,
+    "interval": 2,
+    "format": "   {temperatureC}°C",
+    "format-critical": "   {temperatureC}°C"
+  },
+
+  // Backlight module
+  "backlight": {
+    // "device": "acpi_video1",
+    "format": "{icon} {percent}%",
+    "format-icons": [
+      "󰃚", // 0-14%
+      "󰃛", // 15-29%
+      "󰃜", // 30-44%
+      "󰃝", // 45-59%
+      "󰃞", // 60-74%
+      "󰃟", // 75-89%
+      "󰃠" // 90-100%
+    ],
+    "on-scroll-up": "brightnessctl set +1%",
+    "on-scroll-down": "brightnessctl set 1%-",
+    "smooth-scrolling-threshold": 1,
+    "tooltip": false,
+    "tooltip-format": "Brightness: {percent}%"
+  },
+
+  // PulseAudio module
+  "pulseaudio": {
+    "scroll-step": 1,
+    "format": "{icon} {volume}%",
+    "format-muted": "<span color='#cc241d'>󰝟</span> {volume}%",
+    "format-bluetooth": "<span color='#458588'>󰂰</span> {volume}%",
+    "format-bluetooth-muted": "<span color='#cc241d'>󰂲</span> {volume}%",
+    "format-source": "<span color='#458588'>󰍬</span> {volume}%",
+    "format-source-muted": "<span color='#cc241d'>󰍭</span>",
+    "format-icons": {
+      "headphone": "<span color='#458588'>󰋋</span>",
+      "headset": "<span color='#458588'>󰋎</span>",
+      "phone": "<span color='#458588'>󰏲</span>",
+      "portable": "<span color='#458588'>󰦥</span>",
+      "car": "<span color='#458588'>󰄋</span>",
+      "default": [
+        "<span color='#458588'>󰕿</span>",
+        "<span color='#458588'>󰖀</span>",
+        "<span color='#458588'>󰕾</span>"
+      ]
+    },
+    "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+    "on-click-right": "pavucontrol",
+    "on-scroll-up": "pactl set-sink-volume @DEFAULT_SINK@ +1%",
+    "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -1%",
+    "tooltip": false,
+    "tooltip-format": "{desc} - {volume}%",
+    "max-volume": 130
+  },
+
+  // Battery module
+  "battery": {
+    "interval": 10,
+    "states": {
+      "good": 99,
+      "warning": 30,
+      "critical": 20
+    },
+    "format-icons": [
+      "󰂎",
+      "󰁺",
+      "󰁻",
+      "󰁽",
+      "󰁾",
+      "󰁿",
+      "󰂀",
+      "󰂁",
+      "󰂂",
+      "󰁹"
+    ],
+    "format": "<span color='#98971a'>{icon}</span>{capacity}%",
+    "format-critical": "<span color='#cc241d'> {icon} </span>{capacity}%!!",
+    "format-warning": "<span color='#d79921'> {icon} </span>{capacity}%",
+    "format-full": "<span color='#98971a'> {icon} </span>{capacity}%",
+    "format-charging": "<span color='#98971a'>󰂅 </span>{capacity}%",
+    "format-charging-warning": "<span color='#d79921'> 󰢝 </span> {capacity}%",
+    "format-charging-critical": "<span color='#cc241d'> 󰢜 </span>{capacity}%",
+    "format-plugged": "<span color='#98971a'> 󰂅 </span>{capacity}%",
+    "format-alt": "<span color='#98971a'> 󱧥 </span> {time}",
+    "tooltip": false
+  },
+
+  // Clock module
+  "clock": {
+    // "timezone": "America/New_York",
+    "format": "<span color='#689d6a'>  </span> {:%a %d %b %I:%M:%S %p}",
+    "format-alt": "<span color='#689d6a'>  </span> {:%Y-%m-%d}",
+    "tooltip": true,
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    // "on-click": "gsimplecal",
+    "on-click-right": "gsimplecal",
+    "interval": 1
+  },
+  
+
+  // Power Profiles Daemon module (commented out in modules-right)
+  "power-profiles-daemon": {
+    "format": "{icon}",
+    "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
+    "tooltip": true,
+    "format-icons": {
+      "default": "",
+      "performance": "",
+      "balanced": "",
+      "power-saver": ""
+    }
+  },
+  // Custom Power Button module
+  "custom/power-button": {
+    "format": "  ",
+    "on-click": "~/.config/rofi/powermenu/type-2/powermenu.sh", // Rofi
+    "tooltip": false
+  },
+
+  // Custom Web Links module (commented out in modules-left)
+ "custom/hyprpicker":{
+	"format":"  ",
+	"tooltip":false,
+	"on-click":"hyprpicker -a"
+  },
+
+  "custom/media": {
+    "exec": "~/.config/waybar/mediaplayer.py",
+    "interval": 1,
+    "format": "{}",
+    "return-type": "json",
+    "on-click": "playerctl play-pause",
+    "on-scroll-up": "playerctl next",
+    "on-scroll-down": "playerctl previous",
+    "signal": 1
+  }
+}

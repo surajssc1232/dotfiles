@@ -1,0 +1,15 @@
+[font]
+normal={family="IosevkaTerm Nerd Font"}
+size=22
+
+[colors.primary]
+background="#262626"
+
+[selection]
+save_to_clipboard=true
+
+[window]
+dynamic_padding=true
+resize_increments=true
+
+

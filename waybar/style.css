@@ -1,0 +1,206 @@
+* {
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+  border: none;
+  text-shadow: none;
+  transition: none;
+  box-shadow: none;
+  font-family: JetBrainsMono Nerd Font Propo;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ebdbb2; /* Gruvbox light foreground */
+}
+
+window#waybar {
+  background-color: rgba(40, 35, 31, 0.5); /* Gruvbox dark bg with transparency */
+  color: #ffffff;
+  padding: 8px 10px;
+  margin: 18px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+window#waybar.hidden {
+  opacity: 0.95;
+}
+
+/* Modules: Transparent to blend seamlessly */
+#power-profiles-daemon,
+#custom-power-button,
+#custom-rofi,
+#workspaces,
+#workspaces button,
+#workspaces button:hover,
+#workspaces button.visible,
+#workspaces button.visible:hover,
+#workspaces button.active,
+#workspaces button.active:hover,
+#workspaces button.urgent,
+#window,
+#tray,
+#disk,
+#cpu,
+#temperature,
+#temperature.critical,
+#backlight,
+#custom-memory,
+#pulseaudio,
+#pulseaudio.muted,
+#battery,
+#battery.critical,
+#battery.warning,
+#clock,
+#custom-web-links,
+#memory,
+#mpd,
+#custom-playerctl,
+#bluetooth,
+#network,
+#custom-spotify {
+  background: transparent;
+  padding: 1 6px;
+  margin: 2 2px;
+}
+
+/* Workspaces: Fixed padding and no rounded corners */
+#workspaces {
+  padding: 0 4px;
+}
+
+#workspaces button {
+  color: #ebdbb2;
+  min-width: 24px;
+  padding: 0 4px; /* Consistent padding */
+  margin: 0 2px; /* Consistent margin */
+}
+
+#workspaces button:hover,
+#workspaces button.visible,
+#workspaces button.visible:hover,
+#workspaces button.active,
+#workspaces button.active:hover {
+  background: rgba(131, 165, 152, 0.3); /* Gruvbox aqua highlight */
+  color: #ebdbb2; /* Ensure text color doesn’t change */
+  padding: 0 4px; /* Same as base state */
+  margin: 0 2px; /* Same as base state */
+  border-radius: 8px; /* No rounded corners */
+}
+
+#workspaces button.urgent {
+  background: rgba(234, 105, 98, 0.5); /* Gruvbox red */
+  padding: 0 4px;
+  margin: 0 2px;
+  border-radius: 0;
+}
+
+/* Module-specific colors (unchanged) */
+#window {
+  color: #d3869b;
+}
+
+#tray {
+  padding: 0 6px;
+}
+
+#disk {
+  color: #ea6962;
+}
+
+#cpu {
+  color: #e78a4e;
+}
+
+#temperature {
+  color: #d8a657;
+}
+
+#temperature.critical {
+  color: #cc241d;
+}
+
+#backlight {
+  color: #d8a657;
+}
+
+#custom-memory {
+  color: #458588;
+}
+
+#memory {
+  color: #b8bb26;
+}
+
+#pulseaudio {
+  color: #83a598;
+}
+
+#pulseaudio.muted {
+  color: #ea6962;
+}
+
+#battery {
+  color: #689d6a;
+}
+
+#battery.critical {
+  color: #cc241d;
+}
+
+#battery.warning {
+  color: #e78a4e;
+}
+
+#clock {
+  color: #8ec07c;
+}
+
+#power-profiles-daemon {
+  color: #d3869b;
+}
+
+#custom-power-button {
+  color: #cc241d;
+}
+
+#custom-rofi {
+  color: #83a598;
+  padding: 0 8px;
+}
+
+#custom-web-links {
+  color: #83a598;
+}
+
+#mpd {
+  color: #458588;
+}
+
+#custom-playerctl {
+  color: #ebdbb2;
+  background: rgba(69, 133, 136, 0.3);
+  padding: 0 6px;
+  border-radius: 0; /* No rounded corners */
+}
+
+#bluetooth {
+  color: skyblue;
+}
+
+#network {
+  color: greenyellow;
+}
+
+#custom-spotify {
+  color: #1DB954;
+  background: rgba(29, 185, 84, 0.3);
+  padding: 0 8px;
+  border-radius: 0; /* No rounded corners */
+}
+
+/* RGB animation (unchanged) */
+@keyframes rgbText {
+  0%   { color: red; }
+  33%  { color: lime; }
+  66%  { color: blue; }
+  100% { color: red; }
+}
