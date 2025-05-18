@@ -1,79 +1,107 @@
 #!/usr/bin/env bash
-# v0.1.0
+# v0.2.2 - Rofi UI + Hyprland-specific window capture fix
+
+#!/usr/bin/env bash
+# v0.2.3 - Rofi UI + Hyprland-specific window capture fix + audio support
+
 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$UID}"
 WFRC_FOLDER="${WFRC_FOLDER:-$XDG_RUNTIME_DIR/wfrc}"
 SCRIPT_NAME="${SCRIPT_NAME:-wfrc}"
 WFRC_LOCK="${WFRC_LOCK:-$WFRC_FOLDER/WFRCLOCK}"
-# Set the icon of notification
-WFRC_ICON="${WFRC_ICON:-record}"
+WFRC_ICON="${WFRC_ICON:-camera-web}"
 mkdir -p "$WFRC_FOLDER"
+
 if ! [ -n "$WAYLAND_DISPLAY" ]; then
-    WFRC_NOWAYLAND="${WFRC_NOWAYLAND:-No WAYLAND_DISPLAY found. Did you run me on a wayland compositor?}"
+    WFRC_NOWAYLAND="No WAYLAND_DISPLAY found. Are you running under Wayland?"
     echo "$WFRC_NOWAYLAND" >&2
-    notify-send --app-name=$SCRIPT_NAME 'Error' "$WFRC_NOWAYLAND" --icon="$WFRC_ICON"
+    notify-send --app-name="$SCRIPT_NAME" "Error" "$WFRC_NOWAYLAND" --icon="$WFRC_ICON"
     exit 1
 fi
 
-# 1 to enable full screen
-WFRC_FULL_SCREEN="${WFRC_FULL_SCREEN:-0}"
-# 0 to disable notification
+# Configurable options
 WFRC_NOTIFY="${WFRC_NOTIFY:-1}"
+WFRC_AUDIO_DEV="${WFRC_AUDIO_DEV:-$(LANG=C pactl list sources | grep 'Name.*output' | cut -d ' ' -f2)}"
+WFRC_FILE_NAME="${WFRC_FILE_NAME:-$WFRC_FOLDER/${SCRIPT_NAME}-$(date +%Y-%m-%dT%H:%M:%S).mp4}"
+
+# Single instance check
 if [ -f "$WFRC_LOCK" ]; then
     kill $(cat "$WFRC_LOCK")
     rm "$WFRC_LOCK"
-    exit
 fi
 echo $$ > "$WFRC_LOCK"
 
 kill_wfrc() {
-    kill -TERM $wf_recorder_pid
-    rm $WFRC_LOCK
+    kill -TERM "$wf_recorder_pid" 2>/dev/null
+    rm -f "$WFRC_LOCK"
     echo -n "file://$WFRC_FILE_NAME" | wl-copy -t 'text/uri-list'
-    if [ $WFRC_NOTIFY -eq 1 ]; then
-        SIZE="$(ls -lh $WFRC_FILE_NAME | tr -s ' ' | cut -d ' ' -f 5)"
+    if [ "$WFRC_NOTIFY" -eq 1 ]; then
+        SIZE=$(ls -lh "$WFRC_FILE_NAME" | awk '{print $5}')
         ENDTIME=$(date +%s)
         duration=$((ENDTIME - STARTTIME))
-        if [ $WFRC_FULL_SCREEN -eq 0 ]; then
-            resolution=$(echo $output | cut -d' ' -f2)
-        else
-            resolution='Full screen'
-        fi
         minutes=$((duration / 60))
         seconds=$((duration % 60))
-        if [ $minutes -gt 0 ]; then
-            formatted_duration="${minutes}m ${seconds}s"
-        else
-            formatted_duration="${seconds}s"
-        fi
-        notify-send -t 1000 --app-name=$SCRIPT_NAME 'Finished.' \
+        formatted_duration="${minutes}m ${seconds}s"
+        [[ $minutes -eq 0 ]] && formatted_duration="${seconds}s"
+        notify-send -t 5000 --app-name="$SCRIPT_NAME" "Recording Finished" \
             "$formatted_duration | $SIZE | $resolution" --icon="$WFRC_ICON"
     fi
+    exit
 }
 
-trap 'kill_wfrc $$' SIGINT SIGTERM 
+trap 'kill_wfrc' SIGINT SIGTERM
 
-if [ $WFRC_FULL_SCREEN -eq 0 ]; then
-    output=$(slurp)
-    result=$?
-    if ! [ $result -eq 0 ]; then
-        rm "$WFRC_LOCK"
-        if [ $WFRC_NOTIFY -eq 1 ]; then
-            notify-send --app-name=$SCRIPT_NAME 'Canceled.' --icon="$WFRC_ICON"
+# Ask user what to record
+CHOICE=$(printf "Fullscreen\nWindow\nRegion" | rofi -dmenu -i -p "Record:")
+
+case "$CHOICE" in
+    "Fullscreen")
+        resolution="Full Screen"
+        output=""
+        ;;
+    "Window")
+        # Get visible windows as bounding boxes
+        clients=$(hyprctl -j clients)
+        boxes=$(echo "$clients" | jq -r '.[] | "\(.at[0]),\(.at[1]) \(.size[0])x\(.size[1])"')
+
+        # Use slurp to select one
+        output=$(echo "$boxes" | slurp -r)
+        if [ $? -ne 0 ]; then
+            rm "$WFRC_LOCK"
+            notify-send --app-name="$SCRIPT_NAME" "Selection canceled." --icon="$WFRC_ICON"
+            exit 1
         fi
-        exit
-    fi
+
+        resolution=$(echo "$output" | awk '{split($0,a," "); print a[2]}')
+        ;;
+    "Region")
+        output=$(slurp)
+        if [ $? -ne 0 ]; then
+            rm "$WFRC_LOCK"
+            notify-send --app-name="$SCRIPT_NAME" "Selection canceled." --icon="$WFRC_ICON"
+            exit 1
+        fi
+        resolution=$(echo "$output" | awk '{split($0,a," "); print a[3]"x"a[4]}')
+        ;;
+    *)
+        rm "$WFRC_LOCK"
+        notify-send --app-name="$SCRIPT_NAME" "Invalid choice or canceled." --icon="$WFRC_ICON"
+        exit 1
+        ;;
+esac
+
+if [ "$WFRC_NOTIFY" -eq 1 ]; then
+    notify-send -t 1000 --app-name="$SCRIPT_NAME" "Recording..." --icon="$WFRC_ICON"
 fi
 
-if [ $WFRC_NOTIFY -eq 1 ]; then
-    notify-send -t 1000 --app-name=$SCRIPT_NAME 'Rec.' --icon="$WFRC_ICON"
-fi
-WFRC_AUDIO_DEV="${WFRC_AUDIO_DEV:-$(LANG=C pactl list sources | grep 'Name.*output'|cut -d ' ' -f 2)}"
-WFRC_FILE_NAME="${WFRC_FILE_NAME:-$WFRC_FOLDER/$SCRIPT_NAME-$(date +%Y-%m-%dT%H-%M-%S).mp4}"
-if [ $WFRC_FULL_SCREEN -eq 0 ]; then
-    wf-recorder -f $WFRC_FILE_NAME -g "$output" --audio=$WFRC_AUDIO_DEV "$@" &
-else
-    wf-recorder -f $WFRC_FILE_NAME --audio=$WFRC_AUDIO_DEV "$@" &
-fi
 STARTTIME=$(date +%s)
+
+# Start wf-recorder with appropriate geometry and audio
+if [ -z "$output" ]; then
+    # Fullscreen mode
+    wf-recorder -f "$WFRC_FILE_NAME" --audio="$WFRC_AUDIO_DEV" &
+else
+    wf-recorder -f "$WFRC_FILE_NAME" -g "$output" --audio="$WFRC_AUDIO_DEV" &
+fi
+
 wf_recorder_pid=$!
 wait $wf_recorder_pid
