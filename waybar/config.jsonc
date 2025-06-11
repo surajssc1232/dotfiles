@@ -6,19 +6,21 @@
   // "layer": "top",
   "height": 21,
   "spacing": 0,
-  "margin-top": 0,
-  "margin-right": 0,
-  "margin-left": 0,
+  "margin-top": 4,
+  "margin-right": 5,
+  "margin-left": 5,
 
   // Module placement
   "modules-left": [
-    "hyprland/workspaces"
+ 	"hyprland/workspaces",
+	"mpris"
   ],
   "modules-center": [
     "clock",
-	"custom/media"
+	"custom/dnd"
   ],
   "modules-right": [
+	"custom/powerprofile",
 	"custom/hyprpicker",
 	"bluetooth",
 	"temperature",
@@ -26,7 +28,6 @@
 	"backlight",
 	"network",
 	"battery",
-	"power-profiles-daemon",
 	"custom/power-button"
   ],
 
@@ -34,14 +35,50 @@
   // Modules configuration
   // -------------------------------------------------------------------------
 
+  // MPRIS module - Dynamic media player
+  "mpris": {
+    "format": "{player_icon} {dynamic}",
+    "format-paused": "{status_icon} {dynamic}",
+    "title-len": 25,
+    "artist-len": 20,
+    "album-len": 15,
+    "dynamic-len": 45,
+    "dynamic-order": ["title", "artist", "album"],
+    "dynamic-importance-order": ["title", "artist", "album"],
+    "dynamic-separator": " • ",
+    "ellipsis": "…",
+    "tooltip": true,
+    "tooltip-format": "Player: {player}\nStatus: {status}\nTitle: {title}\nArtist: {artist}\nAlbum: {album}\nPosition: {position}/{length}",
+    "player-icons": {
+      "default": "<span color='#689d6a'>♪</span>",
+      "spotify": "<span color='#1db954'></span>",
+      "mpv": "<span color='#458588'></span>",
+      "vlc": "<span color='#ff8800'>🎬</span>",
+      "firefox": "<span color='#ff7139'></span>",
+      "chromium": "<span color='#4285f4'></span>",
+      "chrome": "<span color='#4285f4'></span>"
+    },
+    "status-icons": {
+      "playing": "<span color='#98971a'>▶</span>",
+      "paused": "<span color='#d79921'>⏸</span>",
+      "stopped": "<span color='#cc241d'>⏹</span>"
+    },
+    "ignored-players": [],
+    "on-click": "playerctl play-pause",
+    "on-click-right": "playerctl next",
+    "on-click-middle": "playerctl previous",
+    "on-scroll-up": "playerctl next",
+    "on-scroll-down": "playerctl previous"
+  },
+
 "network": {
     "format": " ",
     "format-wifi": " ",
     "format-ethernet": "{ipaddr}/{cidr} 󰊗",
-    "format-disconnected": "", //An empty format will hide the module.
+    "format-disconnected": "", //An empty format will hide the module.
     "tooltip-format": "{ifname} via {gwaddr} 󰊗",
-    "tooltip-format-wifi": "{essid} ({signalStrength}%) ",
-    "tooltip-format-ethernet": "{ifname} ",
+    "tooltip-format-wifi": "{essid} ({signalStrength}%) ",
+    "tooltip-format-ethernet": "{ifname} ",
     "tooltip-format-disconnected": "Disconnected",
     "max-length": 50,
 	"on-click":"~/.config/rofi/applets/bin/wifi.sh"
@@ -96,7 +133,7 @@
 
   // CPU module
   "cpu": {
-    "format": "   {usage}%",
+    "format": "  {usage}%",
     "tooltip": true,
     "tooltip-format": "CPU Usage: {usage}%",
     "interval": 2
@@ -104,7 +141,7 @@
 
   // Memory module
   "memory": {
-    "format": "   {used} GiB ({percentage}%)",
+    "format": "  {used} GiB ({percentage}%)",
     "tooltip": false,
     "interval": 10,
     "on-click-right": "kitty -e btop"
@@ -116,7 +153,7 @@
     "thermal-zone": 6,
     "critical-threshold": 70,
     "interval": 2,
-    "format": "   {temperatureC}°C",
+    "format": "  {temperatureC}°C",
     "format-critical": "   {temperatureC}°C"
   },
 
@@ -205,7 +242,7 @@
   // Clock module
   "clock": {
     // "timezone": "America/New_York",
-    "format": "<span color='#689d6a'>  </span> {:%a %d %b %I:%M:%S %p}",
+    "format": "<span color='#689d6a'>  </span> {:%a %d %b %I:%M:%S %p}",
     "format-alt": "<span color='#689d6a'>  </span> {:%Y-%m-%d}",
     "tooltip": true,
     "tooltip-format": "<tt><small>{calendar}</small></tt>",
@@ -214,23 +251,10 @@
     "interval": 1
   },
   
-
-  // Power Profiles Daemon module (commented out in modules-right)
-  "power-profiles-daemon": {
-    "format": "{icon}",
-    "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
-    "tooltip": true,
-    "format-icons": {
-      "default": "",
-      "performance": "",
-      "balanced": "",
-      "power-saver": ""
-    }
-  },
   // Custom Power Button module
   "custom/power-button": {
     "format": "  ",
-    "on-click": "~/.config/rofi/powermenu/type-2/powermenu.sh", // Rofi
+ 	"on-click": "~/.config/rofi/powermenu/type-2/powermenu.sh", // Rofi
     "tooltip": false
   },
 
@@ -240,15 +264,35 @@
 	"tooltip":false,
 	"on-click":"hyprpicker -a"
   },
+   
+    "custom/dnd": {
+        "exec": "~/.config/waybar/scripts/dnd.sh status",
+        "return-type": "json",
+        "interval": 5,
+        "on-click": "~/.config/waybar/scripts/dnd.sh toggle",
+        "signal": 8
+    },
+	"power-profiles-daemon": {
+	  "format": "{icon}",
+	  "tooltip-format": "Power profile: {profile}\nDriver: {driver}",
+	  "tooltip": true,
+	  "format-icons": {
+		"default": " ",
+		"performance": " ",
+		"balanced": " ",
+		"power-saver": " "
+	  }
+	},
+	"custom/powerprofile": {
+        "format": "{} ",
+        "return-type": "json",
+        "exec": "~/.config/waybar/scripts/pprofile.sh",
+        "on-click": "~/.config/waybar/scripts/pprofile.sh cycle",
+        "interval": 5,
+        "tooltip": true,
+        "tooltip-format": "Click to cycle power profiles"
+   }
 
-  "custom/media": {
-    "exec": "~/.config/waybar/mediaplayer.py",
-    "interval": 1,
-    "format": "{}",
-    "return-type": "json",
-    "on-click": "playerctl play-pause",
-    "on-scroll-up": "playerctl next",
-    "on-scroll-down": "playerctl previous",
-    "signal": 1
+
   }
 }

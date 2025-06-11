@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Mapping of window class to emoji icons
+declare -A ICONS=(
+  ["firefox"]="🦊"
+  ["thunar"]="📁"
+  ["alacritty"]="🖥️"
+  ["code"]="📝"
+  ["discord"]="💬"
+  ["spotify"]="🎵"
+)
+
+output=""
+
+# Get client classes
+clients=$(hyprctl clients -j | jq -r '.[].class')
+
+# Remove duplicates
+clients=$(echo "$clients" | sort -u)
+
+for app in $clients; do
+  lower_app=$(echo "$app" | tr '[:upper:]' '[:lower:]')
+  icon=${ICONS[$lower_app]:-"❔"}
+  output+="$icon "
+done
+
+# Final output
+echo "{\"text\": \"${output::-1}\"}" # Remove trailing space
+
