@@ -8,17 +8,8 @@ SAVEHIST=1000
 autoload -Uz add-zle-hook-widget
 autoload -Uz compinit
 compinit
-# End of lines added by compinstall
-
-# export FZF_DEFAULT_OPTS=" \
-# --color=bg+:#363a4f,bg:#24273a,spinner:#f4dbd6,hl:#ed8796 \
-# --color=fg:#cad3f5,header:#ed8796,info:#c6a0f6,pointer:#f4dbd6 \
-# --color=marker:#b7bdf8,fg+:#cad3f5,prompt:#c6a0f6,hl+:#ed8796 \
-# --color=selected-bg:#494d64 \
-# --color=border:#363a4f,label:#cad3f5"
 
 eval "$(starship init zsh)"
-
 # Source plugins
 ZSH_AUTOSUGGEST_STRATEGY=(completion history)
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=8,bold"
@@ -28,24 +19,20 @@ alias c='clear'
 alias q='exit'
 alias l='exa --icons'
 
-# Custom function for opening files with nvim via fzf
-function nvfzf() {
- local selected_file=$(find / -type f 2>/dev/null | fzf --preview 'bat --color=always {}' --preview-window=up:3)
- if [[ -n "$selected_file" ]]; then
- nvim "$selected_file"
- fi
-}
-
-# Custom function for commands with descriptions
-function list_commands_with_desc() {
- echo "$PATH" | tr ':' '\n' | while read -r dir; do
- if [[ -d "$dir" ]]; then
-  find "$dir" -type f -executable 2>/dev/null | while read -r cmd; do
-  description=$(whatis "$(basename "$cmd")" 2>/dev/null | head -n 1) || description="No description"
-  echo "$(basename "$cmd")\t$description"
-  done
- fi
- done | fzf --delimiter='\t' --with-nth=1 --preview='man {} || echo "No manual entry"' --preview-window=up:3
+list_commands_with_desc() {
+  echo "$PATH" | tr ':' '\n' | while read -r dir; do
+    if [[ -d "$dir" ]]; then
+      find "$dir" -maxdepth 1 -type f -executable 2>/dev/null
+    fi
+  done | awk '!seen[$0]++' | while read -r cmd; do
+    name=$(basename "$cmd")
+    description=$(whatis "$name" 2>/dev/null | head -n 1)
+    if [[ -z "$description" ]]; then
+      description="No description"
+    fi
+    echo -e "${name}\t${description}"
+  done | sort -u | \
+  fzf --delimiter='\t' --with-nth=1 --preview='man {1} || echo "No manual entry for {1}"' --preview-window=up:3
 }
 
 # Vim with fzf
@@ -56,10 +43,9 @@ function vimfzf() {
 
 # Bind Ctrl+N to vimfzf
 bindkey -s '^N' 'vimfzf\n'
+bindkey -s '^U' 'list_commands_with_desc\n'
 
-# Environment variables
-export PATH=$PATH:/home/suraj/.spicetify:/home/suraj/.local/bin
-export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+
 
 # Prompt customization
 PROMPT_COMMAND='echo "----------------------------------------"'
@@ -78,10 +64,11 @@ if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] &&
   exec tmux
 fi
 
-fastfetch --config examples/14.jsonc
+fastfetch --config examples/8.jsonc
 alias tt="tweet"
 
-export JAVA_HOME=/usr/lib/jvm/java-21-openjdk/bin/java
+# export JAVA_HOME=/usr/lib/jvm/java-21-openjdk/bin/java
+export JAVA_HOME=/usr/lib/jvm/java-24-openjdk/lib/javac
 export PATH=$JAVA_HOME/bin:$PATH
 
 alias nvimc="nvim ~/.config/nvim/init.lua"
@@ -98,16 +85,60 @@ l() {
   fi
 }
 
+source ~/tweet_api.zsh
 
 alias gc="nvim ~/.config/ghostty/config"
 
-export JAVA_HOME="/usr/lib/jvm/java-24-openjdk/"
 
 export INSTA_RAPIDAPI_KEY="779c19efccmsh6d0190d61a9be00p1c2bc3jsn7fcbde842cc3"
 
 # bun completions
 [ -s "/home/suraj/.bun/_bun" ] && source "/home/suraj/.bun/_bun"
-alias geminif="gemini --model models/gemini-2.0-flash"
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+export LUA_PATH="$HOME/.luarocks/share/lua/5.4/?.lua;$HOME/.luarocks/share/lua/5.4/?/init.lua;;"
+export LUA_CPATH="$HOME/.luarocks/lib/lua/5.4/?.so;;"
+
+export SYSTEMD_EDITOR=/usr/bin/nvim
+
+export PATH=$PATH:~/.cargo/bin/
+
+alias fc-list="fc-list --format='%{family}\n' | sort"
+alias cursor_reset="curl -sL dub.sh/cursorreset | python3"
+
+
+source ~/gemini-cli.zsh
+source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.plugin.zsh
+source /usr/share/zsh/plugins/zsh-auto-venv/auto-venv.zsh
+export PATH="$HOME/go/bin/:$PATH"
+alias gemcli="gemini -m "gemini-2.5-flash-preview-04-17""
+
+alias hx=helix
+alias py=python
+
+
+open_notes() {
+    ~/.local/bin/note.sh
+}
+zle -N open_notes
+
+bindkey '^[D' open_notes
+
+
+export PAGER="less"
+export MANPAGER="less"
+
+man() {
+    command man "$@" | col -bx | bat -l man -p
+}
+
+
+if [ -z "$TMUX" ] && ! pgrep -x "tmux" > /dev/null; then
+  exec tmux
+fi
+
+
+# Created by `pipx` on 2025-06-05 15:25:51
+export PATH="$PATH:/home/suraj/.local/bin/"
+
