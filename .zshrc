@@ -58,11 +58,10 @@ source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
 
 source ~/.zsh/fzf-tab/fzf-tab.plugin.zsh
 
-# Create a custom widget/function
 # Start tmux automatically
-if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
-  exec tmux
-fi
+# if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
+#   exec tmux
+# fi
 
 fastfetch --config examples/8.jsonc
 alias tt="tweet"
@@ -79,7 +78,7 @@ unalias l 2>/dev/null
 # Define 'l' as a function
 l() {
   if [[ "$1" == "-t" ]]; then
-    tree "$@"  # Run tree with arguments when -t is passed
+	exa -T # Run tree with arguments when -t is passed
   else
     exa --icons "$@"  # Run exa with icons for other arguments
   fi
@@ -101,6 +100,8 @@ export LUA_PATH="$HOME/.luarocks/share/lua/5.4/?.lua;$HOME/.luarocks/share/lua/5
 export LUA_CPATH="$HOME/.luarocks/lib/lua/5.4/?.so;;"
 
 export SYSTEMD_EDITOR=/usr/bin/nvim
+export EDITOR=nvim
+export NNN_OPENER=nvim
 
 export PATH=$PATH:~/.cargo/bin/
 
@@ -112,7 +113,7 @@ source ~/gemini-cli.zsh
 source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.plugin.zsh
 source /usr/share/zsh/plugins/zsh-auto-venv/auto-venv.zsh
 export PATH="$HOME/go/bin/:$PATH"
-alias gemcli="gemini -m "gemini-2.5-flash-preview-04-17""
+alias gemcli="gemini -m "gemini-2.5-flash-preview-05-20""
 
 alias hx=helix
 alias py=python
@@ -134,11 +135,69 @@ man() {
 }
 
 
-if [ -z "$TMUX" ] && ! pgrep -x "tmux" > /dev/null; then
-  exec tmux
-fi
 
 
 # Created by `pipx` on 2025-06-05 15:25:51
 export PATH="$PATH:/home/suraj/.local/bin/"
 
+
+if [ -e /home/suraj/.nix-profile/etc/profile.d/nix.sh ]; then . /home/suraj/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
+
+# Auto-start fresh tmux session in interactive shell
+# Auto-start fresh tmux session in interactive shell
+if [[ -n "$PS1" ]] && [[ -z "$TMUX" ]] && command -v tmux &>/dev/null; then
+  exec tmux
+fi
+
+export PATH="$HOME/.nix-profile/bin:$PATH"
+export PATH="$HOME/.nix-profile/bin:$PATH"
+
+export GEMINI_API_KEY='AIzaSyAa2EP_AqNp0Lr8dEAfQMdGzq2HOPRHBYU'
+export NIXPKGS_ALLOW_UNFREE=1
+
+
+# Function to capture the last command's output
+capture_last_output() {
+    # Redirect output to a file
+    fc -s -1 > ~/.prev_cmd_output.txt 2>&1
+}
+# Run after every command
+PROMPT_COMMAND="capture_last_output; $PROMPT_COMMAND"
+
+
+aur() {
+    echo "" | fzf \
+        --disabled \
+        --bind 'start:reload(paru -Sl aur | awk "{print \$2}")' \
+        --bind 'change:reload(if [ -n "{q}" ]; then paru -Ss {q} | grep "^aur/" | cut -d"/" -f2 | cut -d" " -f1; else paru -Sl aur | awk "{print \$2}"; fi)' \
+        --preview 'paru -Si {} 2>/dev/null | bat --color=always --plain' \
+        --layout=reverse \
+        --height=90% \
+        --border \
+        --prompt='🔍 AUR › ' \
+        --header='All AUR packages | Type to search | Enter: Info | Ctrl+I: Install' \
+        --bind 'enter:execute(paru -Si {} | less)' \
+        --bind 'ctrl-i:execute(paru -S {} < /dev/tty > /dev/tty 2>&1)'
+}
+
+nix-search() {
+    # Search and pipe to fzf with bat preview
+    nix search nixpkgs "" --json 2>/dev/null | \
+    jq -r 'to_entries[] | "\(.value.pname // (.key | split(".") | last))\t\(.value.description // "No description")\t\(.key)"' | \
+    fzf --delimiter='\t' \
+        --with-nth=1 \
+        --header-lines=0 \
+        --layout=reverse \
+        --preview='echo "Package: {1}" | bat --style=header --color=always -l yaml; echo; echo "Description:" | bat --style=header --color=always -l yaml; echo "{2}" | bat --color=always -l markdown; echo; echo "Full Path: {3}" | bat --style=header --color=always -l yaml; echo; echo "Details:" | bat --style=header --color=always -l yaml; nix show-derivation {3} 2>/dev/null | head -20 | bat --color=always -l json || echo "No additional details available"' \
+        --preview-window=right:60%:wrap \
+        --header='Tab: toggle preview | Enter: copy full package name to clipboard | Ctrl+I: install package' \
+        --bind='enter:execute(echo {3} | wl-copy)+abort' \
+        --bind='ctrl-i:execute(nix profile install nixpkgs#{3})+abort'
+}
+
+
+# Ensure Emacs keymap is used (default for interactive shell)
+bindkey -e
+
+# Bind Ctrl+R to reverse-incremental history search
+bindkey '^R' history-incremental-search-backward

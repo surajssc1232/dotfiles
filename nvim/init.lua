@@ -103,7 +103,10 @@ require("ibl").setup({
 
 -- Mason and LSP Configuration
 require("mason").setup()
-require("mason-lspconfig").setup({ automatic_installation = true })
+require("mason-lspconfig").setup({ 
+    automatic_installation = true,
+    ensure_installed = { "lua_ls", "pyright", "ts_ls", "clangd" } -- Updated tsserver to ts_ls
+})
 
 local lspconfig = require("lspconfig")
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
@@ -115,15 +118,15 @@ local on_attach = function(client, bufnr)
     vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
 end
 
-require("mason-lspconfig").setup_handlers({
-    function(server_name)
-        lspconfig[server_name].setup({
-            on_attach = on_attach,
-            capabilities = capabilities,
-        })
-    end,
-})
+-- Manual server setup (replace setup_handlers)
+local servers = { "lua_ls", "pyright", "ts_ls", "clangd" } -- Updated tsserver to ts_ls
 
+for _, server in ipairs(servers) do
+    lspconfig[server].setup({
+        on_attach = on_attach,
+        capabilities = capabilities,
+    })
+end
 
 require('toggleterm').setup({
   open_mapping = "<C-\\>",  -- Key mapping for toggling
@@ -170,5 +173,4 @@ vim.keymap.set("v", "<leader>p", '"+p', { noremap = true, silent = true })
 vim.keymap.set("n", "<leader>r", ":PackerSync<CR>", { noremap = true, silent = true })
 -- Colorscheme
 vim.cmd([[colorscheme gruvbox]])
-
 
