@@ -201,3 +201,5 @@ bindkey -e
 
 # Bind Ctrl+R to reverse-incremental history search
 bindkey '^R' history-incremental-search-backward
+
+source ~/tweet_api.zsh

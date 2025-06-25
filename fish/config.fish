@@ -87,7 +87,6 @@ set -x EDITOR nvim
 set -x NNN_OPENER nvim
 set -x PAGER less
 set -x MANPAGER less
-set -x GEMINI_API_KEY AIzaSyAa2EP_AqNp0Lr8dEAfQMdGzq2HOPRHBYU
 set -x NIXPKGS_ALLOW_UNFREE 1
 
 # PATH modifications
