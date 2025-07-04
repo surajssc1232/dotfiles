@@ -131,54 +131,51 @@ main() {
         log "Step 3: paru is already installed."
     fi
 
-    # Step 4: Install core system packages
-    log "Step 4: Installing core system packages..."
-    CORE_PKGS=(
-        # Shell and terminal
-        zsh tmux
-        # System utilities
-        tree exa fzf polkit brightnessctl pavucontrol
-        # Fonts
-        noto-fonts noto-fonts-cjk noto-fonts-emoji
-        # Audio/Video
-        pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber
-        # Wayland essentials
-        wayland xdg-desktop-portal xdg-desktop-portal-wlr
-        # Screen capture
-        grim slurp wf-recorder
-        # Clipboard
-        wl-clipboard
-        # System monitoring
-        power-profiles-daemon
-        # Other utilities
-        qbittorrent fastfetch
-    )
-    install_pacman_pkgs "${CORE_PKGS[@]}"
-
-    # Step 5: Install applications
-    log "Step 5: Installing applications..."
-    APP_PKGS=(
-        neovim zathura ghostty starship
-    )
-    install_pacman_pkgs "${APP_PKGS[@]}"
-
-    # Step 6: Install AUR packages
-    log "Step 6: Installing AUR packages..."
-    AUR_PKGS=(
-        # Fonts
-        ttf-freefont ttf-ms-fonts ttf-linux-libertine ttf-dejavu
-        ttf-inconsolata ttf-ubuntu-font-family
-        # System utilities
-        auto-cpufreq capitaine-cursors
-        # Applications
-        zen-browser-bin
-        # Hyprland ecosystem
-        hyprland swaync waybar
-        # Rofi extensions
-        rofi-wifi-menu-git rofi-bluetooth-git
-    )
-    install_aur_pkgs "${AUR_PKGS[@]}"
-
+     # Step 4: Install core system packages
+     log "Step 4: Installing core system packages..."
+     CORE_PKGS=(
+         # Shell and terminal
+         zsh fish tmux foot
+         # System utilities
+         tree exa fzf polkit brightnessctl pavucontrol dunst ranger
+         # Fonts
+         noto-fonts noto-fonts-cjk noto-fonts-emoji
+         # Audio/Video
+         pipewire pipewire-alsa pipewire-pulse pipewire-jack wireplumber
+         # Wayland essentials
+         wayland xdg-desktop-portal xdg-desktop-portal-wlr
+         # Screen capture
+         grim slurp wf-recorder
+         # Clipboard
+         wl-clipboard
+         # System monitoring
+         power-profiles-daemon
+         # Other utilities
+         qbittorrent fastfetch
+     )
+     install_pacman_pkgs "${CORE_PKGS[@]}"
+     # Step 5: Install applications
+     log "Step 5: Installing applications..."
+     APP_PKGS=(
+         neovim zathura starship
+     )
+     install_pacman_pkgs "${APP_PKGS[@]}"
+     # Step 6: Install AUR packages
+     log "Step 6: Installing AUR packages..."
+     AUR_PKGS=(
+         # Fonts
+         ttf-freefont ttf-ms-fonts ttf-linux-libertine ttf-dejavu
+         ttf-inconsolata ttf-ubuntu-font-family
+         # System utilities
+         auto-cpufreq capitaine-cursors
+         # Applications
+         zen-browser-bin
+         # Hyprland ecosystem
+         hyprland hyprlock hypridle hyprpaper swaync waybar rofi fuzzel
+         # Rofi extensions
+         rofi-wifi-menu-git rofi-bluetooth-git
+     )
+     install_aur_pkgs "${AUR_PKGS[@]}"
     # Step 7: Install plugin managers and dependencies
     log "Step 7: Installing plugin managers..."
     
@@ -199,12 +196,11 @@ main() {
     safe_clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_PLUGINS_DIR/zsh-autosuggestions"
     safe_clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_PLUGINS_DIR/zsh-syntax-highlighting"
 
-    # Step 8: Create necessary directories
-    log "Step 8: Creating configuration directories..."
-    mkdir -p ~/.config/{nvim,ghostty,hypr,swaync,waybar,rofi,zathura,bat,tmux}
-    mkdir -p ~/.local/share/applications
-    mkdir -p ~/.local/bin
-
+     # Step 8: Create necessary directories
+     log "Step 8: Creating configuration directories..."
+     mkdir -p ~/.config/{nvim,hypr,swaync,waybar,rofi,zathura,tmux,fish,dunst,ranger,foot,fuzzel}
+     mkdir -p ~/.local/share/applications
+     mkdir -p ~/.local/bin
     # Step 9: Copy dotfiles with backups
     log "Step 9: Installing configuration files..."
 
@@ -227,39 +223,30 @@ main() {
         success "Installed starship.toml"
     fi
 
-    # Neovim configuration
-    if [ -f "$DOTFILES_DIR/init.lua" ]; then
-        backup_existing ~/.config/nvim/init.lua
-        cp "$DOTFILES_DIR/init.lua" ~/.config/nvim/
-        success "Installed Neovim configuration"
-    elif [ -d "$DOTFILES_DIR/nvim" ]; then
-        backup_existing ~/.config/nvim
-        cp -r "$DOTFILES_DIR/nvim/"* ~/.config/nvim/
-        success "Installed Neovim configuration"
-    fi
+     # Neovim configuration
+     if [ -f "$DOTFILES_DIR/init.lua" ]; then
+         backup_existing ~/.config/nvim/init.lua
+         mkdir -p ~/.config/nvim
+         cp "$DOTFILES_DIR/init.lua" ~/.config/nvim/
+         success "Installed Neovim configuration"
+     elif [ -d "$DOTFILES_DIR/nvim" ]; then
+         backup_existing ~/.config/nvim
+         cp -r "$DOTFILES_DIR/nvim/"* ~/.config/nvim/
+         success "Installed Neovim configuration"
+     fi
 
-    # Ghostty configuration
-    if [ -d "$DOTFILES_DIR/ghostty" ]; then
-        backup_existing ~/.config/ghostty
-        mkdir -p ~/.config/ghostty
-        if cp -r "$DOTFILES_DIR/ghostty/"* ~/.config/ghostty/ 2>/dev/null; then
-            success "Installed Ghostty configuration"
-        else
-            warn "Failed to copy Ghostty configuration - directory may be empty"
-        fi
-    fi
-
-    # Hyprland configuration
-    if [ -d "$DOTFILES_DIR/hypr" ]; then
-        backup_existing ~/.config/hypr
-        mkdir -p ~/.config/hypr
-        if cp -r "$DOTFILES_DIR/hypr/"* ~/.config/hypr/ 2>/dev/null; then
-            success "Installed Hyprland configuration"
-        else
-            warn "Failed to copy Hyprland configuration - directory may be empty"
-        fi
-    fi
-
+     # Hyprland configuration (check if hypr directory exists)
+     if [ -d "$DOTFILES_DIR/hypr" ]; then
+         backup_existing ~/.config/hypr
+         mkdir -p ~/.config/hypr
+         if cp -r "$DOTFILES_DIR/hypr/"* ~/.config/hypr/ 2>/dev/null; then
+             success "Installed Hyprland configuration"
+         else
+             warn "Failed to copy Hyprland configuration - directory may be empty"
+         fi
+     else
+         warn "Hyprland configuration directory not found - skipping"
+     fi
     # swaync configuration
     if [ -d "$DOTFILES_DIR/swaync" ]; then
         backup_existing ~/.config/swaync
@@ -313,81 +300,173 @@ main() {
         fi
     fi
 
-    # bat configuration
-    if [ -d "$DOTFILES_DIR/bat" ]; then
-        backup_existing ~/.config/bat
-        mkdir -p ~/.config/bat
-        if cp -r "$DOTFILES_DIR/bat/"* ~/.config/bat/ 2>/dev/null; then
-            success "Installed bat configuration"
-        else
-            warn "Failed to copy bat configuration - directory may be empty"
-        fi
-    fi
+     # tmux configuration (additional)
+     if [ -d "$DOTFILES_DIR/tmux" ]; then         backup_existing ~/.config/tmux
+         mkdir -p ~/.config/tmux
+         if cp -r "$DOTFILES_DIR/tmux/"* ~/.config/tmux/ 2>/dev/null; then
+             find ~/.config/tmux -name "*.sh" -exec chmod +x {} \; 2>/dev/null
+             success "Installed additional tmux configuration"
+         else
+             warn "Failed to copy tmux configuration - directory may be empty"
+         fi
+     fi
 
-    # tmux configuration (additional)
-    if [ -d "$DOTFILES_DIR/tmux" ]; then
-        backup_existing ~/.config/tmux
-        mkdir -p ~/.config/tmux
-        if cp -r "$DOTFILES_DIR/tmux/"* ~/.config/tmux/ 2>/dev/null; then
-            find ~/.config/tmux -name "*.sh" -exec chmod +x {} \; 2>/dev/null
-            success "Installed additional tmux configuration"
-        else
-            warn "Failed to copy tmux configuration - directory may be empty"
-        fi
-    fi
+     # Fish shell configuration
+     if [ -d "$DOTFILES_DIR/fish" ]; then
+         backup_existing ~/.config/fish
+         mkdir -p ~/.config/fish
+         if cp -r "$DOTFILES_DIR/fish/"* ~/.config/fish/ 2>/dev/null; then
+             success "Installed Fish shell configuration"
+         else
+             warn "Failed to copy Fish configuration - directory may be empty"
+         fi
+     fi
 
-    # Step 10: Make scripts executable
-    log "Step 10: Making scripts executable..."
-    find ~/.config/hypr/scripts -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
-    find ~/.config/rofi -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
-    find ~/.config/waybar -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
+     # Foot terminal configuration
+     if [ -d "$DOTFILES_DIR/foot" ]; then
+         backup_existing ~/.config/foot
+         mkdir -p ~/.config/foot
+         if cp -r "$DOTFILES_DIR/foot/"* ~/.config/foot/ 2>/dev/null; then
+             success "Installed Foot terminal configuration"
+         else
+             warn "Failed to copy Foot configuration - directory may be empty"
+         fi
+     fi
 
-    # Step 11: Enable services
-    log "Step 11: Enabling system services..."
-    
-    # Enable auto-cpufreq if installed
-    if command -v auto-cpufreq &>/dev/null; then
-        sudo systemctl enable --now auto-cpufreq
-        success "Enabled auto-cpufreq service"
-    fi
+     # Fuzzel launcher configuration
+     if [ -d "$DOTFILES_DIR/fuzzel" ]; then
+         backup_existing ~/.config/fuzzel
+         mkdir -p ~/.config/fuzzel
+         if cp -r "$DOTFILES_DIR/fuzzel/"* ~/.config/fuzzel/ 2>/dev/null; then
+             success "Installed Fuzzel launcher configuration"
+         else
+             warn "Failed to copy Fuzzel configuration - directory may be empty"
+         fi
+     fi
 
-    # Step 12: Change default shell to zsh
-    if [ "$SHELL" != "/bin/zsh" ] && [ "$SHELL" != "/usr/bin/zsh" ]; then
-        log "Step 12: Changing default shell to zsh..."
-        chsh -s /bin/zsh
-        success "Changed default shell to zsh"
-    else
-        log "Step 12: Default shell is already zsh."
-    fi
+     # Dunst configuration
+     if [ -d "$DOTFILES_DIR/dunst" ]; then
+         backup_existing ~/.config/dunst
+         mkdir -p ~/.config/dunst
+         if cp -r "$DOTFILES_DIR/dunst/"* ~/.config/dunst/ 2>/dev/null; then
+             success "Installed Dunst configuration"
+         else
+             warn "Failed to copy Dunst configuration - directory may be empty"
+         fi
+     fi
 
-    # Step 13: Final setup
-    log "Step 13: Final setup steps..."
-    
-    # Source zsh configuration to install plugins
-    if [ -f ~/.zshrc ]; then
-        warn "Please run 'source ~/.zshrc' after the script completes to initialize zsh plugins"
-    fi
+     # Ranger configuration
+     if [ -d "$DOTFILES_DIR/ranger" ]; then
+         backup_existing ~/.config/ranger
+         mkdir -p ~/.config/ranger
+         if cp -r "$DOTFILES_DIR/ranger/"* ~/.config/ranger/ 2>/dev/null; then
+             success "Installed Ranger configuration"
+         else
+             warn "Failed to copy Ranger configuration - directory may be empty"
+         fi
+     fi
 
-    # Install tmux plugins
-    if [ -f ~/.tmux.conf ]; then
-        warn "Please run 'prefix + I' in tmux to install plugins (prefix is usually Ctrl+b)"
-    fi
+     # Copy standalone config files to ~/.config if they exist
+     for config_file in config default.conf; do
+         if [ -f "$DOTFILES_DIR/$config_file" ]; then
+             backup_existing ~/.config/$config_file
+             cp "$DOTFILES_DIR/$config_file" ~/.config/
+             success "Installed $config_file"
+         fi
+     done
 
-    # Install neovim plugins
-    if [ -f ~/.config/nvim/init.lua ]; then
-        warn "Please run ':PackerSync' in Neovim to install plugins"
-    fi
+     # Copy utility scripts to ~/.local/bin
+     for script in git.sh wfrc.sh; do
+         if [ -f "$DOTFILES_DIR/$script" ]; then
+             backup_existing ~/.local/bin/$script
+             cp "$DOTFILES_DIR/$script" ~/.local/bin/
+             chmod +x ~/.local/bin/$script
+             success "Installed $script to ~/.local/bin"
+         fi
+     done
+     # Step 10: Make scripts executable
+     log "Step 10: Making scripts executable..."
+     find ~/.config/hypr/scripts -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
+     find ~/.config/rofi -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
+     find ~/.config/waybar -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
+     find ~/.config/fuzzel -name "*.sh" -exec chmod +x {} \; 2>/dev/null || true
+     # Step 11: Enable services
+     log "Step 11: Enabling system services..."
+     
+     # Enable auto-cpufreq if installed
+     if command -v auto-cpufreq &>/dev/null; then
+         sudo systemctl enable --now auto-cpufreq
+         success "Enabled auto-cpufreq service"
+     fi
 
-    success "✅ Dotfiles installation complete!"
-    echo
-    log "Next steps:"
-    echo "1. Log out and log back in to use zsh as default shell"
-    echo "2. Select 'Hyprland' from your display manager"
-    echo "3. Run 'source ~/.zshrc' to initialize zsh plugins"
-    echo "4. Open tmux and press prefix + I to install tmux plugins"
-    echo "5. Open Neovim and run ':PackerSync' to install plugins"
-    echo
-    log "Installation log saved to: $LOG_FILE"
+     # Enable pipewire services for current user
+     if command -v pipewire &>/dev/null; then
+         systemctl --user enable --now pipewire pipewire-pulse
+         success "Enabled pipewire services"
+     fi
+     # Step 12: Change default shell to zsh or fish (user choice)
+     if [ "$SHELL" != "/bin/zsh" ] && [ "$SHELL" != "/usr/bin/zsh" ] && [ "$SHELL" != "/bin/fish" ] && [ "$SHELL" != "/usr/bin/fish" ]; then
+         log "Step 12: Changing default shell..."
+         echo "Which shell would you like as default?"
+         echo "1) zsh (recommended for most users)"
+         echo "2) fish (modern shell with great defaults)"
+         read -p "Enter choice (1 or 2): " shell_choice
+         
+         case $shell_choice in
+             1)
+                 chsh -s /bin/zsh
+                 success "Changed default shell to zsh"
+                 ;;
+             2)
+                 chsh -s /usr/bin/fish
+                 success "Changed default shell to fish"
+                 ;;
+             *)
+                 warn "Invalid choice. Keeping current shell: $SHELL"
+                 ;;
+         esac
+     else
+         log "Step 12: Default shell is already set appropriately."
+     fi
+     # Step 13: Final setup
+     log "Step 13: Final setup steps..."
+     
+     # Source shell configuration to install plugins
+     if [ -f ~/.zshrc ]; then
+         warn "Please run 'source ~/.zshrc' after the script completes to initialize zsh plugins"
+     fi
+     
+     if [ -f ~/.config/fish/config.fish ]; then
+         warn "Please restart your terminal or run 'exec fish' to initialize fish configuration"
+     fi
+
+     # Install tmux plugins
+     if [ -f ~/.tmux.conf ]; then
+         warn "Please run 'prefix + I' in tmux to install plugins (prefix is usually Ctrl+b)"
+     fi
+
+     # Install neovim plugins
+     if [ -f ~/.config/nvim/init.lua ]; then
+         warn "Please run ':PackerSync' in Neovim to install plugins"
+     fi
+
+     # Set up Fish plugins directory if using Fish
+     if [ -f ~/.config/fish/config.fish ]; then
+         mkdir -p ~/.config/fish/functions
+         log "Fish functions directory created"
+     fi
+     success "✅ Dotfiles installation complete!"
+     echo
+     log "Next steps:"
+     echo "1. Log out and log back in to use new default shell"
+     echo "2. Select 'Hyprland' from your display manager"
+     echo "3. If using zsh: Run 'source ~/.zshrc' to initialize zsh plugins"
+     echo "4. If using fish: Restart terminal or run 'exec fish'"
+     echo "5. Open tmux and press prefix + I to install tmux plugins"
+     echo "6. Open Neovim and run ':PackerSync' to install plugins"
+     echo "7. Restart to ensure all services and configurations are active"
+     echo
+     log "Installation log saved to: $LOG_FILE"
 }
 
 # ---------------------------

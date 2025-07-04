@@ -1,56 +1,53 @@
 /* Global Reset */
 * {
-  padding: 0;
-  margin: 0;
-  text-shadow: none;
-  transition: none;
-  box-shadow: none;
-  font-family:"JetBrainsMono Nerd Font";
-  font-size: 16px;
-  font-weight: 700;
-  color: #ebdbb2; /* Gruvbox light foreground */
+	padding: 0;
+	margin: 0;
+	border: none;
+	border-radius: 0px;
+	/* Slightly smaller consistent rounding for modules */
+	font-family: "JetBrainsMono Nerd Font", sans-serif;
+	font-size: 16px;
+	font-weight: 700;
+	color: #FFFFFF;
+	/* Global text color set to white */
+	min-height: 0;
 }
 
 /* Waybar Window Styles */
 window#waybar {
-  background-color: rgba(40, 35, 31, 0.5); /* Gruvbox dark bg with transparency */
-  color: #ffffff;
-  border:2px solid #AF864A;
-  padding: 8px 10px;
-  margin: 18px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+	background-color: rgba(0, 0, 0, 0.7);
+	padding: 0px 0px;
+	margin: 0px;
+	border-radius: 0px;
+	border: 0px solid white;
 }
 
-/* Hidden state (opacity tweak) */
+/* Hidden state */
 window#waybar.hidden {
-  opacity: 0.95;
+	opacity: 0.3;
 }
 
-/* Transparent module backgrounds for seamless blending */
+/* Default module styling */
+.modules-left,
+.modules-center,
+.modules-right {
+	background: transparent;
+}
+
+/* Transparent module backgrounds */
 #power-profiles-daemon,
 #custom-power-button,
 #custom-rofi,
 #workspaces,
-#workspaces button,
-#workspaces button:hover,
-#workspaces button.visible,
-#workspaces button.visible:hover,
-#workspaces button.active,
-#workspaces button.active:hover,
-#workspaces button.urgent,
 #window,
 #tray,
 #disk,
 #cpu,
 #temperature,
-#temperature.critical,
 #backlight,
 #custom-memory,
 #pulseaudio,
-#pulseaudio.muted,
 #battery,
-#battery.critical,
-#battery.warning,
 #clock,
 #custom-web-links,
 #memory,
@@ -58,219 +55,195 @@ window#waybar.hidden {
 #custom-playerctl,
 #bluetooth,
 #network,
-#custom-spotify {
-  /* background: transparent; */
-  padding: 1px 6px;
-  margin: 2px 2px;
+#custom-spotify,
+#mpris,
+#custom-window_icons {
+	background: transparent;
+	padding: 1px 6px;
+	margin: 2px 2px;
+	border: none;
+	/* border-radius: 6px; */
+	/* This would apply the global radius, removed for truly transparent modules */
 }
 
 /* Workspaces styling */
 #workspaces {
-  padding: 0 4px;
+	padding: 0 4px;
+	background: transparent;
 }
 
 #workspaces button {
-  color: #ebdbb2;
-  min-width: 24px;
-  padding: 0 4px;
-  margin: 0 2px;
+	color: rgba(255, 255, 255, 0.1);
+	/* Slightly less opaque white for inactive workspaces */
+	background: transparent;
+	border: none;
+	padding: 0 4px;
+	margin: 0 2px;
+	min-width: 24px;
+	border-radius: 4px;
+	/* Slightly smaller radius for workspace buttons */
 }
 
-#workspaces button:hover,
-#workspaces button.visible,
-#workspaces button.visible:hover,
-#workspaces button.active,
-#workspaces button.active:hover {
-  background: rgba(131, 165, 152, 0.3); /* Gruvbox aqua highlight */
-  color: #ebdbb2;
-  padding: 0 4px;
-  margin: 0 2px;
-  border-radius: 0;
+#workspaces button:hover {
+	background: rgba(255, 255, 255, 0.3);
+	/* Subtle whitish hover background with transparency */
+	color: plum;
+	/* Whie text on hover */
+}
+
+
+#workspaces button.active {
+	background: rgba(80, 80, 80, 1);
+	/* Slightly more prominent for active with transparency */
+	color: green;
+	/* White for active */
 }
 
 #workspaces button.urgent {
-  background: rgba(234, 105, 98, 0.5); /* Gruvbox red */
-  padding: 0 4px;
-  margin: 0 2px;
-  border-radius: 0;
+	background: rgba(200, 80, 80, 0.3);
+	/* Red for urgent workspaces with transparency */
+	color: #FFFFFF;
 }
 
-/* Module-specific colors */
+/* Module-specific styling with white text */
 #window {
-  color: #d3869b;
+	color: #FFFFFF;
 }
 
 #tray {
-  padding: 0 6px;
+	padding: 0 6px;
+	border-radius: 6px;
+	/* Apply rounding to tray */
+	color: #FFFFFF;
 }
 
 #disk {
-  color: #ea6962;
+	color: #FFFFFF;
 }
 
 #cpu {
-  color: #e78a4e;
+	color: #FFFFFF;
 }
 
 #temperature {
-  color: #d8a657;
+	color: #FFFFFF;
 }
 
 #temperature.critical {
-  color: #cc241d;
+	color: #FF4040;
+	/* Retain red for critical temperature */
 }
 
 #backlight {
-  color: #d8a657;
+	color: #FFFFFF;
 }
 
 #custom-memory {
-  color: #458588;
+	color: #FFFFFF;
 }
 
 #memory {
-  color: #b8bb26;
+	color: #FFFFFF;
 }
 
 #pulseaudio {
-  color: #83a598;
+	color: #FFFFFF;
 }
 
 #pulseaudio.muted {
-  color: #ea6962;
+	color: #FF4040;
+	/* Retain red for muted audio */
 }
 
 #battery {
-  color: #689d6a;
+	color: #FFFFFF;
 }
 
 #battery.critical {
-  color: #cc241d;
+	color: #FF4040;
+	/* Retain red for critical battery */
 }
 
 #battery.warning {
-  color: #e78a4e;
+	color: #FFA500;
+	/* Retain orange for battery warning */
 }
 
 #clock {
-  color: #8ec07c;
+	color: #FFFFFF;
+	/* Already white, but explicitly set for consistency */
+	font-weight: bold;
 }
 
 #power-profiles-daemon {
-  color: #d3869b;
+	color: #FFFFFF;
 }
 
 #custom-power-button {
-  color: #cc241d;
+	color: #FF4040;
+	/* Retain bright red for power button */
 }
 
 #custom-rofi {
-  color: #83a598;
-  padding: 0 8px;
+	color: #FFFFFF;
+	padding: 0 8px;
 }
 
 #custom-web-links {
-  color: #83a598;
+	color: #FFFFFF;
 }
 
 #mpd {
-  color: #458588;
+	color: #FFFFFF;
 }
 
 #custom-playerctl {
-  color: #ebdbb2;
-  background: rgba(69, 133, 136, 0.3);
-  padding: 0 6px;
-  border-radius: 0;
+	color: #FFFFFF;
+	/* Already white, but explicitly set for consistency */
+	background: rgba(20, 20, 20, 0.15);
+	padding: 0 6px;
+	border-radius: 6px;
 }
 
 #bluetooth {
-  color: skyblue;
+	color: #FFFFFF;
 }
 
 #network {
-  color: greenyellow;
+	color: #FFFFFF;
 }
+
 #input-devices {
-  color: red;
-  font-weight: bold;
+	color: #4CAF50;
+	/* Retain green for input devices as it's an accent */
+	font-weight: bold;
 }
 
-/* Add this to your existing Waybar CSS file (~/.config/waybar/style.css) */
-@keyframes blink {
-    0% { opacity: 1; }
-    50% { opacity: 0.4; }
-    100% { opacity: 1; }
-}
-
-/* Smooth Pulse Animation for MPRIS */
-
-@keyframes music-pulse {
-    0% { 
-        opacity: 0.8;
-        background-color: rgba(104, 157, 106, 0.1);
-    }
-    50% { 
-        opacity: 1;
-        background-color: rgba(104, 157, 106, 0.25);
-    }
-    100% { 
-        opacity: 0.8;
-        background-color: rgba(104, 157, 106, 0.1);
-    }
-}
-
-@keyframes breathing {
-    0% { 
-        opacity: 0.6;
-        background-color: rgba(104, 157, 106, 0.05);
-    }
-    50% { 
-        opacity: 1;
-        background-color: rgba(104, 157, 106, 0.2);
-    }
-    100% { 
-        opacity: 0.6;
-        background-color: rgba(104, 157, 106, 0.05);
-    }
-}
-
-@keyframes bg-shift {
-    0% { background-color: rgba(104, 157, 106, 0.1); }
-    25% { background-color: rgba(152, 151, 26, 0.1); }
-    50% { background-color: rgba(215, 153, 33, 0.1); }
-    75% { background-color: rgba(69, 133, 136, 0.1); }
-    100% { background-color: rgba(104, 157, 106, 0.1); }
-}
-
-
+/* MPRIS with subtle animation effect */
 #mpris {
-    animation: blink 3s ease-in-out infinite;
-    padding: 1px 8px;
-    margin: 0px 0px;
-    border-radius: 12px;
-    background-color: rgba(40, 40, 40, 0.1);
-    transition: all 0.3s ease;
-    font-weight: 500;
+	padding: 1px 8px;
+	margin: 0px 0px;
+	background-color: rgba(10, 10, 10, 0);
+	font-weight: 500;
+	animation: mpris-pulse 3s ease-in-out infinite;
+	border-radius: 12px;
 }
 
 #mpris:hover {
-    background-color: rgba(104, 157, 106, 0.2);
-    animation-duration: 1.5s;
-}/* Compact Equalizer Animation */
-
-
-/* RGB animation */
-@keyframes rgbText {
-  0%   { color: red; }
-  33%  { color: lime; }
-  66%  { color: blue; }
-  100% { color: red; }
+	background-color: rgba(30, 30, 30, 2);
 }
 
-#custom-window_icons{
-	padding: 2px 10px;
-	font-size: 14px;
+/* Animation keyframes */
+@keyframes mpris-pulse {
+	0% {
+		opacity: 1;
+	}
+
+	50% {
+		opacity: 0.4;
+	}
+
+	100% {
+		opacity: 1;
+	}
 }
-
-
