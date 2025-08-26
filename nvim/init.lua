@@ -1,5 +1,4 @@
-require('lspconfig')
--- Leader Key and General Settings
+require('lspconfig') -- Leader Key and General Settings
 vim.g.mapleader = " "
 vim.opt.number = true
 vim.opt.fillchars:append { eob = " " }
@@ -122,7 +121,7 @@ require("packer").startup(function(use)
 		run = ":TSUpdate",
 		config = function()
 			require("nvim-treesitter.configs").setup({
-				ensure_installed = { "lua", "python", "javascript", "c", "elixir", "eex", "heex" },
+				ensure_installed = { "lua", "python", "javascript", "c", "elixir", "eex", "heex", "java" },
 				highlight = { enable = true },
 				indent = { enable = true },
 			})
@@ -141,6 +140,7 @@ require("packer").startup(function(use)
 	use "L3MON4D3/LuaSnip"
 	use "lukas-reineke/indent-blankline.nvim"
 	use "kyazdani42/nvim-web-devicons"
+	use 'mfussenegger/nvim-jdtls'
 end)
 
 -- Indent Blankline Configuration
@@ -153,7 +153,7 @@ require("ibl").setup({
 require("mason").setup()
 require("mason-lspconfig").setup({
 	automatic_installation = true,
-	ensure_installed = { "lua_ls", "pyright", "ts_ls", "clangd" },
+	ensure_installed = { "jdtls", "lua_ls", "pyright", "ts_ls", "clangd" },
 })
 
 local lspconfig = require("lspconfig")
@@ -166,6 +166,7 @@ local on_attach = function(client, bufnr)
 	vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
 end
 
+-- Configure regular language servers (excluding jdtls)
 local servers = { "lua_ls", "pyright", "ts_ls", "clangd" }
 for _, server in ipairs(servers) do
 	lspconfig[server].setup({
@@ -173,6 +174,110 @@ for _, server in ipairs(servers) do
 		capabilities = capabilities,
 	})
 end
+
+-- JDTLS Configuration
+local function setup_jdtls()
+	local jdtls = require('jdtls')
+
+	-- Find the Mason installation path for jdtls using a more robust method
+	local mason_path = vim.fn.stdpath('data') .. '/mason'
+	local jdtls_path = mason_path .. '/packages/jdtls'
+
+	-- Check if JDTLS is installed
+	if vim.fn.isdirectory(jdtls_path) == 0 then
+		vim.notify("JDTLS not found. Please run :MasonInstall jdtls", vim.log.levels.ERROR)
+		return
+	end
+
+	-- Determine OS-specific config
+	local config_dir
+	if vim.fn.has('mac') == 1 then
+		config_dir = jdtls_path .. '/config_mac'
+	elseif vim.fn.has('unix') == 1 then
+		config_dir = jdtls_path .. '/config_linux'
+	else
+		config_dir = jdtls_path .. '/config_win'
+	end
+
+	-- Find the launcher JAR
+	local launcher_jar = vim.fn.glob(jdtls_path .. '/plugins/org.eclipse.equinox.launcher_*.jar')
+	if launcher_jar == '' then
+		vim.notify("JDTLS launcher jar not found", vim.log.levels.ERROR)
+		return
+	end
+
+	-- Workspace directory (project-specific)
+	local project_name = vim.fn.fnamemodify(vim.fn.getcwd(), ':p:h:t')
+	local workspace_dir = vim.fn.stdpath('data') .. '/workspace/' .. project_name
+
+	local config = {
+		cmd = {
+			'java',
+			'-Declipse.application=org.eclipse.jdt.ls.core.id1',
+			'-Dosgi.bundles.defaultStartLevel=4',
+			'-Declipse.product=org.eclipse.jdt.ls.core.product',
+			'-Dlog.protocol=true',
+			'-Dlog.level=ALL',
+			'-Xmx1g',
+			'--add-modules=ALL-SYSTEM',
+			'--add-opens', 'java.base/java.util=ALL-UNNAMED',
+			'--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+			'-jar', launcher_jar,
+			'-configuration', config_dir,
+			'-data', workspace_dir,
+		},
+
+		root_dir = require('jdtls.setup').find_root({ '.git', 'mvnw', 'gradlew', 'pom.xml', 'build.gradle' }),
+
+		settings = {
+			java = {
+				eclipse = {
+					downloadSources = true,
+				},
+				configuration = {
+					updateBuildConfiguration = "interactive",
+				},
+				maven = {
+					downloadSources = true,
+				},
+				implementationsCodeLens = {
+					enabled = true,
+				},
+				referencesCodeLens = {
+					enabled = true,
+				},
+				references = {
+					includeDecompiledSources = true,
+				},
+			}
+		},
+
+		init_options = {
+			bundles = {}
+		},
+
+		on_attach = function(client, bufnr)
+			on_attach(client, bufnr)
+
+			-- JDTLS-specific keymaps
+			local opts = { noremap = true, silent = true, buffer = bufnr }
+			vim.keymap.set('n', '<leader>jo', jdtls.organize_imports, opts)
+			vim.keymap.set('n', '<leader>jv', jdtls.extract_variable, opts)
+			vim.keymap.set('n', '<leader>jc', jdtls.extract_constant, opts)
+			vim.keymap.set('v', '<leader>jm', [[<ESC><CMD>lua require('jdtls').extract_method(true)<CR>]], opts)
+		end,
+
+		capabilities = capabilities,
+	}
+
+	jdtls.start_or_attach(config)
+end
+
+-- Auto-command to setup JDTLS when opening Java files
+vim.api.nvim_create_autocmd('FileType', {
+	pattern = 'java',
+	callback = setup_jdtls,
+})
 
 require('toggleterm').setup({
 	open_mapping = "<C-\\>",
@@ -183,7 +288,6 @@ require('toggleterm').setup({
 		winblend = 10,
 	},
 })
-
 
 --auto format Plugin
 require("lsp-format").setup {}
@@ -227,8 +331,6 @@ vim.lsp.handlers["textDocument/hover"] = vim.lsp.with(
 	vim.lsp.handlers.hover,
 	{ border = "rounded" }
 )
-
-
 
 -- Nvim-Tree Configuration
 require("nvim-tree").setup()
