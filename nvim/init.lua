@@ -175,104 +175,16 @@ for _, server in ipairs(servers) do
 	})
 end
 
--- JDTLS Configuration
 local function setup_jdtls()
 	local jdtls = require('jdtls')
 
-	-- Find the Mason installation path for jdtls using a more robust method
-	local mason_path = vim.fn.stdpath('data') .. '/mason'
-	local jdtls_path = mason_path .. '/packages/jdtls'
-
-	-- Check if JDTLS is installed
-	if vim.fn.isdirectory(jdtls_path) == 0 then
-		vim.notify("JDTLS not found. Please run :MasonInstall jdtls", vim.log.levels.ERROR)
-		return
-	end
-
-	-- Determine OS-specific config
-	local config_dir
-	if vim.fn.has('mac') == 1 then
-		config_dir = jdtls_path .. '/config_mac'
-	elseif vim.fn.has('unix') == 1 then
-		config_dir = jdtls_path .. '/config_linux'
-	else
-		config_dir = jdtls_path .. '/config_win'
-	end
-
-	-- Find the launcher JAR
-	local launcher_jar = vim.fn.glob(jdtls_path .. '/plugins/org.eclipse.equinox.launcher_*.jar')
-	if launcher_jar == '' then
-		vim.notify("JDTLS launcher jar not found", vim.log.levels.ERROR)
-		return
-	end
-
-	-- Workspace directory (project-specific)
-	local project_name = vim.fn.fnamemodify(vim.fn.getcwd(), ':p:h:t')
-	local workspace_dir = vim.fn.stdpath('data') .. '/workspace/' .. project_name
-
 	local config = {
-		cmd = {
-			'java',
-			'-Declipse.application=org.eclipse.jdt.ls.core.id1',
-			'-Dosgi.bundles.defaultStartLevel=4',
-			'-Declipse.product=org.eclipse.jdt.ls.core.product',
-			'-Dlog.protocol=true',
-			'-Dlog.level=ALL',
-			'-Xmx1g',
-			'--add-modules=ALL-SYSTEM',
-			'--add-opens', 'java.base/java.util=ALL-UNNAMED',
-			'--add-opens', 'java.base/java.lang=ALL-UNNAMED',
-			'-jar', launcher_jar,
-			'-configuration', config_dir,
-			'-data', workspace_dir,
-		},
-
-		root_dir = require('jdtls.setup').find_root({ '.git', 'mvnw', 'gradlew', 'pom.xml', 'build.gradle' }),
-
-		settings = {
-			java = {
-				eclipse = {
-					downloadSources = true,
-				},
-				configuration = {
-					updateBuildConfiguration = "interactive",
-				},
-				maven = {
-					downloadSources = true,
-				},
-				implementationsCodeLens = {
-					enabled = true,
-				},
-				referencesCodeLens = {
-					enabled = true,
-				},
-				references = {
-					includeDecompiledSources = true,
-				},
-			}
-		},
-
-		init_options = {
-			bundles = {}
-		},
-
-		on_attach = function(client, bufnr)
-			on_attach(client, bufnr)
-
-			-- JDTLS-specific keymaps
-			local opts = { noremap = true, silent = true, buffer = bufnr }
-			vim.keymap.set('n', '<leader>jo', jdtls.organize_imports, opts)
-			vim.keymap.set('n', '<leader>jv', jdtls.extract_variable, opts)
-			vim.keymap.set('n', '<leader>jc', jdtls.extract_constant, opts)
-			vim.keymap.set('v', '<leader>jm', [[<ESC><CMD>lua require('jdtls').extract_method(true)<CR>]], opts)
-		end,
-
-		capabilities = capabilities,
+		cmd = { 'jdtls' },
+		root_dir = vim.fs.dirname(vim.fs.find({ '.git', 'mvnw', 'gradlew' }, { upward = true })[1]),
 	}
 
 	jdtls.start_or_attach(config)
 end
-
 -- Auto-command to setup JDTLS when opening Java files
 vim.api.nvim_create_autocmd('FileType', {
 	pattern = 'java',
