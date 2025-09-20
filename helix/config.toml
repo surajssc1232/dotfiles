@@ -1,0 +1,11 @@
+theme="autumn"
+
+[editor]
+clipboard-provider="wayland"
+
+[keys.normal]
+a="insert_mode"
+
+[keys.normal.space]
+w=":write"
+q=":quit!"
