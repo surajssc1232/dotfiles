@@ -1,11 +1,10 @@
-require('lspconfig') -- Leader Key and General Settings
 vim.g.mapleader = " "
 vim.opt.number = true
 vim.opt.fillchars:append { eob = " " }
 vim.opt.cursorline = true
 vim.opt.laststatus = 0
-vim.opt.shiftwidth = 4
-vim.opt.tabstop = 4
+vim.opt.shiftwidth = 2
+vim.opt.tabstop = 2
 vim.opt.clipboard = "unnamedplus"
 vim.opt.wrap = true
 vim.opt.updatetime = 200
@@ -63,17 +62,12 @@ vim.api.nvim_create_autocmd("CursorHold", {
 
 -- Plugin Management with Packer
 require("packer").startup(function(use)
-	use {
-		"voltycodes/areyoulockedin.nvim",
-		requires = { "nvim-lua/plenary.nvim" },
-		config = function()
-			require("areyoulockedin").setup({
-				session_key = "06d82624-2d76-4cef-a278-3c2a2073130c",
-			})
-		end,
-		event = "VimEnter",
-	}
 	use "wbthomason/packer.nvim"
+
+	use 'Julian/lean.nvim'
+	use { 'srcery-colors/srcery-vim', as = 'srcery' }
+	use "WTFox/jellybeans.nvim"
+	use "blazkowolf/gruber-darker.nvim"
 	use({
 		"neanias/everforest-nvim",
 		-- Optional; default configuration will be used if setup isn't called.
@@ -167,7 +161,7 @@ local on_attach = function(client, bufnr)
 end
 
 -- Configure regular language servers (excluding jdtls)
-local servers = { "lua_ls", "pyright", "ts_ls", "clangd" }
+local servers = { "lua_ls", "ts_ls", "clangd" }
 for _, server in ipairs(servers) do
 	lspconfig[server].setup({
 		on_attach = on_attach,
@@ -177,14 +171,13 @@ end
 
 local function setup_jdtls()
 	local jdtls = require('jdtls')
-
 	local config = {
 		cmd = { 'jdtls' },
 		root_dir = vim.fs.dirname(vim.fs.find({ '.git', 'mvnw', 'gradlew' }, { upward = true })[1]),
 	}
-
 	jdtls.start_or_attach(config)
 end
+
 -- Auto-command to setup JDTLS when opening Java files
 vim.api.nvim_create_autocmd('FileType', {
 	pattern = 'java',
@@ -194,10 +187,10 @@ vim.api.nvim_create_autocmd('FileType', {
 require('toggleterm').setup({
 	open_mapping = "<C-\\>",
 	direction = "float",
-	size = 20,
+	size = 10,
 	dir = "current",
 	float_opts = {
-		winblend = 10,
+		winblend = 20,
 	},
 })
 
@@ -211,17 +204,39 @@ vim.api.nvim_create_autocmd('LspAttach', {
 	end,
 })
 
--- Autocompletion Setup
+
 local cmp = require("cmp")
 local lspkind = require("lspkind")
 
 cmp.setup({
-	snippet = { expand = function(args) require("luasnip").lsp_expand(args.body) end },
+	snippet = {
+		expand = function(args)
+			require("luasnip").lsp_expand(args.body)
+		end,
+	},
+
 	mapping = cmp.mapping.preset.insert({
 		["<C-b>"] = cmp.mapping.scroll_docs(-4),
 		["<C-f>"] = cmp.mapping.scroll_docs(4),
 		["<C-Space>"] = cmp.mapping.complete(),
 		["<C-e>"] = cmp.mapping.abort(),
+
+		["<Tab>"] = cmp.mapping(function(fallback)
+			if cmp.visible() then
+				cmp.select_next_item()
+			else
+				fallback()
+			end
+		end, { "i", "s" }),
+
+		["<S-Tab>"] = cmp.mapping(function(fallback)
+			if cmp.visible() then
+				cmp.select_prev_item()
+			else
+				fallback()
+			end
+		end, { "i", "s" }),
+
 		["<CR>"] = cmp.mapping.confirm({ select = true }),
 	}),
 
@@ -231,10 +246,26 @@ cmp.setup({
 		{ name = "path" },
 		{ name = "cmdline" },
 	}),
-	formatting = { format = lspkind.cmp_format({ mode = "symbol_text", maxwidth = 50, ellipsis_char = "...", with_text = true }) },
+
+	formatting = {
+		format = lspkind.cmp_format({
+			mode = "symbol_text",
+			maxwidth = 50,
+			ellipsis_char = "...",
+		}),
+	},
+
 	window = {
 		completion = cmp.config.window.bordered(),
 		documentation = cmp.config.window.bordered(),
+	},
+
+	experimental = {
+		ghost_text = false, -- shows the inline suggestion
+	},
+
+	completion = {
+		completeopt = "menu,menuone,noinsert,noselect", -- <--- important
 	},
 })
 
@@ -258,9 +289,10 @@ vim.keymap.set("n", "<leader>w", ":w<CR>", { noremap = true, silent = true })
 vim.keymap.set("v", "<leader>y", '"+y', { noremap = true, silent = true })
 vim.keymap.set("v", "<leader>p", '"+p', { noremap = true, silent = true })
 vim.keymap.set("n", "<leader>r", ":PackerSync<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "<leader>c", vim.lsp.buf.code_action, { desc = "Code Action" })
+vim.keymap.set("v", "<leader>c", vim.lsp.buf.code_action, { desc = "Code Action (Visual)" })
 
 vim.api.nvim_set_keymap("n", "gD", "<cmd>lua vim.lsp.buf.declaration()<CR>", { noremap = true, silent = true })
 vim.api.nvim_set_keymap("n", "gd", "<cmd>lua vim.lsp.buf.definition()<CR>", { noremap = true, silent = true })
-
 -- Colorscheme
-vim.cmd([[colorscheme moonfly]])
+vim.cmd([[colorscheme jellybeans]])
