@@ -1,0 +1,410 @@
+clear
+sudo pacman -S btop
+clear
+rustup toolchain --help
+rustup toolchain install stable
+cargo --version
+clear
+rustc --version
+clear
+cargo install lsa
+clear
+lsa
+clear
+$env.path
+CLEAR
+clear
+sudo pacman -S niri
+clear
+cp -r dotfiles/niri/ ~/.config/
+clear
+<\n>
+clear
+sudo pacman -S keyd
+clear
+$env.XDG_SESSION_TYPE
+clear
+sudo pacman -S chrome
+sudo systemctl enable --now keyd.service
+clear
+sudo cp dotfiles/default.conf /etc/keyd/
+clear
+sudo keyd-reload
+sudo keyd reload
+clear
+sudo pacman -S wine
+lsblk -f
+clear
+du -f
+clear
+df -j
+df -h
+clear
+clear
+sudo pacman -S helix
+clear
+lsa
+sudo pacman -S firefox
+clear
+lsa
+clear
+cp -r dotfiles/helix/ ~/.config/
+clear
+firefox
+cp -r dotfiles/ghostty/ ~/.config/
+clear
+helix .config/ghostty/config
+clear
+nu -e scripts
+clear
+nu -e scripts install pacman
+sudo pacman -S nu_scripts
+paru -S nu_scripts
+paru
+helix .config/ghostty/config
+clear
+sudo pacman -S fish
+clear
+clear
+sudo pacman -S --needed base-devel<\n>git clone https://aur.archlinux.org/paru.git<\n>cd paru<\n>makepkg -si
+cd paru/
+makepkg -si
+clear
+cd
+clear
+rm -rf paru/
+clear
+cargo install tealdeer
+sudo pacman -S power-profiles-daemon
+clear
+fc-list | grep Iosevka
+$env.config.completions.external.enable=true
+$env.config.completions.external.enable
+$env.config.completions.case_sensitive=true
+$env.config.completions.case_sensitive
+set $env.config.completions.case_sensitive=true
+clear
+sudo pacman -S man
+clear
+man nushell
+man --update
+man nu
+clear
+man nu
+clear
+man 5 nu
+man nushell
+clear
+nmcli device wifi connect suraj password suraj123
+nmcli device wifi --help
+nmcli device wifi scan
+nmcli device wifi rescan
+nmcli device wifi connect suraj password suraj123
+nmcli device wifi connect suraj 
+clear
+paru -S pacman-completion
+ps | where status == Running
+ps 
+ps | sort mem
+ps | sort "mem"
+ps | sort
+ps | where mem > 20
+ps | where mem > 20 mb
+ps | where mem > 20 MB
+ps | where mem > 20MV
+ps | where mem > 20MB
+clear
+ps | sort-by mem
+ps | sort-by mem | reverse
+ps | sort-by mem | reverse | first
+sudo pacman -S speech-dispatcher
+clear
+ps | sort-by mem | reverse | first
+clear
+ps | sort-by mem | reverse
+ps | sort-by mem 
+clear
+clear
+ckear
+clear
+clera
+clear
+lsa
+clear
+$env.PATH = ($env.PATH | split row (char esep) | prepend ".cargo/bin/")
+clear
+lsa
+clear
+lsa
+clear
+$env.PATH = ($env.PATH | split row (char esep) | prepend ".cargo/bin/")
+clear
+lsa
+lsa --theme
+clear
+lsa
+clear
+$env.PATH = ($env.PATH | split row (char esep) | append ".cargo/bin/")
+clear
+lsa
+clear
+cd .config/nushell/
+helix env.nu
+cd
+clear
+sudo pacman -Rns cosmic-term
+paru -Rns cosmic-term
+clear
+term 
+clear
+sudo pacman -Rns cosmic-term
+cosmic-term
+clear
+nvim .config/ghostty/config
+clear
+nvim .config/ghostty/config
+clear
+man ghostty
+nvim .config/ghostty/config
+man ghostty
+ghostty --window-decoration none
+nvim .config/ghostty/config
+sudo pacman -Rns cosmic-terminal
+clear
+sudo pacman -Rns cosmic-terminal
+c
+clear
+man ghostty
+nvim .config/ghostty/config
+clear
+nvim .config/nushell/config.nu
+helix .config/nushell/config.nu
+clear
+fullscreen
+clear
+fullscreen=true
+ghostty --fullscreen
+clear
+nvim .config/ghostty/config
+man ghostty
+nvim .config/ghostty/config
+helix .config/nushell/config.nu
+helix .config/ghostty/config
+clear
+cear
+clear
+helix .config/nushell/config.nu
+clear
+helix .config/nushell/config.nu
+man nushell
+nushell --help
+clear
+nvim .config/nushell/config.nu
+helix .config/nushell/config.nu
+config.nu
+nu config.nu
+clear
+helix .config/nushell/config.nu
+nushell --help
+nu --help
+clear
+ncursesw6-config 
+cllear
+clear
+nu_plugin_stress_internals 
+nu_plugin_example 
+clear
+plugin use cool
+plugin use col
+clear
+plugin list
+man plugin
+plugin help
+help plugin
+plugin add nu_plugin_inc
+plugin use inc
+plugin list
+inc
+inc "hello"
+clear
+sudo pacman -Rns fish
+clear
+inc 1
+shutdown now
+clear
+paru -S zen-browser
+clear
+sudo pacman -Rns firefox
+clear
+tldr --update
+nvim .config/nushell/config.nu
+nvim --version
+clear
+$env.PATH
+helix .config/nushell/config.nu
+lsa
+clear
+lsa
+clear
+helix .config/nushell/config.nu
+sudo pacman -S wl-clipboard
+clear
+hel
+helix .config/nushell/config.nu
+$env.PATH = $env.PATH + "~/.cargo/bin/"
+$env.PATH = $env.PATH | append "~/.cargo/bin/"
+lsa
+clear
+helix .config/nushell/config.nu
+clear
+helix .config/nushell/config.nu
+clear
+nushell --help
+nu --help
+clear
+where lsa
+lsa
+clear
+lsa --theme
+lsa
+clear
+lsa --theme
+lsa
+clear
+lsa
+clcear
+clear
+lsa --theme
+lsa
+clear
+lsa
+nvim .config/nushell/config.nu
+helix .config/nushell/config.nu
+config nu
+helix .config/nushell/config.nu
+nvim .config/nushell/config.nu
+helix .config/nushell/config.nu
+clear
+helix .config/nushell/config.nu
+clear
+ls
+clear
+ls Downloads/
+clear
+lsa
+clear
+helix .config/nushell/config.nu
+sa
+clear
+c
+clear
+helix .config/nushell/config.nu
+c
+clear
+ad
+clear
+$env.config.ls.clickable_links
+$env.config.ls.clickable_links=true
+$env.config.ls.clickable_links = true
+$env.config.keybindings
+$env.config.cursor_shape.vi_normal = "block"
+$env.config.cursor_shape.vi_insert = "bar"
+$env.config.cursor_shape.vi_insert = "line<\n>"
+$env.config.cursor_shape.vi_insert = "line"
+clear
+$env.config.menus
+$env.config.completions.external.enable
+$env.config.completions.external.enable = true
+$env.config.completions.external.completer
+$env.config.completions.external.max_results = 100
+clear
+helix .config/nushell/config.nu
+clear
+ls
+clear
+cd
+ls
+clear
+cd dotfiles/
+ls
+ls -t
+clear
+tree
+clear
+lsa -t
+clear
+ls --help
+ls --tree
+clear
+tree
+sudo pacman -S tree
+ls | tree
+clear
+tree
+clear
+fish
+sudo pacman -S fish
+clear
+fish
+helix .config/nushell/config.nu
+helix ~/.config/nushell/config.nu
+clear
+cd
+helix ~/.config/nushell/config.nu
+clear
+sudo pacman -S fzf
+clear
+$env.PROMPT_COMMAND
+clear
+$env.config.keybindings ++= [{name:help_menu}]
+$env.config.keybindings ++= [{name:help_menu modifier: none keycode:f1 mode:[vi_insert] event: {send: menu_name: help_menu} }]
+clear
+acpi
+clea
+sudo pacman -S acpi
+acpi
+clear
+sudo pacman -S bluez bluez-utils bluetooth
+sudo pacman -S bluez bluez-utils 
+sudo systemctl enable --now bluetooth.service
+fish
+helix ~/.config/nushell/config.nu
+helix ~/.config/nushell/env.nu
+helix .config/nushell/config.nu
+clear
+paru -S wf-recorder 
+clear
+tldr wf-recorder
+fush
+tldr --update
+cargo uninstall tldr
+cargo uninstall teeldear
+cargo uninstall tealdeer
+cargo install tealdeer
+clear
+clear
+tldr --update
+clea
+clar
+clear
+tldr wf-recorder
+wf-recorder -f output.mp4 &
+clear
+sudo pacman -S kooha 
+clear
+sudo pacman -S ncurses 
+clear
+sudo pacman -Rns kooha 
+clear
+lsa -t
+clear
+lsa -t
+clear
+sudo pacman -S acpi
+clear
+clar
+clear
+clea
+clear
+cd
+clear
