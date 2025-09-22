@@ -31,8 +31,6 @@ $jobs\
 ${custom.memory_usage}\
 ${custom.battery}\
 ${custom.keyboard_layout}\
-$time\
-$cmd_duration\
 $status\
 $line_break\
 $character\
@@ -150,17 +148,17 @@ style_root = "bold fg:color_danger"
 format = '[ $user ]($style)'
 
 [directory]
-style = "fg:color_directory"
-read_only_style = "fg:color_directory"
-repo_root_style = "bold fg:color_directory"
-format = "[ $path ]($style)"
+# style = "fg:color_directory"
+# read_only_style = "fg:color_directory"
+# repo_root_style = "bold fg:color_directory"
+# format = "[ $path ]($style)"
 read_only = " "
 home_symbol = "~"
-truncation_symbol = "…/"
-truncation_length = 0
-truncate_to_repo = true
+truncation_symbol = "../"
+truncation_length = 4
+truncate_to_repo = false
 fish_style_pwd_dir_length = 0
-use_logical_path = true
+use_logical_path = false
 
 [git_branch]
 symbol = ""
