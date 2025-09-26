@@ -31,7 +31,6 @@ setopt NO_HUP
 setopt NO_CHECK_JOBS
 
 # Key bindings
-bindkey -v
 bindkey '^R' history-incremental-search-backward
 bindkey '^S' history-incremental-search-forward
 bindkey '^[[1;5C' forward-word
@@ -79,8 +78,8 @@ alias saplogon='xfreerdp3 /v:115.245.150.98:9001 /u:USER517 /p:Welcome@2025 /f'
 # Environment variables
 export EDITOR='nvim'
 export VISUAL='nvim'
-export PAGER='+nvim!'
 export LESS='-R'
+export PAGER='less'
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 export XDG_CONFIG_HOME="$HOME/.config"
@@ -91,6 +90,7 @@ export XDG_CACHE_HOME="$HOME/.cache"
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/bin:$PATH"
 
+export PATH="$HOME/.cargo/bin:$PATH"
 
 
 # Starship prompt
@@ -129,7 +129,13 @@ export FZF_DEFAULT_OPTS="--height 40% --layout=reverse --border"
 
 source ~/.zsh/fzf-history-search/zsh-fzf-history-search.zsh
 
-# fastfetch --config examples/13.jsonc
+export GEMINI_API_KEY="AIzaSyBpkio2uI8zvzWZX5c_l1Ilz-AQfq71jr0"
 
 
-source ~/GEMINI_API_KEY.zsh
+fastfetch --config examples/13.jsonc
+
+
+
+# force emacs (so we don’t get vi)
+bindkey -e
+
