@@ -46,8 +46,11 @@
 # window-padding-balance=true
 # window-step-resize=true
 cursor-style=block
-theme=GruvboxDark
+theme=Adventure
 confirm-close-surface=false
 cursor-color=#689D6A
-font-size=21
-font-family=Iosevka Nerd Font
+font-size=16
+font-family=IosevkaTermNerdFont
+window-decoration=none
+background-opacity=1
+
