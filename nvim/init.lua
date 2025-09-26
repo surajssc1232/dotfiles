@@ -6,7 +6,6 @@ vim.opt.laststatus = 0
 vim.opt.shiftwidth = 2
 vim.opt.tabstop = 2
 vim.opt.clipboard = "unnamedplus"
-vim.opt.wrap = true
 vim.opt.updatetime = 200
 
 vim.g.python3_host_prog = '/home/suraj/demo/venv/bin/python3.13'
@@ -63,10 +62,11 @@ vim.api.nvim_create_autocmd("CursorHold", {
 -- Plugin Management with Packer
 require("packer").startup(function(use)
 	use "wbthomason/packer.nvim"
-
+	use "xiyaowong/transparent.nvim"
 	use 'Julian/lean.nvim'
 	use { 'srcery-colors/srcery-vim', as = 'srcery' }
 	use "WTFox/jellybeans.nvim"
+	use "RRethy/base16-nvim"
 	use "blazkowolf/gruber-darker.nvim"
 	use({
 		"neanias/everforest-nvim",
@@ -295,4 +295,4 @@ vim.keymap.set("v", "<leader>c", vim.lsp.buf.code_action, { desc = "Code Action 
 vim.api.nvim_set_keymap("n", "gD", "<cmd>lua vim.lsp.buf.declaration()<CR>", { noremap = true, silent = true })
 vim.api.nvim_set_keymap("n", "gd", "<cmd>lua vim.lsp.buf.definition()<CR>", { noremap = true, silent = true })
 -- Colorscheme
-vim.cmd([[colorscheme jellybeans]])
+vim.cmd([[colorscheme base16-rose-pine-moon]])

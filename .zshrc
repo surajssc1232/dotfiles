@@ -79,7 +79,7 @@ alias saplogon='xfreerdp3 /v:115.245.150.98:9001 /u:USER517 /p:Welcome@2025 /f'
 # Environment variables
 export EDITOR='nvim'
 export VISUAL='nvim'
-export PAGER='less'
+export PAGER='+nvim!'
 export LESS='-R'
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8

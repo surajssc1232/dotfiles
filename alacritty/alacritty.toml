@@ -10,7 +10,7 @@ style = { shape = "Block" ,blinking = "On"}
 
 [colors.selection]
 text = "#928374"
-background = "#3c3836"
+background = "#3c3849"
 
 [colors.normal]
 black   = "#282828"
@@ -35,3 +35,10 @@ white   = "#ebdbb2"
 [font]
 normal.family="Iosevka"
 size = 15
+
+[window]
+decorations = "none"
+
+[env]
+TERM="xterm-256color"
+COLORTERM="truecolor"
