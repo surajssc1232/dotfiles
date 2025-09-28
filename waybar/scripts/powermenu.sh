@@ -10,6 +10,6 @@ selected=$(echo -e "$options" | fuzzel --dmenu )
 case "$selected" in
     " Shutdown") systemctl poweroff ;;  # Shutdown
     " Reboot") systemctl reboot ;;      # Reboot
-    " Logout") hyprctl dispatch exit ;; # Logout for Hyprland
-    " Lock") hyprlock ;;               # Lock for Hyprland
+    " Logout") niri msg action quit;; # Logout for Hyprland
+    " Lock") niri msg action quit --skip-confirmation;;               # Lock for Hyprland
 esac

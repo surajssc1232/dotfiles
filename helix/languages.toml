@@ -2,71 +2,11 @@
 lean = { command = "lake", args = ["serve"] }
 clangd = { command = "clangd" }
 
-
-[[language]]
-name = "rust"
-scope = "source.rust"
-injection-regex = "rs|rust"
-file-types = ["rs"]
-roots = ["Cargo.toml", "Cargo.lock"]
-shebangs = ["rust-script", "cargo"]
-auto-format = true
-comment-tokens = ["//", "///", "//!"]
-block-comment-tokens = [
-  { start = "/*", end = "*/" },
-  { start = "/**", end = "*/" },
-  { start = "/*!", end = "*/" },
-]
-language-servers = [ "rust-analyzer" ]
-indent = { tab-width = 4, unit = "    " }
-persistent-diagnostic-sources = ["rustc", "clippy"]
-
-[language.auto-pairs]
-'(' = ')'
-'{' = '}'
-'[' = ']'
-'"' = '"'
-'`' = '`'
-
-[language.debugger]
-name = "lldb-dap"
-transport = "stdio"
-command = "lldb-dap"
-
-[[language.debugger.templates]]
-name = "binary"
-request = "launch"
-completion = [ { name = "binary", completion = "filename" } ]
-args = { program = "{0}" }
-
-[[language.debugger.templates]]
-name = "binary (terminal)"
-request = "launch"
-completion = [ { name = "binary", completion = "filename" } ]
-args = { program = "{0}", runInTerminal = true }
-
-[[language.debugger.templates]]
-name = "attach"
-request = "attach"
-completion = [ "pid" ]
-args = { pid = "{0}" }
-
-[[language.debugger.templates]]
-name = "gdbserver attach"
-request = "attach"
-completion = [ { name = "lldb connect url", default = "connect://localhost:3333" }, { name = "file", completion = "filename" }, "pid" ]
-args = { attachCommands = [ "platform select remote-gdb-server", "platform connect {0}", "file {1}", "attach {2}" ] }
-
-[[grammar]]
-name = "rust"
-source = { git = "https://github.com/tree-sitter/tree-sitter-rust", rev = "1f63b33efee17e833e0ea29266dd3d713e27e321" }
-
-
 [[language]]
 name = "c"
 scope = "source.c"
 injection-regex = "c"
-file-types = ["c"] # TODO: ["h"]
+file-types = ["c"] 
 comment-token = "//"
 block-comment-tokens = { start = "/*", end = "*/" }
 language-servers = [ "clangd" ]
@@ -137,3 +77,76 @@ args = { console = "internalConsole", attachCommands = [ "platform select remote
 [[grammar]]
 name = "cpp"
 source = { git = "https://github.com/tree-sitter/tree-sitter-cpp", rev = "56455f4245baf4ea4e0881c5169de69d7edd5ae7" }
+
+[language-server.rust-analyzer]
+command = "rust-analyzer"
+
+[language-server.rust-analyzer.config]
+inlayHints.bindingModeHints.enable = false
+inlayHints.closingBraceHints.minLines = 10
+inlayHints.closureReturnTypeHints.enable = "with_block"
+inlayHints.discriminantHints.enable = "fieldless"
+inlayHints.lifetimeElisionHints.enable = "skip_trivial"
+inlayHints.typeHints.hideClosureInitialization = false
+
+[language-server.rust-analyzer.config.files]
+watcher = "server"
+
+[[language]]
+name = "rust"
+scope = "source.rust"
+injection-regex = "rs|rust"
+file-types = ["rs"]
+roots = ["Cargo.toml", "Cargo.lock"]
+shebangs = ["rust-script", "cargo"]
+auto-format = true
+comment-tokens = ["//", "///", "//!"]
+block-comment-tokens = [
+  { start = "/*", end = "*/" },
+  { start = "/**", end = "*/" },
+  { start = "/*!", end = "*/" },
+]
+language-servers = [ "rust-analyzer" ]
+indent = { tab-width = 4, unit = "    " }
+persistent-diagnostic-sources = ["rustc", "clippy"]
+
+[language.auto-pairs]
+'(' = ')'
+'{' = '}'
+'[' = ']'
+'"' = '"'
+'`' = '`'
+
+[language.debugger]
+name = "lldb-dap"
+transport = "stdio"
+command = "lldb-dap"
+
+[[language.debugger.templates]]
+name = "binary"
+request = "launch"
+completion = [ { name = "binary", completion = "filename" } ]
+args = { program = "{0}" }
+
+[[language.debugger.templates]]
+name = "binary (terminal)"
+request = "launch"
+completion = [ { name = "binary", completion = "filename" } ]
+args = { program = "{0}", runInTerminal = true }
+
+[[language.debugger.templates]]
+name = "attach"
+request = "attach"
+completion = [ "pid" ]
+args = { pid = "{0}" }
+
+[[language.debugger.templates]]
+name = "gdbserver attach"
+request = "attach"
+completion = [ { name = "lldb connect url", default = "connect://localhost:3333" }, { name = "file", completion = "filename" }, "pid" ]
+args = { attachCommands = [ "platform select remote-gdb-server", "platform connect {0}", "file {1}", "attach {2}" ] }
+
+[[grammar]]
+name = "rust"
+source = { git = "https://github.com/tree-sitter/tree-sitter-rust", rev = "1f63b33efee17e833e0ea29266dd3d713e27e321" }
+

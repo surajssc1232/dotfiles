@@ -408,3 +408,567 @@ clea
 clear
 cd
 clear
+cp -r .config/nushell/ ~/dotfiles/
+cd dotfiles/
+git add .
+git commit -u 
+git config --global user.email "surajssc1232@gmail.com"
+git config --global user.name  "suraj"
+git commit -u 
+$env.config.buffer_editor
+sudo pacman -S vi
+clear
+sudo pacman -S vi
+git commit -u 
+clear
+git commit -m "added nushell"
+clear
+git push 
+clear
+cargo init huh
+clear
+cd huh/
+clear
+rustc --version
+clear
+helix src/main.rs 
+hel
+helix src/main.rs 
+helix ~/.config/helix/languages.toml 
+cd src/
+clear
+helix main.rs 
+clear
+helix src/main.rs 
+helix main.rs 
+helix ~/.config/helix/config.toml 
+lsa
+cd dotfiles/
+rm -rf huh/
+clear
+cd
+clea
+cler
+clear
+cargo init huh
+clear
+helix huh/src/main.rs 
+clear
+helix huh/src/main.rs 
+clear
+man helix
+clear
+helix --help
+clear
+man helix
+tldr helix
+clear
+cler
+clear
+helix .config/helix/languages.toml 
+cd huh/src/
+clear
+helix main.rs 
+clear
+dcd
+clear
+cd
+helix .config/helix/languages.toml 
+clear
+clar
+clear
+cd huh/
+clear
+cp -r ~/dotfiles/nvim/ ~/.config/
+nvim ~/.config/nvim/init.lua 
+clear
+nvim src/main.rs 
+clear
+git clone --depth 1 https://github.com/wbthomason/packer.nvim\<\n> ~/.local/share/nvim/site/pack/packer/start/packer.nvim
+git clone --depth 1 https://github.com/wbthomason/packer.nvim<\n> ~/.local/share/nvim/site/pack/packer/start/packer.nvim
+git clone --depth 1 https://github.com/wbthomason/packer.nvim ~/.local/share/nvim/site/pack/packer/start/packer.nvim
+clear
+nvim src/main.rs 
+clear
+cd
+lear
+clear
+nvim src/main.rs 
+man rustc
+man cargo
+clear
+cd src
+nvim main.rs 
+sudo pacman -S nodejs npm
+nvim shell.rs 
+nvim main.rs 
+cd huh/
+clear
+cd src/
+nvim main.rs 
+nvim shell.rs 
+cargo run
+$env.SHELL
+nvim main.rs 
+cargo run
+clear
+nvim main.rs 
+cargo run
+clear
+nvim main.rs 
+cargo run
+clear
+nvim main.rs 
+cargo run
+nvim main.rs 
+clear
+nvim main.rs 
+clear
+cargo run
+nvim main.rs 
+clear
+cargo run
+basah
+clear
+bash
+clear
+nvim main.rs 
+clear
+gcd 
+clear
+celar
+cd 
+clea
+rm -rf huh/
+clear
+git clone https://github.com/surajssc1232/wut_rust
+cd wut_rust/
+clear
+cd src/
+lsa
+nvim shell.rs 
+nvim main.rs 
+clear
+git log --oneline 
+cargo n
+cargo b
+../target/debug/huh
+helix ~/.config/nushell/env.nu 
+clear
+sudo pacman -S tmux
+clear
+cd wut_rust/
+cler
+clear
+./target/debug/huh
+opencod
+opencode
+clear
+cd src/
+nvim main.rs 
+clear
+paru -S opencode-ai-bin 
+clear
+lsa
+lcear
+clear
+opencode
+claer
+paru -Rns opencode-ai-bin 
+clear
+paru -S qwencode
+paru -S qwen-code 
+clear
+cd wut_rust/
+cargo b
+paru -S visual-studio-code-bin 
+./target/debug/huh
+clear
+asdasd
+./target/debug/huh
+cat ~/.config/nushell/history.txt 
+cargo b
+./target/debug/huh
+clear
+./target/debug/huh
+ceaasd
+./target/debug/huh
+cleaasdasd
+kajsdkjaksd
+./target/debug/huh
+git 
+./target/debug/huh
+cd wut_rust/
+./target/debug/huh
+clear
+lsa
+clea
+clear
+lasdkljasldj
+./target/debug/huh
+clear
+what the uc\
+./target/debug/huh
+clear
+asdsad
+lklj
+./target/debug/huh
+$env.HISTORY
+clear
+clea
+clear
+celar
+lsa
+clear
+./target/l
+./target/debug/huh
+clear
+cargo b
+./target/debug/huh
+lkajsdljaksdjlasd
+./target/debug/huh
+alksdjlaksjd
+./target/debug/huh
+history
+clear
+history
+./target/debug/huh
+alskdjlajsd
+history
+asd
+alskdjlajsd
+./target/debug/huh
+clear
+history
+./target/debug/huh
+clear
+shutdown now
+clear
+curl https://elan.lean-lang.org/elan-init.sh -sSf | sh
+nvim .config/nushell/config.nu 
+clear
+lake init demo
+clear
+cd demo
+cd Demo/
+lsa
+lean --run Basic.lean
+clear
+lsa
+clear
+lsa
+lsa --theme
+clear
+lsa
+clae
+clear
+cd Demo/
+lsa
+clear
+helix Basic.lean 
+clear
+helix ~/.config/helix/config.toml 
+clear
+helix ~/.config/helix/config.toml 
+clear
+helix ~/.config/helix/config.toml 
+clear
+helix Basic.lean 
+helix ~/.config/helix/languages.toml 
+clear
+helix Demo/Basic.lean 
+helix .config/helix/config.toml 
+helix Demo/Basic.lean 
+helix .config/helix/config.toml 
+clear
+helix Demo/Basic.lean 
+clear
+helix .config/helix/config.toml 
+helix Demo/Basic.lean 
+clear
+nvim Demo/Basic.lean 
+clear
+helix .config/ghostty/config 
+clear
+helix Demo/Basic.lean 
+clear
+rn -rf Demo.lean
+rn -rf Demo/
+clear
+rm -rf Demo/ Demo.lean
+lake new hello_tui
+cd hello_tui/
+ls
+lsa
+clear
+ls
+helix Main.lean 
+clear
+ls
+clear
+ls
+clear
+ls
+clear
+ls
+clear
+ls
+clear
+ls
+clear
+ls
+clear
+ls
+clear
+ls
+clear
+ls
+helix README.md 
+ls
+clear
+ls
+cd HelloTui/
+ls
+cd ..
+ls
+lear
+ls
+clear
+ls
+clear
+helix Main.lean 
+lake run
+lake --help
+lake run Main.lean
+clear
+lake run
+clear
+lake run
+hel
+helix Main.lean 
+lake run Main.lean
+clear
+lean --run Main.lean
+clear
+lake build 
+clear
+./.lake/build/bin/hello_tui
+clear
+helix Main.lean 
+helix lakefile.toml 
+helix HelloTui.lean 
+clear
+helix Main.lean 
+helix lakefile.lean
+rm -rf lakefile.lean
+clear
+lake add libuv
+lake --help
+clear
+lake help
+cls
+clear
+helix lakefile.lean
+rm -rf .
+cd ..
+rm -rf hello_tui/
+clear
+lake init http_server
+clear
+lake new http_server
+cd http_server/
+lsa
+clear
+ls
+helix Main.lean 
+clear
+cd..
+..
+rm -rf http_server/
+clear
+lake new lean_http_server
+cd lean_http_server/
+helix LeanHttpServer.lean 
+helix Main.lean 
+lean --run Main.lean
+lean --run Main.lean | wl-copy 
+clear
+rm -rf lean_http_server/ lake-manifest.json lakefile.toml lean_http_server/ lean-toolchain Main.lean
+clear
+ls
+bat README.md 
+sudo pacman -S bat
+clear
+bat README.md 
+clear
+rm -rf README.md
+clear
+clear
+cd
+clear
+wine "/run/media/suraj/D:/downloads/Hollow Knight Silksong/Hollow Knight Silksong.exe" 
+clear
+sudo pacman -Rns wine
+sudo pacman -S wine-staging 
+clear
+nu_plugin_inc 
+nu-highlight 
+nu-highlight --help
+let x = 3 |nu-highlight 
+let x = 3 | nu-highlight 
+'let x = 3' | nu-highlight 
+clear
+cleaar
+clear
+mkdir ncurses
+cd ncurses/
+clear
+sudo pacman -S ncurses
+clear
+helix main.c
+sudo pacman -S gcc
+sudo pacman -S clangd
+sudo pacman -S clang
+mkdir lib
+rm -rf lib
+mkdir include
+mkdir src
+clear
+ls -t
+tree
+clear
+lsa -t
+rm -rf main.c
+clear
+cd sr
+clear
+cd src/
+clear
+helix main.c
+sudo pacman -S lm_sensors 
+clear
+sensors 
+helix ~/.config/helix/config.toml 
+helix main.c 
+clear
+clang main.c -lncurses
+./a.out
+clear
+sensord 
+sensors
+helix main.c 
+sensors -u | grep templ_input | head -n1
+sensors -u 
+helix main.c 
+clear
+clang main.c -lncurses
+./a.out
+clear
+sensors -u | grep temp1_input | head -n1
+sensor -u
+sensors -u
+sensors -u | grep temp1_input | head -n1
+helix main.c
+helix main.c 
+clear
+clang main.c -lncurses
+./a.out
+helix main.c 
+clang main.c -lncurses
+./a.out
+helix main.c 
+clang main.c -lncurses
+./a.out
+clang main.c -lncurses
+./a.out
+helix main.c 
+cl
+clang main.c -lncurses
+./a.out
+clang main.c -lncurses
+helix main.c 
+clang main.c -lncurses
+./a.out
+clang main.c -lncurses
+helix main.c 
+clang main.c -lncurses
+./a.out
+helix main.c 
+clang main.c -lncurses
+./a.out
+helix main.c 
+clang main.c -lncurses
+./a.out
+clear
+./a.out
+clear
+./a.out
+cp -r ~/dotfiles/niri/ ~/.config/
+sudo pacman -S peek obs-studio xdg-desktop-portal-cosmic 
+helix main.c 
+clang main.c -lncurses
+./a.out
+tldr peek
+tldr --update
+tldr peek
+clear
+obs 
+clear
+tldr obs
+clear
+clang main.c -lncurses
+./a.out
+clang main.c -lncurses
+./a.out
+clear
+nvim main.c 
+sensors -u | grep temp1_input | head -n1
+sensors -u | grep temp1_input 
+sensors -u 
+clear
+sensors
+sensors -u | grep temp1_input 
+helix main.c 
+clear
+sensors -u
+clear
+helix main.c 
+sudo pacman -S spectacle 
+sudo pacman -Rns sensors
+clear
+spectacle 
+sudo pacman -Rns spectacle 
+clear
+sudo pacman -Rns sen__
+sudo pacman -Rns sen_
+clear
+cd
+clear
+sensors-detect 
+sudo sensors-detect 
+bat /etc/conf.d/lm_sensors 
+clear
+sudo sensors-detect 
+clear
+awk 'suraj singh'
+tldr awk
+clear
+nvim main.c 
+cd ncurses/src/
+bat main.c | wl-copy 
+clear
+man ncurses
+man ERR
+man _
+clear
+cd
+clear
+carapace 
+carapace --list
+clear
+sudo pacman -S zsh
+clear
+chsh -s $(which zsh)
+chsh -s
+chsh 
+reboot

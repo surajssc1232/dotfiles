@@ -1,11 +1,25 @@
-theme="autumn"
+theme="base16_transparent"
 
 [editor]
 clipboard-provider="wayland"
 
 [keys.normal]
 a="insert_mode"
+# d.d=["extend_line_below", "delete_selection"]
+G="goto_file_end"
 
 [keys.normal.space]
 w=":write"
+d=["extend_line_below","delete_selection"]
 q=":quit!"
+a="select_all"
+y="yank_to_primary_clipboard"
+p="paste_primary_clipboard_after"
+
+[keys.insert]
+j.k="normal_mode"
+
+[editor.cursor-shape]
+normal="block"
+insert="bar"
+select="underline"

@@ -5,6 +5,7 @@
 // Find the full list of options on the wiki:
 // https://yalter.github.io/niri/Configuration:-Input
 input {
+		focus-follows-mouse
     keyboard {
 		repeat-delay 200
 		repeat-rate 60
@@ -113,8 +114,7 @@ input {
 // https://yalter.github.io/niri/Configuration:-Layout
 layout {
     // Set gaps around windows in logical pixels.
-    gaps 16
-
+    gaps 4
     // When to center a column when changing focus, options are:
     // - "never", default behavior, focusing an off-screen column will keep at the left
     //   or right edge of the screen.
@@ -158,10 +158,10 @@ layout {
     // You can change how the focus ring looks.
     focus-ring {
         // Uncomment this line to disable the focus ring.
-        // off
+        off
 
         // How many logical pixels the ring extends out from the windows.
-        width 4
+        width 2
 
         // Colors can be set in a variety of ways:
         // - CSS named colors: "red"
@@ -169,17 +169,18 @@ layout {
         // - CSS-like notation: "rgb(255, 127, 0)", rgba(), hsl() and a few others.
 
         // Color of the ring on the active monitor.
-        active-color "#7fc8ff"
+        active-color "#ffffff"
 
         // Color of the ring on inactive monitors.
         //
         // The focus ring only draws around the active window, so the only place
         // where you can see its inactive-color is on other monitors.
-        inactive-color "#505050"
+        // inactive-color "#505050"
 
         // You can also use gradients. They take precedence over solid colors.
         // Gradients are rendered the same as CSS linear-gradient(angle, from, to).
         // The angle is the same as in linear-gradient, and is optional,
+
         // defaulting to 180 (top-to-bottom gradient).
         // You can use any CSS linear-gradient tool on the web to set these up.
         // Changing the color space is also supported, check the wiki for more info.
@@ -194,10 +195,12 @@ layout {
     }
 
     // You can also add a border. It's similar to the focus ring, but always visible.
+
+
     border {
         // The settings are the same as for the focus ring.
         // If you enable the border, you probably want to disable the focus ring.
-        off
+        
 
         width 4
         active-color "#cccccc"
@@ -233,7 +236,7 @@ layout {
         // window. These will also remove client-side shadows if the window
         // draws any.
         //
-        // draw-behind-window true
+        draw-behind-window false
 
         // You can change how shadows look. The values below are in logical
         // pixels and match the CSS box-shadow properties.
@@ -250,6 +253,9 @@ layout {
         // You can also change the shadow color and opacity.
         color "#0007"
     }
+
+
+// Add this to your config.kdl file
 
     // Struts shrink the area occupied by windows, similarly to layer-shell panels.
     // You can think of them as a kind of outer gaps. They are set in logical pixels.
@@ -321,7 +327,13 @@ window-rule {
     match app-id=r#"^org\.wezfurlong\.wezterm$"#
     default-column-width {}
 }
-
+window-rule {
+    match app-id="^com.mitchellh.ghostty$"
+    opacity 0.87
+		border{
+			off
+		}
+}
 // Open the Firefox picture-in-picture player as floating by default.
 window-rule {
     // This app-id regular expression will work for both:
@@ -351,6 +363,8 @@ window-rule {
 }
 
 binds {
+
+	Alt+J {spawn "~/quicksites.sh";}
 
 	Mod+Shift+L {spawn "~/.config/sway/swaylock.sh";}
     // Keys consist of modifiers separated by + signs, followed by an XKB key name
@@ -562,7 +576,7 @@ binds {
     // Makes the column "fill the rest of the space".
     Mod+Ctrl+F { expand-column-to-available-width; }
 
-    Alt+C { center-column; }
+    Alt+Shift+C { center-column; }
 
     // Center all fully visible columns on screen.
     Mod+Ctrl+C { center-visible-columns; }

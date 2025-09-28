@@ -46,10 +46,10 @@
 # window-padding-balance=true
 # window-step-resize=true
 cursor-style=block
-theme=Adventure
+theme=Black Metal
 confirm-close-surface=false
 cursor-color=#689D6A
-font-size=16
+font-size=12
 font-family=IosevkaTermNerdFont
 window-decoration=none
 background-opacity=1

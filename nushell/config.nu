@@ -22,6 +22,10 @@ $env.PATH = $env.PATH | append "~/.cargo/bin/"
 
 $env.PATH = $env.PATH | append "/usr/bin/"
 
+$env.PATH = $env.PATH | append "~/.elan/env" 
+
+
+$env.PATH = $env.PATH | append "~/.elan/bin/"
 
 $env.config.buffer_editor = "helix"
 

@@ -22,3 +22,5 @@ $env.CARAPACE_BRIDGES = 'zsh,fish,bash,inshellisense' # optional
 mkdir ~/.cache/carapace
 carapace _carapace nushell | save --force ~/.cache/carapace/init.nu
 
+$env.GEMINI_API_KEY = "AIzaSyBpkio2uI8zvzWZX5c_l1Ilz-AQfq71jr0"
+
