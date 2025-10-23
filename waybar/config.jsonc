@@ -320,7 +320,7 @@
 "custom/weather": {
     "format": "{}",
     "exec": "~/.config/waybar/scripts/weather.sh Mathura",
-    "interval": 900,          // Update every 15 minutes
+    "interval": 200,          // Update every 15 minutes
     "return-type": "json",    // Script returns JSON
     "tooltip": true,          // Enable tooltip display
 }
