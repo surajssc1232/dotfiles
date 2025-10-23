@@ -267,7 +267,7 @@
 		"signal": 8
 	},
 	"power-profiles-daemon": {
-		"format": "{icon}",
+		"format": " {icon} ",
 		"tooltip-format": "Power profile: {profile}\nDriver: {driver}",
 		"tooltip": true,
 		"format-icons": {
@@ -278,7 +278,7 @@
 		}
 	},
 	"custom/powerprofile": {
-		"format": "{} ",
+		"format": "{}",
 		"return-type": "json",
 		"exec": "~/.config/waybar/scripts/pprofile.sh",
 		"on-click": "~/.config/waybar/scripts/pprofile.sh cycle",
