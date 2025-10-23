@@ -10,24 +10,28 @@
 	"margin-left": 0,
 	// Module placement
 	"modules-left": [
+		"sway/workspaces",
 		"hyprland/workspaces",
 		"mpris"
+
 	],
 	"modules-center": [
+		"custom/weather",
 		"clock",
-		"custom/dnd"
+		"custom/dnd",
+		"temperature"
 	],
 	"modules-right": [
 		"custom/powerprofile",
 		"custom/hyprpicker",
 		"bluetooth",
-		"temperature",
 		"pulseaudio",
 		"backlight",
 		"network",
 		"battery",
 		"custom/power-button"
 	],
+
 	// -------------------------------------------------------------------------
 	// Modules configuration
 	// -------------------------------------------------------------------------
@@ -150,7 +154,7 @@
 		"thermal-zone": 6,
 		"critical-threshold": 70,
 		"interval": 2,
-		"format": "  {temperatureC}°C",
+		"format": "->  {temperatureC}°C",
 		"format-critical": "   {temperatureC}°C"
 	},
 	// Backlight module
@@ -222,21 +226,21 @@
 			"󰁹"
 		],
 		"format": "<span color='#cccccc'>{icon}</span>{capacity}%",
-		"format-critical": "<span color='#cc241d'> {icon} </span>{capacity}%!!",
-		"format-warning": "<span color='#d79921'> {icon} </span>{capacity}%",
-		"format-full": "<span color='#98971a'> {icon} </span>{capacity}%",
+		"format-critical": "<span color='#cc241d'>{icon}</span>{capacity}%!!",
+		"format-warning": "<span color='#d79921'>{icon}</span>{capacity}%",
+		"format-full": "<span color='#98971a'>{icon}</span>{capacity}%",
 		"format-charging": "<span color='#98971a'>󰂅 </span>{capacity}%",
-		"format-charging-warning": "<span color='#d79921'> 󰢝 </span> {capacity}%",
-		"format-charging-critical": "<span color='#cc241d'> 󰢜 </span>{capacity}%",
-		"format-plugged": "<span color='#98971a'> 󰂅 </span>{capacity}%",
-		"format-alt": "<span color='#98971a'> 󱧥 </span> {time}",
+		"format-charging-warning": "<span color='#d79921'>󰢝 </span> {capacity}%",
+		"format-charging-critical": "<span color='#cc241d'>󰢜 </span>{capacity}%",
+		"format-plugged": "<span color='#98971a'>󰂅 </span>{capacity}%",
+		"format-alt": "<span color='#98971a'>󱧥 </span> {time}",
 		"tooltip": false
 	},
 	// Clock module
 	"clock": {
 		// "timezone": "America/New_York",
-		"format": "<span color='#ffffff'>  </span> {:%a %d %b %I:%M:%S %p}",
-		"format-alt": "<span color='#ffffff'>  </span> {:%Y-%m-%d}",
+		"format": "<span color='#ffffff'></span>{:%a %d %b %I:%M:%S %p}",
+		"format-alt": "<span color='#ffffff'></span>{:%Y-%m-%d}",
 		"tooltip": true,
 		"tooltip-format": "<tt><small>{calendar}</small></tt>",
 		// "on-click": "gsimplecal",
@@ -245,13 +249,13 @@
 	},
 	// Custom Power Button module
 	"custom/power-button": {
-		"format": "  ",
+		"format": " ",
 		"on-click": "~/.config/waybar/scripts/powermenu.sh", // Rofi
 		"tooltip": false
 	},
 	// Custom Web Links module (commented out in modules-left)
 	"custom/hyprpicker": {
-		"format": "  ",
+		"format": " ",
 		"tooltip": false,
 		"on-click": "hyprpicker -a"
 	},
@@ -281,5 +285,44 @@
 		"interval": 5,
 		"tooltip": true,
 		"tooltip-format": "Click to cycle power profiles"
-	}
+	},
+		"sway/workspaces": {
+		"active-only": false,
+		"all-outputs": true,
+		"warp-on-scroll": false,
+		"format": "{icon}",
+		"format-icons": {
+			"1": "I",
+			"2": "II",
+			"3": "III",
+			"4": "IV",
+			"5": "V",
+			"6": "VI",
+			"7": "VII",
+			"8": "VIII",
+			"9": "IX",
+			"10": "X"
+		},
+		"persistent-workspaces": {
+			"*": 5
+		},
+		"on-scroll-up": "hyprctl dispatch workspace e+1",
+		"on-scroll-down": "hyprctl dispatch workspace e-1"
+	},
+"ext/workspaces": {
+    "format": "{icon}",
+    "ignore-hidden": true,
+    "on-click": "activate",
+    "on-click-right": "deactivate",
+    "sort-by-id": true
+  },
+
+"custom/weather": {
+    "format": "{}",
+    "exec": "~/.config/waybar/scripts/weather.sh Mathura",
+    "interval": 900,          // Update every 15 minutes
+    "return-type": "json",    // Script returns JSON
+    "tooltip": true,          // Enable tooltip display
+}
+
 }

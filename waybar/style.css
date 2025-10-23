@@ -1,25 +1,29 @@
 /* Global Reset */
 * {
 	padding: 0;
-	margin: 0;
+	margin: 1px;
 	border: none;
-	border-radius: 0px;
-	/* Slightly smaller consistent rounding for modules */
-	font-family: "JetBrainsMono Nerd Font", sans-serif;
-	font-size: 16px;
+	font-family: "IosevkaTerm Nerd Font", sans-serif;
+	font-size: 14px;
 	font-weight: 700;
 	color: #FFFFFF;
-	/* Global text color set to white */
 	min-height: 0;
 }
 
-/* Waybar Window Styles */
+/* Waybar Window Styles - Frosted Glass Effect */
 window#waybar {
-	background-color: rgba(0, 0, 0, 0.7);
-	padding: 0px 0px;
-	margin: 0px;
+	background-color: rgba(45, 45, 50, 1.0);
+	/* Grayish background */
+	padding: 10px 10px;
+	/* Increased padding for more spacing */
+	margin: 12px 12px;
+	/* More space all around for true floating effect */
 	border-radius: 0px;
-	border: 0px solid white;
+	/* Rounded corners for floating effect */
+	border: 0px solid rgba(255, 255, 255, 0.18);
+	/* Subtle border for glass edge */
+	box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+	/* Shadow for depth */
 }
 
 /* Hidden state */
@@ -34,8 +38,8 @@ window#waybar.hidden {
 	background: transparent;
 }
 
-/* Transparent module backgrounds */
-#power-profiles-daemon,
+
+/* Transparent module backgrounds with subtle glass effect */
 #custom-power-button,
 #custom-rofi,
 #workspaces,
@@ -43,7 +47,7 @@ window#waybar.hidden {
 #tray,
 #disk,
 #cpu,
-#temperature,
+/* #temperature, */
 #backlight,
 #custom-memory,
 #pulseaudio,
@@ -52,68 +56,113 @@ window#waybar.hidden {
 #custom-web-links,
 #memory,
 #mpd,
+#custom-hyprpicker,
 #custom-playerctl,
 #bluetooth,
 #network,
 #custom-spotify,
 #mpris,
 #custom-window_icons {
-	background: transparent;
-	padding: 1px 6px;
-	margin: 2px 2px;
-	border: none;
-	/* border-radius: 6px; */
-	/* This would apply the global radius, removed for truly transparent modules */
+	background: rgba(255, 255, 255, 0.05);
+	/* Very subtle frosted background */
+	padding: 4px 10px;
+	margin: 2px 4px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 10px;
+	transition: all 0.3s ease;
+	/* Smooth transitions */
+}
+
+/* Hover effect for modules */
+#custom-powerprofile:hover {
+	background: rgba(255, 255, 255, 0.15);
+	border: 0px solid rgba(255, 255, 255, 0.25);
+	box-shadow: 0 4px 16px 0 rgba(255, 255, 255, 0.1);
+	border-radius: 10px;
+}
+
+
+#power-profiles-daemon:hover,
+#custom-power-button:hover,
+#custom-hyprpicker:hover,
+#custom-rofi:hover,
+#tray:hover,
+#disk:hover,
+#cpu:hover,
+#backlight:hover,
+#custom-memory:hover,
+#pulseaudio:hover,
+#battery:hover,
+#clock:hover,
+#custom-web-links:hover,
+#memory:hover,
+#mpd:hover,
+#custom-playerctl:hover,
+#bluetooth:hover,
+#network:hover,
+#mpris:hover {
+	background: rgba(255, 255, 255, 0.15);
+	border: 1px solid rgba(255, 255, 255, 0.25);
+	box-shadow: 0 4px 16px 0 rgba(255, 255, 255, 0.1);
+	border-radius: 10px;
+
 }
 
 /* Workspaces styling */
-#workspaces {
-	padding: 0 4px;
-	background: transparent;
-}
-
 #workspaces button {
-	color: rgba(255, 255, 255, 0.1);
-	/* Slightly less opaque white for inactive workspaces */
-	background: transparent;
-	border: none;
-	padding: 0 4px;
-	margin: 0 2px;
-	min-width: 24px;
-	border-radius: 4px;
-	/* Slightly smaller radius for workspace buttons */
+	color: rgba(255, 255, 255, 0.6);
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	padding: 4px 8px;
+	margin: 0 3px;
+	min-width: 28px;
+	border-radius: 8px;
+	transition: all 0.3s ease;
 }
 
 #workspaces button:hover {
-	background: rgba(255, 255, 255, 0.3);
-	/* Subtle whitish hover background with transparency */
-	color: plum;
-	/* Whie text on hover */
+	background: rgba(255, 255, 255, 0.2);
+	color: #FFFFFF;
+	box-shadow: 0 4px 12px 0 rgba(255, 255, 255, 0.2);
 }
 
-
 #workspaces button.active {
-	background: rgba(80, 80, 80, 1);
-	/* Slightly more prominent for active with transparency */
-	color: green;
-	/* White for active */
+	background: rgba(255, 255, 255, 0.25);
+	color: #4CAF50;
+	border: 1px solid rgba(255, 255, 255, 0.3);
+	box-shadow: 0 4px 16px 0 rgba(76, 175, 80, 0.3);
 }
 
 #workspaces button.urgent {
-	background: rgba(200, 80, 80, 0.3);
-	/* Red for urgent workspaces with transparency */
+	background: rgba(255, 64, 64, 0.4);
 	color: #FFFFFF;
+	border: 1px solid rgba(255, 64, 64, 0.6);
+	animation: urgent-pulse 1s ease-in-out infinite;
+}
+
+@keyframes urgent-pulse {
+	0% {
+		box-shadow: 0 0 8px rgba(255, 64, 64, 0.5);
+	}
+
+	50% {
+		box-shadow: 0 0 20px rgba(255, 64, 64, 0.8);
+	}
+
+	100% {
+		box-shadow: 0 0 8px rgba(255, 64, 64, 0.5);
+	}
 }
 
 /* Module-specific styling with white text */
 #window {
 	color: #FFFFFF;
+	background: rgba(255, 255, 255, 0.08);
 }
 
 #tray {
-	padding: 0 6px;
-	border-radius: 6px;
-	/* Apply rounding to tray */
+	padding: 4px 8px;
+	border-radius: 10px;
 	color: #FFFFFF;
 }
 
@@ -126,12 +175,12 @@ window#waybar.hidden {
 }
 
 #temperature {
-	color: #FFFFFF;
+	color: #7E7E7E;
 }
 
 #temperature.critical {
 	color: #FF4040;
-	/* Retain red for critical temperature */
+	/* background: rgba(255, 64, 64, 0.2); */
 }
 
 #backlight {
@@ -152,7 +201,7 @@ window#waybar.hidden {
 
 #pulseaudio.muted {
 	color: #FF4040;
-	/* Retain red for muted audio */
+	background: rgba(255, 64, 64, 0.2);
 }
 
 #battery {
@@ -161,18 +210,18 @@ window#waybar.hidden {
 
 #battery.critical {
 	color: #FF4040;
-	/* Retain red for critical battery */
+	background: rgba(255, 64, 64, 0.2);
 }
 
 #battery.warning {
 	color: #FFA500;
-	/* Retain orange for battery warning */
+	background: rgba(255, 165, 0, 0.2);
 }
 
 #clock {
 	color: #FFFFFF;
-	/* Already white, but explicitly set for consistency */
 	font-weight: bold;
+	background: rgba(255, 255, 255, 0.1);
 }
 
 #power-profiles-daemon {
@@ -181,12 +230,12 @@ window#waybar.hidden {
 
 #custom-power-button {
 	color: #FF4040;
-	/* Retain bright red for power button */
+	background: rgba(255, 64, 64, 0.15);
 }
 
 #custom-rofi {
 	color: #FFFFFF;
-	padding: 0 8px;
+	padding: 4px 10px;
 }
 
 #custom-web-links {
@@ -199,10 +248,9 @@ window#waybar.hidden {
 
 #custom-playerctl {
 	color: #FFFFFF;
-	/* Already white, but explicitly set for consistency */
-	background: rgba(20, 20, 20, 0.15);
-	padding: 0 6px;
-	border-radius: 6px;
+	background: rgba(255, 255, 255, 0.1);
+	padding: 4px 10px;
+	border-radius: 10px;
 }
 
 #bluetooth {
@@ -215,35 +263,53 @@ window#waybar.hidden {
 
 #input-devices {
 	color: #4CAF50;
-	/* Retain green for input devices as it's an accent */
 	font-weight: bold;
 }
 
-/* MPRIS with subtle animation effect */
+/* MPRIS with enhanced glass effect */
 #mpris {
-	padding: 1px 8px;
-	margin: 0px 0px;
-	background-color: rgba(10, 10, 10, 0);
+	padding: 4px 12px;
+	margin: 2px 4px;
+	background-color: rgba(255, 255, 255, 0.08);
 	font-weight: 500;
-	animation: mpris-pulse 3s ease-in-out infinite;
+	animation: mpris-glow 3s ease-in-out infinite;
 	border-radius: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 #mpris:hover {
-	background-color: rgba(30, 30, 30, 2);
+	background-color: rgba(255, 255, 255, 0.15);
+	box-shadow: 0 4px 16px 0 rgba(255, 255, 255, 0.2);
 }
 
+
+#custom-weather {
+	font-family: "IosevkaTerm Nerd Font", "Segoe UI Emoji", sans-serif;
+	font-size: 15px;
+	padding: 0 8px;
+	color: #ffd166;
+}
+
+#custom-weather:hover {
+	color: #ffd166;
+}
+
+/* #custom-weather:hover {} */
+
 /* Animation keyframes */
-@keyframes mpris-pulse {
+@keyframes mpris-glow {
 	0% {
 		opacity: 1;
+		box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
 	}
 
 	50% {
-		opacity: 0.4;
+		opacity: 0.8;
+		box-shadow: 0 0 16px rgba(255, 255, 255, 0.2);
 	}
 
 	100% {
 		opacity: 1;
+		box-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
 	}
 }
