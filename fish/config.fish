@@ -1,9 +1,9 @@
-set -gx TERM xterm-256color
+# set -gx TERM xterm-256color
 set -gx EDITOR nvim
 
 if status is-interactive
     set fish_greeting
-    fastfetch --config examples/9.jsonc
+		freshfetch
 
     # ${UserConfigDir}/fish/config.fish
     # set -Ux CARAPACE_BRIDGES 'zsh,fish,bash,inshellisense' # optional
@@ -13,6 +13,8 @@ if status is-interactive
 
     set -x NNN_OPTS d
 
+set -gx LANG en_US.UTF-8
+set -gx LC_ALL en_US.UTF-8
     if type -q tmux
         if status is-interactive
             and test -z "$TMUX"
@@ -21,6 +23,7 @@ if status is-interactive
             exec tmux
         end
     end
+
 
     alias hh helix
     alias hx helix
@@ -36,6 +39,13 @@ if status is-interactive
 end
 
 echo \n
+
+# Bind Alt+N to nix package search
+bind \en ns
+
+
+
+
 
 # opencode
 fish_add_path /home/suraj/.opencode/bin
