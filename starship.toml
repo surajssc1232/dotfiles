@@ -19,6 +19,8 @@ $golang\
 $nodejs\
 $php\
 $java\
+$lua\
+$zig\
 $kotlin\
 $haskell\
 $python\
@@ -140,6 +142,7 @@ Debian = "󰣚"
 Redhat = "󱄛"
 RedHatEnterprise = "󱄛"
 Pop = ""
+NixOS =" "
 
 [username]
 show_always = true
@@ -243,6 +246,16 @@ format = '[( $symbol( $version) )]($style)'
 
 [java]
 symbol = ""
+style = "fg:color_env"
+format = '[( $symbol( $version) )]($style)'
+
+[lua]
+symbol = " "
+style = "fg:color_env"
+format = '[( $symbol( $version) )]($style)'
+
+[zig]
+symbol = " "
 style = "fg:color_env"
 format = '[( $symbol( $version) )]($style)'
 

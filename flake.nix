@@ -8,6 +8,11 @@
       url = "github:DreamMaoMao/mangowc";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nur = {
+      url = "github:nix-community/NUR";
+      inputs.nixpkgs.follows = "nixpkgs";  # Syncs with your nixpkgs version
+    };
+
   };
 
   outputs = { self, nixpkgs, mangowc, zen-browser, ... }@inputs:
