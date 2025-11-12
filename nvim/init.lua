@@ -4,8 +4,8 @@ vim.opt.number = true
 vim.opt.fillchars:append { eob = " " }
 vim.opt.cursorline = false
 vim.opt.laststatus = 0
-vim.opt.shiftwidth = 4
-vim.opt.tabstop = 4
+vim.opt.shiftwidth = 2
+vim.opt.tabstop = 2
 vim.opt.clipboard = "unnamedplus"
 vim.opt.updatetime = 200
 vim.opt.termguicolors = true
@@ -34,34 +34,49 @@ vim.api.nvim_create_user_command("ViewLog", function()
 	vim.cmd("edit " .. log_file)
 end, { desc = "Open the error log file" })
 
--- Diagnostics Configuration
 vim.diagnostic.config({
-	float = {
+	float = { -- Unchanged: Shows warnings/errors on hover
 		focusable = false,
 		style = "minimal",
-		border = "rounded",
-		source = false, -- Fixed: was "false" (string)
+		border = "single",
+		source = false,
 		header = "",
 		prefix = "",
+		winhighlight = 'Normal:NormalFloat,FloatBorder:FloatBorder,Search:None',
 	},
 	signs = false,
-	underline = false, -- Disables all underlines (errors too)
-	virtual_text = false, -- Optional: Hides inline error text; set to { prefix = '●' } if you want subtle icons
+	underline = false,   -- Underlines for warnings (and errors)
+	virtual_text = false, -- Off to avoid clutter
+	virtual_lines = {    -- Now for errors + warnings as wrapped lines (always-on)
+		only_current_line = false,
+		highlight_whole_line = true,
+		severity = { min = vim.diagnostic.severity.HINT }, -- Changed: Includes WARN+ (warnings & errors)
+		format = function(diag)
+			local icons = {
+				[vim.diagnostic.severity.WARN] = '',
+			} -- Icons for both severities
+			local icon = icons[diag.severity] or ''
+			local msg = diag.message:gsub('^%s*(.-)%s*$', '%1'):gsub('^%w+:%s*', '')
+			return string.format('%s%s', icon, msg)
+		end,
+	},
+	severity_sort = false, -- Sorts errors above warnings
 })
 
-vim.api.nvim_create_autocmd("CursorHold", {
-	callback = function()
-		local float_opts = {
-			focusable = false,
-			close_events = { "BufLeave", "CursorMoved", "InsertEnter", "FocusLost" },
-			border = "rounded",
-			source = false,
-			prefix = "",
-			scope = "cursor",
-		}
-		vim.diagnostic.open_float(nil, float_opts)
-	end,
-})
+
+-- Auto-show diagnostic float on hover (for warnings/errors; delays to avoid flicker)
+-- vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+-- 	callback = function()
+-- 		local opts = {
+-- 			focusable = false,
+-- 			border = "rounded",
+-- 			source = "if_many",
+-- 			scope = "cursor", -- Or "line" for all on the line
+-- 		}
+-- 		vim.diagnostic.open_float(opts)
+-- 	end,
+-- 	desc = "Show diagnostic float on hover",
+-- })
 
 -- Plugin Management with Packer
 require("packer").startup(function(use)
@@ -152,10 +167,10 @@ require("ibl").setup({
 })
 
 require('rover').setup({
-	api_key = os.getenv("GEMINI_API_KEY"),
+	api_key = "AIzaSyC27VXi-WRBetfH3lZCMmGTIzbnxBPRzPQ",
 	window_width = 150,
 	window_height = 25,
-	model = 'gemini-2.5-flash-lite'
+	model = 'gemini-2.5-flash'
 })
 
 -- LSP Configuration
@@ -258,7 +273,7 @@ vim.lsp.config.nushell = {
 	filetypes = { 'nu' },
 	root_dir = function(fname)
 		return vim.fs.dirname(vim.fs.find({ '.git', 'Cargo.toml' }, { upward = true, path = fname })[1])
-			or vim.fn.getcwd()
+				or vim.fn.getcwd()
 	end,
 	capabilities = capabilities,
 	settings = {},
@@ -465,6 +480,9 @@ vim.keymap.set("v", "<leader>c", vim.lsp.buf.code_action, { desc = "Code Action 
 
 vim.api.nvim_set_keymap("n", "gD", "<cmd>lua vim.lsp.buf.declaration()<CR>", { noremap = true, silent = true })
 vim.api.nvim_set_keymap("n", "gd", "<cmd>lua vim.lsp.buf.definition()<CR>", { noremap = true, silent = true })
+
+-- rover keymap
+vim.keymap.set("v", "<leader>d", ":Rover<CR>", { noremap = true, silent = true })
 
 -- Colorscheme
 vim.cmd([[colorscheme gruvbox]])
