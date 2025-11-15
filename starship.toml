@@ -4,6 +4,7 @@ add_newline = true
 
 command_timeout = 2000
 
+
 format = """
 $os\
 $username\
@@ -430,3 +431,13 @@ style = "fg:color_other"
 format = '[( $symbol $output )]($style)'
 when = '[ "${STARSHIP_COCKPIT_KEYBOARD_LAYOUT_ENABLED:-false}" = "true" ]'
 disabled = false
+
+
+[nix_shell]
+disabled = false
+symbol = " 🐚"  # Your custom sign (change to whatever you like, e.g., "[nix]")
+style = "bold green"  # Color and boldness
+format = "via [$symbol$shell_name]($style) "  # How it appears (e.g., "via 🐚 myproject ")
+pure_msg = "pure"  # Optional: Show for pure shells
+impure_msg = "impure"  # Optional: Show for impure shells
+heuristic = true  # Detects modern `nix shell` too
