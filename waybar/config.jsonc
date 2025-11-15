@@ -8,8 +8,11 @@
 	"margin-top": 0,
 	"margin-right": 0,
 	"margin-left": 0,
+
+
 	// Module placement
 	"modules-left": [
+		"ext/workspaces",
 		"sway/workspaces",
 		"hyprland/workspaces",
 		"mpris"
@@ -150,12 +153,13 @@
 	},
 	// Temperature module
 	"temperature": {
-		"tooltip": false,
-		"thermal-zone": 6,
-		"critical-threshold": 70,
-		"interval": 2,
-		"format": "->  {temperatureC}°C",
-		"format-critical": "   {temperatureC}°C"
+			"tooltip": false,
+			"hwmon-path-abs": "/sys/devices/platform/coretemp.0/hwmon",
+			"input-filename": "temp1_input",
+			"critical-threshold": 70,
+			"interval": 2,
+			"format": "->  {temperatureC}°C",
+			"format-critical": "   {temperatureC}°C"
 	},
 	// Backlight module
 	"backlight": {
@@ -319,7 +323,7 @@
 
 "custom/weather": {
     "format": "{}",
-    "exec": "~/.config/waybar/scripts/weather.sh Mathura",
+    "exec": "~/.config/waybar/scripts/weather.sh",
     "interval": 200,          // Update every 15 minutes
     "return-type": "json",    // Script returns JSON
     "tooltip": true,          // Enable tooltip display

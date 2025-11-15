@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/run/current-system/sw/bin/bash
 
 # Define options with Unicode icons and text labels (Nerd Fonts)
 options=" Shutdown\n Reboot\n Logout\n Lock"

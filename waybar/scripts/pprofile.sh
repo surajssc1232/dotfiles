@@ -1,24 +1,32 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+# NixOS-compatible power profile script for Waybar
 
 # Get the current power profile
-CURRENT_PROFILE=$(powerprofilesctl get)
+CURRENT_PROFILE=$(powerprofilesctl get 2>/dev/null)
 
-# Define icons for each profile (using Font Awesome or similar)
+# If powerprofilesctl fails, show error
+if [[ -z "$CURRENT_PROFILE" ]]; then
+    echo "{\"text\": \" Unknown\", \"tooltip\": \"power-profiles-daemon not running\", \"class\": \"error\"}"
+    exit 0
+fi
+
+# Define icons for each profile
 case "$CURRENT_PROFILE" in
     "performance")
-        ICON=""
+        ICON=""
         TEXT="Performance"
         ;;
     "balanced")
-        ICON=""
+        ICON=""
         TEXT="Balanced"
         ;;
     "power-saver")
-        ICON=""
+        ICON=""
         TEXT="Power Saver"
         ;;
     *)
-        ICON=""
+        ICON=""
         TEXT="Unknown"
         ;;
 esac
