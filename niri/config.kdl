@@ -69,6 +69,7 @@ input {
     focus-follows-mouse max-scroll-amount="70%"
 }
 
+
 // You can configure outputs by their name, which you can find
 // by running `niri msg outputs` while inside a niri instance.
 // The built-in laptop monitor is usually called "eDP-1".
@@ -105,6 +106,7 @@ output "eDP-1" {
     // automatically.
     position x=1280 y=0
 }
+
 
 // Settings that influence how windows are positioned and sized.
 // Find more information on the wiki:
@@ -156,7 +158,7 @@ layout {
     // You can change how the focus ring looks.
     focus-ring {
         // Uncomment this line to disable the focus ring.
-        // off
+        off
 
         // How many logical pixels the ring extends out from the windows.
         width 2
@@ -195,10 +197,10 @@ layout {
     border {
         // The settings are the same as for the focus ring.
         // If you enable the border, you probably want to disable the focus ring.
-        off
+        // off
 
-        width 0
-        active-color "#000000"
+        width 1
+        active-color "#FF7856"
         inactive-color "#505050"
 
         // Color of the border around windows that request your attention.
@@ -215,7 +217,7 @@ layout {
     // You can enable drop shadows for windows.
     shadow {
         // Uncomment the next line to enable shadows.
-        // on
+        on
 
         // By default, the shadow draws only around its window, and not behind it.
         // Uncomment this setting to make the shadow draw behind its window.
@@ -260,6 +262,8 @@ layout {
         // top 64
         // bottom 64
     }
+
+    
 }
 
 // Add lines like this to spawn processes at startup.
@@ -271,6 +275,8 @@ layout {
 spawn-at-startup "waybar"
 spawn-at-startup "swww-daemon"
 // spawn-at-startup "xwayland-satellite"
+
+
 
 environment {
 		QT_QPA_PLATFORM "wayland"
@@ -354,10 +360,13 @@ window-rule {
 
 // Example: enable rounded corners for all windows.
 // (This example rule is commented out with a "/-" in front.)
-/-window-rule {
-    geometry-corner-radius 12
+window-rule {
+    // geometry-corner-radius 12
     clip-to-geometry true
+	draw-border-with-background false
 }
+
+
 
 binds {
 
@@ -371,11 +380,12 @@ binds {
     //
     // Most actions that you can bind here can also be invoked programmatically with
     // `niri msg action do-something`.
-
+    
     // Mod-Shift-/, which is usually the same as Mod-?,
     // shows a list of important hotkeys.
     Mod+Shift+Slash { show-hotkey-overlay; }
-		// Mod+Shift+R {spawn "/home/suraj/.config/waybar/scripts/wfrc.sh";}
+    Ctrl+Shift+r { spawn "~/.config/waybar/scripts/screen-rec.sh"; }
+
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
     Mod+Q repeat=true hotkey-overlay-title="Open a Terminal foot" { spawn "foot"; }
@@ -629,3 +639,4 @@ binds {
     Mod+Shift+P { power-off-monitors; }
 
 }
+
