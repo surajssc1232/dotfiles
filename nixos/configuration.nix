@@ -7,6 +7,13 @@
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
     ];
+    
+	programs.git = {
+  enable = true;
+  config = {
+    credential.helper = "store";
+  	};
+	};
 
 
   # Enable hardware acceleration
@@ -20,7 +27,9 @@
     ];
   };
 
-  environment.shells = [pkgs.nushell];
+  programs.fish.enable=true;
+  users.defaultUserShell = pkgs.fish;
+
 
   # nix-ld
   programs.nix-ld.enable = true;
@@ -36,31 +45,28 @@
   ];
 	
 
-  # Bootloader.
-  # boot.loader.systemd-boot.enable = true;
-  # boot.loader.efi.canTouchEfiVariables = true;
-  # boot.loader.systemd-boot.configurationLimit = 5;
 
  # Bootloader section
   boot.loader = {
+  systemd-boot.enable=false;
     grub = {
       enable = true;
       device = "nodev";
       efiSupport = true;
-      efiInstallAsRemovable = true;
       useOSProber = true;
-      configurationLimit = 5;
       # Add these to hide GRUB completely
       splashImage = null;  # Remove the background image
       backgroundColor = "#000000";  # Black background
       gfxmodeEfi = "1920x1080";
+      configurationLimit = 2;
     };
 
     efi = {
-      canTouchEfiVariables = false;
       efiSysMountPoint = "/boot";
+      canTouchEfiVariables = true;
     };
   };
+
 
 
 
@@ -136,15 +142,67 @@ i18n.defaultLocale = "en_US.UTF-8";
     variant = "";
   };
 
+  services.pipewire = {
+    enable=true;
+    alsa.enable=true;
+    pulse.enable=true;
+  };
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.suraj = {
     isNormalUser = true;
     description = "suraj";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [ "networkmanager" "wheel" "audio" "input" ];
     packages = with pkgs; [];
   };
 
-  services.keyd.enable=true;
+services.keyd = {
+  enable = true;
+  keyboards = {
+    default = {
+      ids = ["*"];
+      settings = {
+        main = {
+          capslock = "overload(vim, esc)";
+          esc = "capslock";
+          rightalt = "toggle(vim)";
+          f5 = "macro(C-a C-c)";
+        };
+        vim = {
+          h = "left";
+          "[" = "{";
+          "]" = "}";
+          j = "down";
+          k = "up";
+          "C-w" = "C-w";
+          "'" = ''"'';
+          ";" = ":";
+          "9" = "(";
+          "0" = ")";
+          "8" = "*";
+          "\\" = "|";
+          "," = "<";
+          "." = ">";
+          "C-l" = "C-l";
+          l = "right";
+          u = "esc";
+          o = "A-left";
+          p = "A-right";
+          q = "C-f1";
+          w = "C-f2";
+          e = "C-f3";
+        };
+        bloodyroar = {
+          i = "up";
+          j = "left";
+          k = "down";
+          l = "right";
+        };
+      };
+    };
+  };
+};
+
   services.displayManager.ly.enable=true;
   services.power-profiles-daemon.enable=true;
   
@@ -163,121 +221,111 @@ i18n.defaultLocale = "en_US.UTF-8";
   programs.mango.enable=true;
   programs.tmux.enable=true;
   programs.steam = {
-	enable = true;
-	extraCompatPackages = [pkgs.proton-ge-bin];
+		enable = true;
+		extraCompatPackages = [pkgs.proton-ge-bin];
   };
 
+  
 
-
-  programs.nix-index = {
-    enable = true;
-    enableBashIntegration = false;  # Explicitly disable (even if default)
-    enableZshIntegration = false;   # Explicitly disable
-  };
-
-  # Disable the built-in command-not-found entirely
-  programs.command-not-found.enable = false;
 
 
   environment.systemPackages = with pkgs; [
-   	acpi
-    	i3status
-    	ninja
-    	meson
-    	nix-direnv
-	pls
-    	direnv
-  	ncurses
-    	wlsunset
-	winetricks
-	playerctl
-    	dbus
-    	waybar-mpris
-    	helix
-    	ols
-    	starship
-    	nnn
-    	zls
-    	google-chrome
-  	steam
-	git
-	neovim
-	libva
-	fuzzel
-	waybar
-	libsForQt5.qt5.qtgraphicaleffects  # Required for themes
-  	libsForQt5.qt5.qtquickcontrols2
-	lemurs
-	ly
-	foot
-	alacritty
-	btop
-	freshfetch
-	fastfetch
-	brightnessctl
-    	keyd
-	wl-clipboard
-	nushell
-	zsh
-	heroic
-	grim
-	rustc
-  	cargo
-  	gcc
-  	rustfmt
-  	clippy
-	slurp
-	dunst
-	libnotify
-	swaybg
-	zoxide
-	lxappearance
-	adw-gtk3
-	hyprpicker
-	bluez
-	bluez-tools
-	gcc
-	clang
-	quickshell
-	zig
-	fzf
-	unzip
-	cmake
-	pkg-config
-	jq
-	pyright
-	rust-analyzer
-	pavucontrol
-	gnumake
-	power-profiles-daemon
-	clang-tools
-	jdt-language-server
-	lua-language-server
-	lua
-	ripgrep
-	unrar
-	fd
-	clippy
-	uv
-	dxvk
-	wl-screenrec
-	wf-recorder
-	libva-utils  # Provides vainfo command
-    	pciutils     # Provides lspci command
-	mpv
-	qbittorrent
-	nix-search-tv
-	wineWowPackages.stable
+		acpi
+		ninja
+		fish
+		meson
+		nix-direnv
+		direnv
+		wlsunset
+		git
+		winetricks
+		playerctl
+		dbus
+		waybar-mpris
+		helix
+		starship
+		nnn
+		google-chrome
+		steam
+		neovim
+		libva
+		fuzzel
+		waybar
+		wireplumber
+		libsForQt5.qt5.qtgraphicaleffects  # Required for themes
+		libsForQt5.qt5.qtquickcontrols2
+		ly
+		direnv
+		nix-direnv
+		foot
+		btop
+		fastfetch
+		brightnessctl
+		keyd
+		wl-clipboard
+		zsh
+		heroic
+		grim
+		rustc
+		cargo
+		rustfmt
+		clippy
+		slurp
+		dunst
+		libnotify
+		swaybg
+		zoxide
+		lxappearance
+		adw-gtk3
+		hyprpicker
+		bluez
+		bluez-tools
+		fzf
+		unzip
+		cmake
+		pkg-config
+		niri
+		jq
+		pyright
+		rust-analyzer
+		pavucontrol
+		nur.repos.Ev357.helium
+		gnumake
+		power-profiles-daemon
+		clang-tools
+		lua-language-server
+		lua
+		ripgrep
+		unrar
+		fd
+		clippy
+		dxvk
+		wl-screenrec
+		wf-recorder
+		libva-utils  # Provides vainfo command
+		pciutils     # Provides lspci command
+		mpv
+		qbittorrent
+		nix-search-tv
+		wineWowPackages.stable
+		bat
+		fish-lsp
+	    bibata-cursors
+	    capitaine-cursors-themed
+	    rustlings
+	    xdg-desktop-portal-gnome
+	    xdg-desktop-portal-gtk
+	    nemo
 
   ]++[inputs.zen-browser.packages."${system}".default];
 
-  fonts.packages = with pkgs;[
-  	nerd-fonts.jetbrains-mono
-        nerd-fonts.iosevka-term
-	nerd-fonts.iosevka
-	nerd-fonts.fira-code
-	nerd-fonts.space-mono
 
+  fonts.packages = with pkgs;[
+  			nerd-fonts.jetbrains-mono
+        nerd-fonts.iosevka-term
+				nerd-fonts.iosevka
+				nerd-fonts.fira-code
+				nerd-fonts.space-mono
   ];
 
   # environment.variables = {
@@ -285,19 +333,6 @@ i18n.defaultLocale = "en_US.UTF-8";
   #   XCURSOR_SIZE = "24";
   # };
 
-environment.systemPackages = with pkgs; [
-  (neovim.override {
-    configure = {
-      customRC = ''
-        " Same extraConfig as above
-      '';
-      packages.myVimPlugins.start = with pkgs.vimPlugins; [
-        nvim-treesitter
-        nvim-nu
-      ];
-    };
-  })
-];
 
 
   fonts.fontconfig.enable = true;
@@ -365,15 +400,8 @@ hardware.bluetooth = {
   programs.zoxide.flags = ["--no-cmd" "--cmd j"];
 
   nix.gc = {
-	automatic = true;
-	dates = "weekly";
-	options = "--delete-generations +5";
+		automatic = true;
+		dates = "daily";
+		options = "--delete-generations +1";
   };
-
-programs.bash.interactiveShellInit = ''
-    if ! [ "$TERM" = "dumb" ]; then
-      exec nu
-    fi
-  '';
-
 }
