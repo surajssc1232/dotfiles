@@ -64,6 +64,7 @@ output * bg /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
 # You can also configure each device individually.
 # Read `man 5 sway-input` for more information about this section.
 
+
 ### Key bindings
 #
 # Basics:
@@ -71,8 +72,23 @@ output * bg /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
     # Start a terminal
     bindsym $mod+q exec $term
 
+    # Switch to next workspace (right)
+    bindsym $mod+d workspace next
+
+    # Switch to previous workspace (left)
+    bindsym $mod+a workspace prev
+
     # Kill focused window
     bindsym $mod+c kill
+
+    # Alt+Tab = focus next window (across all workspaces)
+    bindsym $mod+Tab workspace next_on_output
+    bindsym $mod+shift+r exec ~/.config/mango/screen-rec.sh
+
+    focus_wrapping yes
+
+    # Optional: make it wrap around at the end
+    set $wrap_focus true
 
 		bindsym $mod+b exec ~/.config/waybar/scripts/blue.sh
 
@@ -94,6 +110,7 @@ output * bg /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
 #
 # Moving around:
 #
+# 
     # Move your focus around
     bindsym $mod+$left focus left
     bindsym $mod+$down focus down
@@ -168,11 +185,10 @@ output * bg /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
 
     # Swap focus between the tiling area and the floating area
     bindsym $mod+space focus mode_toggle
-		bindsym $mod+shift+r exec ~/.config/sway/wfrc_sway.sh
 		bindsym $mod+Print exec ~/.config/sway/screenshot.sh
 
     # Move focus to the parent container
-    bindsym $mod+a focus parent
+    bindsym $mod+shift+a focus parent
 #
 # Scratchpad:
 #
@@ -295,3 +311,5 @@ client.background        $base00
 # disabling the border and title
 # default_border pixel 2
 # default_floating_border pixel 2
+gaps inner 10
+gaps outer 2
