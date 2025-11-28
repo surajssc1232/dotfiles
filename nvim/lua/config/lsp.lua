@@ -2,6 +2,7 @@
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
 local lsp_attached_buffers = {}
 
+
 -- On attach function
 local on_attach = function(client, bufnr)
 	local buffer_key = bufnr .. "_" .. client.name

@@ -1,27 +1,31 @@
 -- Colorscheme and highlight configuration
 
 -- Set colorscheme
-vim.cmd([[colorscheme gruvbox]])
+vim.cmd([[colorscheme gruvbox]])  -- change anytime
 
--- Custom Pmenu highlights with your bg color (#282828)
-vim.api.nvim_set_hl(0, 'Pmenu', { bg = '#282828', fg = '#ebdbb2' })
-vim.api.nvim_set_hl(0, 'PmenuSel', { bg = '#3c3836', fg = '#fabd2f' })
-vim.api.nvim_set_hl(0, 'PmenuSbar', { bg = '#282828' })
-vim.api.nvim_set_hl(0, 'PmenuThumb', { bg = '#504945' })
+-- Add this at the very end of your colorscheme.lua
+vim.api.nvim_create_autocmd("ColorScheme", {
+  pattern = "*",
+  callback = function()
+    local normal_hl = vim.api.nvim_get_hl(0, { name = "Normal" })
+    local bg = normal_hl.bg
+    local fg = normal_hl.fg
+    
+    -- For transparent/base16 themes, use a dark fallback
+    if not bg then
+      bg = 0x1d2021  -- or use "NONE" for full transparency
+    end
+    
+    local sel = vim.api.nvim_get_hl(0, { name = "Visual" }).bg or 0x3c3836
 
--- Custom Diagnostic highlights with your bg color (#282828)
-vim.api.nvim_set_hl(0, 'DiagnosticFloat', { bg = '#282828', fg = '#ebdbb2' })
-vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextError', { bg = '#282828', fg = '#fb4934' })
-vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextWarn', { bg = '#282828', fg = '#fabd2f' })
-vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextInfo', { bg = '#282828', fg = '#83a598' })
-vim.api.nvim_set_hl(0, 'DiagnosticVirtualTextHint', { bg = '#282828', fg = '#b8bb26' })
+    vim.api.nvim_set_hl(0, "NormalFloat", { bg = bg, fg = fg })
+    vim.api.nvim_set_hl(0, "FloatBorder", { fg = fg, bg = bg })
+    vim.api.nvim_set_hl(0, "Pmenu",        { bg = "NONE", fg = fg })  -- ← Force NONE
+    vim.api.nvim_set_hl(0, "PmenuSel",     { bg = sel })
+    vim.api.nvim_set_hl(0, "PmenuSbar",    { bg = bg })
+    vim.api.nvim_set_hl(0, "PmenuThumb",   { bg = sel })
+  end,
+})
 
--- Underline overrides (for completeness, even if disabled)
-vim.api.nvim_set_hl(0, 'DiagnosticUnderlineError', { undercurl = false, underline = false })
-vim.api.nvim_set_hl(0, 'DiagnosticUnderlineWarn', { undercurl = false, underline = false })
-vim.api.nvim_set_hl(0, 'DiagnosticUnderlineInfo', { undercurl = false, underline = false })
-vim.api.nvim_set_hl(0, 'DiagnosticUnderlineHint', { undercurl = false, underline = false })
-
--- Float window highlights
-vim.api.nvim_set_hl(0, 'FloatBorder', { fg = '#504945', bg = '#282828' })
-vim.api.nvim_set_hl(0, 'NormalFloat', { bg = '#282828', fg = '#ebdbb2' })
+-- Apply immediately
+vim.schedule(function() vim.cmd("doautocmd ColorScheme") end)
