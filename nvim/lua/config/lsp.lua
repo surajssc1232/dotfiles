@@ -45,6 +45,42 @@ local servers = {
 		cmd = { 'qmlls' }
 	},
 
+	gopls = {
+  cmd = { "gopls" },                     -- usually just "gopls" (in PATH)
+  filetypes = { "go", "gomod", "gowork", "gotmpl" },
+  root_markers = { "go.work", "go.mod", ".git" },
+  capabilities = capabilities,
+  settings = {
+    gopls = {
+      -- Enable all the good stuff most people want
+      completeUnimported = true,         -- import automatically on completion
+      usePlaceholders = true,            -- show placeholders for function args
+      analyses = {
+        unusedparams = true,
+        shadow = true,
+        nilness = true,
+        unusedwrite = true,
+        useany = true,
+        unusedvariable = true,
+      },
+      staticcheck = true,                -- run staticcheck analyses
+      gofumpt = true,                    -- stricter gofmt
+      hints = {                          -- inlay hints (Neovim 0.10+ shows them nicely)
+        assignVariableTypes = true,
+        compositeLiteralFields = true,
+        compositeLiteralTypes = true,
+        constantValues = true,
+        functionTypeParameters = true,
+        parameterNames = true,
+        rangeVariableTypes = true,
+      },
+      -- Optional but very popular
+      directoryFilters = { "-node_modules" },  -- ignore node_modules if you’re in a mixed repo
+      semanticTokens = true,
+    },
+  },
+},
+
 	ols = {
 		cmd = { 'ols' },
 		filetypes = { 'odin' },
@@ -101,7 +137,7 @@ for server, config in pairs(servers) do
 end
 
 -- Enable LSP servers
-vim.lsp.enable({ 'nu', 'fish-lsp', 'leanls', 'ols', 'lua_ls', 'ts_ls', 'clangd', 'pyright',
+vim.lsp.enable({'gopls', 'nu', 'fish-lsp', 'leanls', 'ols', 'lua_ls', 'ts_ls', 'clangd', 'pyright',
 	'rust_analyzer', 'zls' })
 
 -- Attach on_attach function when LSP attaches

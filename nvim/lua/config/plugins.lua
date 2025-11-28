@@ -8,6 +8,10 @@ require("packer").startup(function(use)
 	use "WTFox/jellybeans.nvim"
 	use "RRethy/base16-nvim"
 	use "blazkowolf/gruber-darker.nvim"
+	use {
+		'nvim-lualine/lualine.nvim',
+		requires = { 'nvim-tree/nvim-web-devicons', opt = true }
+	}
 	use { "ellisonleao/gruvbox.nvim" }
 	use "sainnhe/gruvbox-material"
 	use "bluz71/vim-moonfly-colors"

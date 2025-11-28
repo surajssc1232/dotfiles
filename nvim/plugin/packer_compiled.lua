@@ -140,13 +140,18 @@ _G.packer_plugins = {
     path = "/home/suraj/.local/share/nvim/site/pack/packer/start/lsp-format.nvim",
     url = "https://github.com/lukas-reineke/lsp-format.nvim"
   },
+  ["lualine.nvim"] = {
+    loaded = true,
+    path = "/home/suraj/.local/share/nvim/site/pack/packer/start/lualine.nvim",
+    url = "https://github.com/nvim-lualine/lualine.nvim"
+  },
   ["mini.icons"] = {
     loaded = true,
     path = "/home/suraj/.local/share/nvim/site/pack/packer/start/mini.icons",
     url = "https://github.com/echasnovski/mini.icons"
   },
   ["nvim-autopairs"] = {
-    config = { "\27LJ\2\n’\1\0\0\3\0\4\0\a6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\3\0B\0\2\1K\0\1\0\1\0\5\vmap_cr\2\23ignored_next_chars\v[%w%.]\30enable_check_bracket_line\2\rcheck_ts\2\vmap_bs\2\nsetup\19nvim-autopairs\frequire\0" },
+    config = { "\27LJ\2\n’\1\0\0\3\0\4\0\a6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\3\0B\0\2\1K\0\1\0\1\0\5\30enable_check_bracket_line\2\rcheck_ts\2\vmap_bs\2\vmap_cr\2\23ignored_next_chars\v[%w%.]\nsetup\19nvim-autopairs\frequire\0" },
     loaded = false,
     needs_bufread = false,
     only_cond = false,
@@ -174,7 +179,7 @@ _G.packer_plugins = {
     url = "https://github.com/nvim-tree/nvim-tree.lua"
   },
   ["nvim-treesitter"] = {
-    config = { "\27LJ\2\nû\1\0\0\4\0\n\0\r6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\4\0005\3\3\0=\3\5\0025\3\6\0=\3\a\0025\3\b\0=\3\t\2B\0\2\1K\0\1\0\vindent\1\0\1\venable\2\14highlight\1\0\1\venable\2\21ensure_installed\1\0\3\vindent\0\21ensure_installed\0\14highlight\0\1\v\0\0\blua\vpython\15javascript\6c\velixir\beex\theex\tjava\trust\bzig\nsetup\28nvim-treesitter.configs\frequire\0" },
+    config = { "\27LJ\2\nû\1\0\0\4\0\n\0\r6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\4\0005\3\3\0=\3\5\0025\3\6\0=\3\a\0025\3\b\0=\3\t\2B\0\2\1K\0\1\0\vindent\1\0\1\venable\2\14highlight\1\0\1\venable\2\21ensure_installed\1\0\3\14highlight\0\vindent\0\21ensure_installed\0\1\v\0\0\blua\vpython\15javascript\6c\velixir\beex\theex\tjava\trust\bzig\nsetup\28nvim-treesitter.configs\frequire\0" },
     loaded = true,
     path = "/home/suraj/.local/share/nvim/site/pack/packer/start/nvim-treesitter",
     url = "https://github.com/nvim-treesitter/nvim-treesitter"
@@ -239,7 +244,7 @@ try_loadstring("\27LJ\2\n8\0\0\3\0\3\0\0066\0\0\0'\2\1\0B\0\2\0029\0\2\0B\0\1\1K
 time([[Config for everforest-nvim]], false)
 -- Config for: nvim-treesitter
 time([[Config for nvim-treesitter]], true)
-try_loadstring("\27LJ\2\nû\1\0\0\4\0\n\0\r6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\4\0005\3\3\0=\3\5\0025\3\6\0=\3\a\0025\3\b\0=\3\t\2B\0\2\1K\0\1\0\vindent\1\0\1\venable\2\14highlight\1\0\1\venable\2\21ensure_installed\1\0\3\vindent\0\21ensure_installed\0\14highlight\0\1\v\0\0\blua\vpython\15javascript\6c\velixir\beex\theex\tjava\trust\bzig\nsetup\28nvim-treesitter.configs\frequire\0", "config", "nvim-treesitter")
+try_loadstring("\27LJ\2\nû\1\0\0\4\0\n\0\r6\0\0\0'\2\1\0B\0\2\0029\0\2\0005\2\4\0005\3\3\0=\3\5\0025\3\6\0=\3\a\0025\3\b\0=\3\t\2B\0\2\1K\0\1\0\vindent\1\0\1\venable\2\14highlight\1\0\1\venable\2\21ensure_installed\1\0\3\14highlight\0\vindent\0\21ensure_installed\0\1\v\0\0\blua\vpython\15javascript\6c\velixir\beex\theex\tjava\trust\bzig\nsetup\28nvim-treesitter.configs\frequire\0", "config", "nvim-treesitter")
 time([[Config for nvim-treesitter]], false)
 -- Config for: toggleterm.nvim
 time([[Config for toggleterm.nvim]], true)
