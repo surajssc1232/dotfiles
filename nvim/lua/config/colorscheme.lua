@@ -1,7 +1,7 @@
 -- Colorscheme and highlight configuration
 
 -- Set colorscheme
-vim.cmd([[colorscheme gruvbox]])  -- change anytime
+vim.cmd([[colorscheme gruvbox-material]])  -- change anytime
 
 -- Add this at the very end of your colorscheme.lua
 vim.api.nvim_create_autocmd("ColorScheme", {

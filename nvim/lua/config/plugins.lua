@@ -6,8 +6,8 @@ require("packer").startup(function(use)
 	use "xiyaowong/transparent.nvim"
 	use { 'srcery-colors/srcery-vim', as = 'srcery' }
 	use "WTFox/jellybeans.nvim"
-	use "RRethy/base16-nvim"
 	use "blazkowolf/gruber-darker.nvim"
+	use "shaunsingh/nord.nvim"
 	use {
 		'nvim-lualine/lualine.nvim',
 		requires = { 'nvim-tree/nvim-web-devicons', opt = true }
@@ -23,7 +23,6 @@ require("packer").startup(function(use)
 	})
 	
 	-- Core functionality
-	use 'Julian/lean.nvim'
 	use "surajssc1232/rover.nvim"
 	use { "akinsho/toggleterm.nvim", tag = '*', config = function()
 		require("toggleterm").setup()

@@ -3,7 +3,7 @@
 require('mini.icons').setup()
 -- Indent Blankline Configuration
 require("ibl").setup({
-	indent = { char = "┋" },
+	indent = { char = "|" },
 	scope = { show_start = false, show_end = false },
 })
 -- Rover setup
@@ -138,7 +138,7 @@ cmp.setup({
 			require('cmp.types').cmp.TriggerEvent.TextChanged,
 		},
 	},
-	preselect = cmp.PreselectMode.Item,
+	preselect = cmp.PreselectMode.None,  -- FIXED: No preselection by default
 	performance = {
 		debounce = 60,
 		throttle = 30,
