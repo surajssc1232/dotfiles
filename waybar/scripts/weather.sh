@@ -1,4 +1,4 @@
-#!/run/current-system/sw/bin/bash
+#!/bin/bash
 
 # weather.sh — Waybar JSON with WAQI AQI integration
 

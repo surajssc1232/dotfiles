@@ -1,10 +1,10 @@
 #!/usr/bin/bash
-# wl-record-toggle.sh — bullet-proof version with full logging
+# screen-record-toggle.sh — using wf-recorder (wl-screenrec has broken VAAPI handling)
 
 set -euo pipefail
 
-LOCKFILE="/tmp/wlrecord.lock"
-LOGFILE="/tmp/wlrecord-debug.log"
+LOCKFILE="/tmp/screenrecord.lock"
+LOGFILE="/tmp/screenrecord-debug.log"
 MAX_LOG_SIZE=50000  # ~50 KB, rotates
 
 # Rotate log if too big
@@ -34,7 +34,7 @@ cleanup_stale() {
     else
         log "PID $old_pid is dead → removing stale lock + orphan files"
         rm -f "$LOCKFILE"
-        rm -f /tmp/wlrecord-*.mp4
+        rm -f /tmp/screenrec-*.mp4
         notify-send "Cleaned stale recording lock" "Old PID $old_pid was dead" --icon=dialog-warning
         return 0
     fi
@@ -48,14 +48,10 @@ if [[ -f "$LOCKFILE" ]]; then
     if kill -0 "$PID" 2>/dev/null; then
         log "Stopping recording (PID $PID)..."
         kill -SIGINT "$PID"
-        if wait "$PID" 2>/dev/null; then
-            log "wl-screenrec exited gracefully"
-        else
-            log "wl-screenrec was already dead or killed"
-        fi
-
+        sleep 0.5  # Give it time to finalize the file
+        
         rm -f "$LOCKFILE"
-        LATEST=$(ls -t /tmp/wlrecord-*.mp4 2>/dev/null | head -n1 || echo "")
+        LATEST=$(ls -t /tmp/screenrec-*.mp4 2>/dev/null | head -n1 || echo "")
         if [[ -f "$LATEST" ]]; then
             URI="file://$LATEST"
             echo "$URI" | wl-copy -t text/uri-list
@@ -77,10 +73,11 @@ fi
 # --- Start new recording ---
 cleanup_stale  # final safety
 
+# Get the monitor source of the default sink for system audio
 AUDIO_DEVICE="$(pactl get-default-sink).monitor"
-log "Default audio monitor: $AUDIO_DEVICE"
+log "Audio source (system audio monitor): $AUDIO_DEVICE"
 
-TMPFILE="/tmp/wlrecord-$(date +%s).mp4"
+TMPFILE="/tmp/screenrec-$(date +%s).mp4"
 log "Output file will be: $TMPFILE"
 
 # Choose mode
@@ -88,7 +85,9 @@ MODE=$(printf "Fullscreen\nRegion\nActive Window (Hyprland)" | fuzzel --dmenu -p
 [[ -z "$MODE" ]] && { log "User cancelled mode selection"; exit 0; }
 log "Selected mode: $MODE"
 
-REC_ARGS=(--audio --audio-device "$AUDIO_DEVICE" -f "$TMPFILE")
+# wf-recorder args - using software encoding (libx264) to avoid VAAPI issues
+# Use --audio instead of -a for wf-recorder
+REC_ARGS=(-c libx264 --audio="$AUDIO_DEVICE" -f "$TMPFILE")
 
 case "$MODE" in
     Fullscreen)
@@ -117,23 +116,27 @@ case "$MODE" in
         ;;
 esac
 
-notify-send "Recording started" "$MODE" --icon=media-record
-log "Starting wl-screenrec with args: ${REC_ARGS[*]}"
+notify-send "Recording started" "$MODE (wf-recorder)" --icon=media-record
+log "Starting wf-recorder with args: ${REC_ARGS[*]}"
 
-# Start recording — redirect BOTH stdout+stderr so no zombie output
-nohup wl-screenrec "${REC_ARGS[@]}" >/tmp/wlrecord-stdout.log 2>/tmp/wlrecord-stderr.log &
+# Start recording — redirect output
+nohup wf-recorder "${REC_ARGS[@]}" >/tmp/screenrec-stdout.log 2>/tmp/screenrec-stderr.log &
 PID=$!
 
 # Double-check it actually started
-sleep 0.3
+sleep 0.5
 if kill -0 "$PID" 2>/dev/null; then
     echo "$PID" > "$LOCKFILE"
     disown "$PID"
     log "Recording started successfully — PID $PID → lockfile created"
 else
-    log "wl-screenrec failed to start (PID $PID died instantly)"
+    log "wf-recorder failed to start (PID $PID died instantly)"
+    log "=== STDOUT ==="
+    cat /tmp/screenrec-stdout.log >> "$LOGFILE" 2>/dev/null || log "(no stdout)"
+    log "=== STDERR ==="
+    cat /tmp/screenrec-stderr.log >> "$LOGFILE" 2>/dev/null || log "(no stderr)"
     rm -f "$LOCKFILE"
-    notify-send "Recording FAILED" "wl-screenrec died immediately — see logs" --icon=dialog-error
+    notify-send "Recording FAILED" "Check log: $LOGFILE" --icon=dialog-error
     exit 1
 fi
 

@@ -1,4 +1,4 @@
-theme="autumn"
+theme="onedark"
 
 [editor]
 clipboard-provider="wayland"
@@ -9,3 +9,4 @@ a="insert_mode"
 [keys.normal.space]
 w=":write"
 q=":quit!"
+
