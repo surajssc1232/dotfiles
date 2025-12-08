@@ -199,7 +199,7 @@ layout {
         // If you enable the border, you probably want to disable the focus ring.
         // off
 
-        width 1
+        width 1 
         active-color "#FF7856"
         inactive-color "#505050"
 
@@ -428,6 +428,7 @@ binds {
     Mod+J     { focus-workspace-down; }
     Mod+K     { focus-workspace-up; }
     Mod+L     { focus-column-right; }
+		Alt+O {spawn "~/.config/waybar/scripts/wlsunset.sh";}
 
     Mod+Ctrl+Left  { move-column-left; }
     Mod+Ctrl+Down  { move-window-down; }
@@ -644,3 +645,34 @@ binds {
 
 }
 
+
+recent-windows {
+    // off
+    debounce-ms 750
+
+    open-delay-ms 150
+
+    highlight {
+        active-color "#999999ff"
+        urgent-color "#ff9999ff"
+        padding 15
+        corner-radius 0
+    }
+
+    previews {
+        max-height 400
+        max-scale 0.5
+    }
+
+    binds {
+        Alt+Tab         { next-window; }
+        Alt+Shift+Tab   { previous-window; }
+        Alt+grave       { next-window     filter="app-id"; }
+        Alt+Shift+grave { previous-window filter="app-id"; }
+
+        Mod+Tab         { next-window; }
+        Mod+Shift+Tab   { previous-window; }
+        Mod+grave       { next-window     filter="app-id"; }
+        Mod+Shift+grave { previous-window filter="app-id"; }
+    }
+}
