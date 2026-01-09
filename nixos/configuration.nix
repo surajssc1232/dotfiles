@@ -1,98 +1,147 @@
-#Edit this configuration file to define what should be installed on your system.  Help is available in the configuration.nix(5) man page and in the NixOS manual (accessible by running ‘nixos-help’).
-
-{ config, pkgs,inputs,system, ... }:
+{ pkgs, inputs, system, ... }:
 
 {
   imports =
-    [ # Include the results of the hardware scan.
+    [
+      # Include the results of the hardware scan.
       ./hardware-configuration.nix
     ];
-    
-	programs.git = {
-  enable = true;
-  config = {
-    credential.helper = "store";
-  	};
-	};
+
+  programs.git = {
+    enable = true;
+    config = {
+      credential.helper = "store";
+    };
+  };
+  
+  hardware.xpadneo.enable = true;
 
 
   # Enable hardware acceleration
   hardware.graphics = {
     enable = true;
     extraPackages = with pkgs; [
-      	intel-media-driver  # For Tiger Lake and newer Intel GPUs
-        vulkan-loader	
-    	vulkan-validation-layers
-      	libvdpau-va-gl
+      intel-media-driver # For Tiger Lake and newer Intel GPUs
+      vulkan-loader
+      vulkan-validation-layers
+      libvdpau-va-gl
     ];
   };
 
-  programs.fish.enable=true;
+  
+  programs.fish.enable = true;
   users.defaultUserShell = pkgs.fish;
-
 
   # nix-ld
   programs.nix-ld.enable = true;
-  programs.nix-ld.libraries = with pkgs; [
-    # Add common libraries that pre-compiled binaries might need
+
+programs.tmux = {
+  enable = true;
+  terminal = "screen-256color";
+  clock24 = true;  # Use 24-hour format
+  escapeTime =  0;
+
+  
+  extraConfig = ''
+    # Status bar configuration
+    set -g status-position top
+    set -g status-interval 1  # Update every second
+
+    # Right side: battery and clock
+    set -g status-right-length 50
+    set -g status-right "#[fg=yellow]#(cat /sys/class/power_supply/BAT0/capacity)%% #[fg=white]| #[fg=green]%H:%M:%S #[fg=white]| #[fg=blue]%Y-%m-%d"
+    
+    # Left side: session name
+    set -g status-left ""
+    set -g status-left-length 0
+
+    
+    # Make status bar transparent
+    set -g status-style bg=default,fg=white
+    
+    # Make pane borders transparent
+    set -g pane-border-style fg=default
+    set -g pane-active-border-style fg=cyan
+    
+    # Make window status transparent
+    setw -g window-status-style bg=default,fg=white
+    setw -g window-status-current-style bg=default,fg=cyan,bold
+    
+    # Prefix key configuration (commented out as in your config)
+    # unbind C-b
+    # set -g prefix C-a
+    # bind M-a send-prefix
+    
+    # Create new window with Alt+c
+    unbind C-c
+    bind -n M-c new-window
+    
+    # Split panes using Alt+| and Alt+- without prefix
+    bind -n M-\\ split-window -h  # Alt+\ (which appears as |)
+    bind -n M-- split-window -v   # Alt+-
+    
+    # Switch panes using arrow keys without prefix
+    bind -n M-Left select-pane -L
+    bind -n M-Right select-pane -R
+    bind -n M-Up select-pane -U
+    bind -n M-Down select-pane -D
+    
+    # Switch windows using Shift+arrow without prefix
+    bind -n S-Left previous-window
+    bind -n S-Right next-window
+    
+    # Close current pane with Alt+x without prefix
+    bind -n M-x kill-pane
+  '';
+};
+
+    programs.nix-ld.libraries = with pkgs; [
     stdenv.cc.cc.lib
     zlib
     openssl
     curl
-    glib
     glibc
     libgcc
   ];
-	
 
 
- # Bootloader section
-  boot.loader = {
-  systemd-boot.enable=false;
-    grub = {
-      enable = true;
-      device = "nodev";
-      efiSupport = true;
-      useOSProber = true;
-      # Add these to hide GRUB completely
-      splashImage = null;  # Remove the background image
-      backgroundColor = "#000000";  # Black background
-      gfxmodeEfi = "1920x1080";
-      configurationLimit = 2;
-    };
 
-    efi = {
-      efiSysMountPoint = "/boot";
-      canTouchEfiVariables = true;
+  # Bootloader section
+  boot.loader.systemd-boot.enable = false;
+  boot.loader.grub.enable = false;
+
+  boot.loader.limine = {
+    enable = true;
+    style.backdrop = "282828";
+    style.wallpapers = [];
+    efiSupport = true;
+    efiInstallAsRemovable = true;
+    maxGenerations = 2;
+    package = pkgs.limine;  
+  };
+  
+  services.libinput.enable = true;
+
+  services.logind.settings = {
+    Login = {
+      HandlePowerKey = "ignore";
+      HandleLidSwitch = "suspend";
     };
   };
-
-
-
-
-# Auto-login moved to top-level displayManager
-# services.displayManager.autoLogin = {
-#   enable = true;
-#   user = "suraj";
-# };
-services.libinput.enable=true;
-
-
   # Add these lines AFTER the boot.loader section
-  boot.kernelParams = [ 
-     "video=1920x1080"
-     "quiet"           # Hides most boot messages
-     "loglevel=3"      # Only show errors (3) or critical (2)
-     "systemd.show_status=false"  # Hide systemd status messages
-     "rd.udev.log_level=0"        # Reduce udev log verbosity
-     "vt.global_cursor_default=0"
-     "rd.systemd.show_status=false"
+  boot.kernelParams = [
+    "video=1920x1080"
+    "quiet" # Hides most boot messages
+    "loglevel=0" # Only show errors (3) or critical (2)
+    "systemd.show_status=false" # Hide systemd status messages
+    "rd.udev.log_level=0" # Reduce udev log verbosity
+    "vt.global_cursor_default=0"
+    "rd.systemd.show_status=false"
   ];
 
   boot.consoleLogLevel = 0;
   boot.initrd.verbose = false;
   boot.initrd.kernelModules = [ "i915" ];
-  # boot.plymouth.enable = true;
 
   networking.hostName = "nixos"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -106,11 +155,10 @@ services.libinput.enable=true;
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
-
   # Set your time zone.
   time.timeZone = "Asia/Kolkata";
 
-i18n.defaultLocale = "en_US.UTF-8";
+  i18n.defaultLocale = "en_US.UTF-8";
 
   i18n.extraLocaleSettings = {
     LC_ADDRESS = "en_IN";
@@ -131,9 +179,14 @@ i18n.defaultLocale = "en_US.UTF-8";
   environment.sessionVariables = {
     LANG = "en_US.UTF-8";
     LC_ALL = "en_US.UTF-8";
-    XCURSOR_THEME = "Bibata-Modern-Ice";
-    XCURSOR_SIZE = "24";
-    LIBVA_DRIVER_NAME = "iHD";  # Use iHD for intel-media-driver
+    LIBVA_DRIVER_NAME = "iHD"; # Use iHD for intel-media-driver
+    EDITOR = "hx";
+  };
+
+  environment.variables = {
+    XCURSOR_THEME = "Bibata-Modern-Classic";
+    XCURSOR_SIZE = "18";
+    EDITOR = "hx";
   };
 
   # Configure keymap in X11
@@ -142,10 +195,13 @@ i18n.defaultLocale = "en_US.UTF-8";
     variant = "";
   };
 
+  services.xserver.enable = true;
+  services.upower.enable = true;
+
   services.pipewire = {
-    enable=true;
-    alsa.enable=true;
-    pulse.enable=true;
+    enable = true;
+    alsa.enable = true;
+    pulse.enable = true;
   };
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
@@ -153,221 +209,222 @@ i18n.defaultLocale = "en_US.UTF-8";
     isNormalUser = true;
     description = "suraj";
     extraGroups = [ "networkmanager" "wheel" "audio" "input" ];
-    packages = with pkgs; [];
   };
 
-services.keyd = {
-  enable = true;
-  keyboards = {
-    default = {
-      ids = ["*"];
-      settings = {
-        main = {
-          capslock = "overload(vim, esc)";
-          esc = "capslock";
-          rightalt = "toggle(vim)";
-          f5 = "macro(C-a C-c)";
-        };
-        vim = {
-          h = "left";
-          "[" = "{";
-          "]" = "}";
-          j = "down";
-          k = "up";
-          "C-w" = "C-w";
-          "'" = ''"'';
-          ";" = ":";
-          "9" = "(";
-          "0" = ")";
-          "8" = "*";
-          "\\" = "|";
-          "," = "<";
-          "." = ">";
-          "C-l" = "C-l";
-          l = "right";
-          u = "esc";
-          o = "A-left";
-          p = "A-right";
-          q = "C-f1";
-          w = "C-f2";
-          e = "C-f3";
-        };
-        bloodyroar = {
-          i = "up";
-          j = "left";
-          k = "down";
-          l = "right";
+  services.keyd = {
+    enable = true;
+    keyboards = {
+      default = {
+        ids = [ "*" ];
+        settings = {
+          main = {
+            capslock = "overload(vim, esc)";
+            esc = "capslock";
+            rightalt = "toggle(vim)";
+            f5 = "macro(C-a C-c)";
+          };
+          vim = {
+            h = "left";
+            "[" = "{";
+            "]" = "}";
+            j = "down";
+            k = "up";
+            "C-w" = "C-w";
+            "'" = ''"'';
+            ";" = ":";
+            "9" = "(";
+            "0" = ")";
+            "8" = "*";
+            "\\" = "|";
+            "," = "<";
+            "." = ">";
+            "C-l" = "C-l";
+            l = "right";
+            u = "esc";
+            o = "A-left";
+            p = "A-right";
+            q = "C-f1";
+            w = "C-f2";
+            e = "C-f3";
+          };
+          bloodyroar = {
+            i = "up";
+            j = "left";
+            k = "down";
+            l = "right";
+          };
         };
       };
     };
   };
-};
 
-  services.displayManager.ly.enable=true;
-  services.power-profiles-daemon.enable=true;
+
+  programs.gamemode.enable = true;
+  services.udev.packages = [pkgs.game-devices-udev-rules];
   
-  services.dbus.enable=true;
-  services.dbus.packages = [pkgs.playerctl];
+  services.power-profiles-daemon.enable = true;
+
+  services.displayManager.ly.enable = true;
+  
+  services.dbus.enable = true;
+  services.dbus.packages = [ pkgs.playerctl ];
+
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
-  # List packages installed in system profile. To search, run:
-  # $ nix search wget
 
-  nixpkgs.overlays = [
-    inputs.nur.overlays.default  # This exposes all NUR repos
-  ];
+  # nixpkgs.overlays = [
+  #   inputs.nur.overlays.default # This exposes all NUR repos
+  # ];
 
-  programs.mango.enable=true;
-  programs.tmux.enable=true;
+  programs.niri.enable = true;
+
   programs.steam = {
-		enable = true;
-		extraCompatPackages = [pkgs.proton-ge-bin];
+    enable = true;
+    extraCompatPackages = [ pkgs.proton-ge-bin ];
+  };
+
+  environment.systemPackages = with pkgs; [
+    acpi
+    ninja    
+    quickshell
+    fish
+    meson
+    nix-direnv
+    direnv
+    wlsunset
+    git
+    winetricks
+    google-chrome
+    playerctl
+    dbus
+    waybar-mpris
+    starship
+    nnn
+    gcc
+    zig
+    rustup
+    steam
+    neovim
+    libva
+    fuzzel
+    waybar
+    wireplumber
+    libsForQt5.qt5.qtgraphicaleffects # Required for themes
+    libsForQt5.qt5.qtquickcontrols2
+    direnv
+    nix-direnv
+    btop
+    fastfetch
+    brightnessctl
+    keyd
+    wl-clipboard
+    zsh
+    tmux
+    heroic
+    grim
+    cargo
+    clippy
+    slurp
+    dunst
+    libnotify
+    zoxide
+    lxappearance
+    gtk3
+    orchis-theme
+    hyprpicker
+    bluez
+    bluez-tools
+    fzf
+    unzip
+    cmake
+    pkg-config
+    niri
+    jq
+    pyright
+    pavucontrol
+    gnumake
+    xwayland
+    nixpkgs-fmt
+    power-profiles-daemon
+    nemo
+    kdePackages.qtlanguageserver
+    clang-tools
+    pulseaudio
+    steam-run
+    lua-language-server
+    lua
+    ripgrep
+    matugen
+    nil
+    nixd
+    ncurses
+    unrar
+    fd
+    clippy
+    dxvk
+    wl-screenrec
+    wf-recorder
+    libva-utils # Provides vainfo command
+    pciutils # Provides lspci command
+    mpv
+    qbittorrent
+    nix-search-tv
+    bat
+    fish-lsp
+    wineWowPackages.stable
+    wineWowPackages.waylandFull
+    xdg-desktop-portal-gnome
+    xdg-desktop-portal-gtk    
+    papirus-icon-theme
+    xwayland-satellite
+    bibata-cursors
+
+  ] ++ [ inputs.zen-browser.packages."${system}".default ];
+
+  xdg.mime = {
+    enable = true;
+    defaultApplications = { "application/pdf" = "firefox.desktop"; "application/wine-extension-ini"="wine.desktop"; "application/x-ms-dos-executable"="wine.desktop";"application/x-msdownload"="wine.desktop";"application/x-msdos-program"="wine.desktop";};
   };
 
   
 
-
-
-  environment.systemPackages = with pkgs; [
-		acpi
-		ninja
-		fish
-		meson
-		nix-direnv
-		direnv
-		wlsunset
-		git
-		winetricks
-		playerctl
-		dbus
-		waybar-mpris
-		helix
-		starship
-		nnn
-		google-chrome
-		steam
-		neovim
-		libva
-		fuzzel
-		waybar
-		wireplumber
-		libsForQt5.qt5.qtgraphicaleffects  # Required for themes
-		libsForQt5.qt5.qtquickcontrols2
-		ly
-		direnv
-		nix-direnv
-		foot
-		btop
-		fastfetch
-		brightnessctl
-		keyd
-		wl-clipboard
-		zsh
-		heroic
-		grim
-		rustc
-		cargo
-		rustfmt
-		clippy
-		slurp
-		dunst
-		libnotify
-		swaybg
-		zoxide
-		lxappearance
-		adw-gtk3
-		hyprpicker
-		bluez
-		bluez-tools
-		fzf
-		unzip
-		cmake
-		pkg-config
-		niri
-		jq
-		pyright
-		rust-analyzer
-		pavucontrol
-		nur.repos.Ev357.helium
-		gnumake
-		power-profiles-daemon
-		clang-tools
-		lua-language-server
-		lua
-		ripgrep
-		unrar
-		fd
-		clippy
-		dxvk
-		wl-screenrec
-		wf-recorder
-		libva-utils  # Provides vainfo command
-		pciutils     # Provides lspci command
-		mpv
-		qbittorrent
-		nix-search-tv
-		wineWowPackages.stable
-		bat
-		fish-lsp
-	    bibata-cursors
-	    capitaine-cursors-themed
-	    rustlings
-	    xdg-desktop-portal-gnome
-	    xdg-desktop-portal-gtk
-	    nemo
-
-  ]++[inputs.zen-browser.packages."${system}".default];
-
-
   fonts.packages = with pkgs;[
-  			nerd-fonts.jetbrains-mono
-        nerd-fonts.iosevka-term
-				nerd-fonts.iosevka
-				nerd-fonts.fira-code
-				nerd-fonts.space-mono
+    nerd-fonts.jetbrains-mono
+    nerd-fonts.iosevka-term
   ];
-
-  # environment.variables = {
-  #   XCURSOR_THEME = "Bibata-Modern-Ice";
-  #   XCURSOR_SIZE = "24";
-  # };
-
-
 
   fonts.fontconfig.enable = true;
 
-  qt.style = "adwaita-dark";
-
-  fileSystems."/home/suraj/D:"={
-	device = "/dev/disk/by-uuid/582d78bd-435f-4bca-8c4b-4bee046b5725";
-	fsType = "ext4";
-	options = ["nofail"];
+  fileSystems."/home/suraj/D:" = {
+    device = "/dev/disk/by-uuid/582d78bd-435f-4bca-8c4b-4bee046b5725";
+    fsType = "ext4";
+    options = [ "nofail" ];
   };
 
   hardware.graphics.enable32Bit = true;
 
-hardware.bluetooth = {
-  enable = true;
-  powerOnBoot = true;
-  settings = {
-    General = {
-      # Shows battery charge of connected devices on supported
-      # Bluetooth adapters. Defaults to 'false'.
-      Experimental = true;
-      # When enabled other devices can connect faster to us, however
-      # the tradeoff is increased power consumption. Defaults to
-      # 'false'.
-      FastConnectable = true;
-    };
-    Policy = {
-      # Enable all controllers when they are found. This includes
-      # adapters present on start as well as adapters that are plugged
-      # in later on. Defaults to 'true'.
-      AutoEnable = true;
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = true;
+    settings = {
+      General = {
+        # Shows battery charge of connected devices on supported
+        # Bluetooth adapters. Defaults to 'false'.
+        Experimental = true;
+        # When enabled other devices can connect faster to us, however
+        # the tradeoff is increased power consumption. Defaults to
+        # 'false'.
+        FastConnectable = true;
+      };
+      Policy = {
+        # Enable all controllers when they are found. This includes
+        # adapters present on start as well as adapters that are plugged
+        # in later on. Defaults to 'true'.
+        AutoEnable = true;
+      };
     };
   };
-};
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -397,11 +454,17 @@ hardware.bluetooth = {
   system.stateVersion = "25.05"; # Did you read the comment?
 
   programs.zoxide.enable = true;
-  programs.zoxide.flags = ["--no-cmd" "--cmd j"];
+  programs.zoxide.flags = [ "--no-cmd" "--cmd j" ];
 
   nix.gc = {
-		automatic = true;
-		dates = "daily";
-		options = "--delete-generations +1";
+    automatic = true;
+    dates = "daily";
   };
+
+  nix.settings.auto-optimise-store = true; # For automatic dedup
+  # Create Wayland session file
+
+  qt.enable = true;
+
+
 }
