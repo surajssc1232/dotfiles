@@ -1,6 +1,5 @@
-waybar &
 
-swww-daemon & disown
+# swaybg -i Downloads/wallhaven-jeej1q.jpg & disown
 
 # trying to rrestart the xdg-desktop-portal-wlr
 systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE
