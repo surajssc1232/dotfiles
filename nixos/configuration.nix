@@ -6,16 +6,38 @@
       # Include the results of the hardware scan.
       ./hardware-configuration.nix
     ];
+    
+  services.gnome.gnome-keyring.enable=true;
 
+  security.pam.services.ly.enableGnomeKeyring = true;
+  security.pam.services.login.enableGnomeKeyring = true;
+  
   programs.git = {
     enable = true;
     config = {
       credential.helper = "store";
     };
   };
-  
+
+  nix.settings = {
+    substituters = [
+      "https://mirrors.bfsu.edu.cn/nix-channels/store"
+      "https://cache.nixos.org"
+    ];
+
+    trusted-public-keys = ["cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="];
+
+    http-connections = 25;
+    connect-timeout = 5;
+    download-attempts = 3;
+    
+  };
+
   hardware.xpadneo.enable = true;
 
+  documentation.enable = true;
+  documentation.man.enable = true;
+  documentation.man.generateCaches = true;
 
   # Enable hardware acceleration
   hardware.graphics = {
@@ -117,7 +139,6 @@ programs.tmux = {
     efiSupport = true;
     efiInstallAsRemovable = true;
     maxGenerations = 2;
-    package = pkgs.limine;  
   };
   
   services.libinput.enable = true;
@@ -138,7 +159,7 @@ programs.tmux = {
     "vt.global_cursor_default=0"
     "rd.systemd.show_status=false"
   ];
-
+  
   boot.consoleLogLevel = 0;
   boot.initrd.verbose = false;
   boot.initrd.kernelModules = [ "i915" ];
@@ -187,7 +208,11 @@ programs.tmux = {
     XCURSOR_THEME = "Bibata-Modern-Classic";
     XCURSOR_SIZE = "18";
     EDITOR = "hx";
+    NIXPKGS_ALLOW_UNFREE=1;
+    XDG_SOUND_THEME="freedesktop";
   };
+
+  environment.pathsToLink = ["/share/sounds"];
 
   # Configure keymap in X11
   services.xserver.xkb = {
@@ -278,27 +303,47 @@ programs.tmux = {
   # ];
 
   programs.niri.enable = true;
+  programs.mango.enable=true;
 
+
+  environment.plasma6.excludePackages = with pkgs;[
+    kdePackages.elisa
+    kdePackages.dolphin
+    kdePackages.kate
+    kdePackages.kwallet
+    kdePackages.kwalletmanager
+    kdePackages.kwallet-pam
+    kdePackages.kwrited
+    kdePackages.okular
+    kdePackages.ark
+  ];
+
+  
   programs.steam = {
     enable = true;
-    extraCompatPackages = [ pkgs.proton-ge-bin ];
+    extraCompatPackages = with pkgs; [proton-ge-bin];
   };
 
   environment.systemPackages = with pkgs; [
     acpi
-    ninja    
+    odin
+    wineWowPackages.waylandFull
+    ols
+    ninja
+    swaybg
+    libcanberra
+    sound-theme-freedesktop
+    pulseaudio
+    umu-launcher
     quickshell
     fish
     meson
-    nix-direnv
-    direnv
     wlsunset
     git
     winetricks
     google-chrome
     playerctl
     dbus
-    waybar-mpris
     starship
     nnn
     gcc
@@ -348,17 +393,16 @@ programs.tmux = {
     nixpkgs-fmt
     power-profiles-daemon
     nemo
+    steam-run
     kdePackages.qtlanguageserver
     clang-tools
     pulseaudio
-    steam-run
     lua-language-server
     lua
     ripgrep
     matugen
     nil
     nixd
-    ncurses
     unrar
     fd
     clippy
@@ -385,9 +429,8 @@ programs.tmux = {
   xdg.mime = {
     enable = true;
     defaultApplications = { "application/pdf" = "firefox.desktop"; "application/wine-extension-ini"="wine.desktop"; "application/x-ms-dos-executable"="wine.desktop";"application/x-msdownload"="wine.desktop";"application/x-msdos-program"="wine.desktop";};
-  };
 
-  
+  };
 
   fonts.packages = with pkgs;[
     nerd-fonts.jetbrains-mono
@@ -466,5 +509,5 @@ programs.tmux = {
 
   qt.enable = true;
 
-
+  
 }

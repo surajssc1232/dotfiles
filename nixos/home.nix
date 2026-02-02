@@ -13,6 +13,7 @@
     x11.enable = true;
   };
 
+
   # --- Example: Dark GTK theme (from your earlier questions) ---
   gtk = {
     enable = true;
@@ -24,7 +25,7 @@
 
     iconTheme = {
       package = pkgs.tela-icon-theme;
-      name = "Tela-dark"; # Or Tela-circle-dark, Tela-purple, etc.
+      name = "Tela-pink-dark"; # Or Tela-circle-dark, Tela-purple, etc.
     };
   };
 
