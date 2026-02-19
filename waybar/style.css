@@ -12,17 +12,18 @@
 
 /* Waybar Window Styles - Frosted Glass Effect */
 window#waybar {
-	background-color: rgba(45, 45, 50, 1.0);
+	transition: all 0.3s ease;
+	background-color: rgba(30, 30, 34, 0.9);
 	/* Grayish background */
 	padding: 10px 10px;
 	/* Increased padding for more spacing */
-	margin: 12px 12px;
+	margin: 8px 12px 0px 15px;
 	/* More space all around for true floating effect */
-	border-radius: 0px;
+	border-radius: 12px;
 	/* Rounded corners for floating effect */
-	border: 0px solid rgba(255, 255, 255, 0.18);
+	border: 1px solid #1D2021;
 	/* Subtle border for glass edge */
-	box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+	box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.6);
 	/* Shadow for depth */
 }
 
@@ -37,6 +38,7 @@ window#waybar.hidden {
 .modules-right {
 	background: transparent;
 }
+
 
 
 /* Transparent module backgrounds with subtle glass effect */
@@ -61,11 +63,13 @@ window#waybar.hidden {
 #network,
 #custom-spotify,
 #custom-window_icons {
-	background: rgba(255, 255, 255, 0.05);
+	/* background: rgba(255, 255, 255, 0.05); */
 	/* Very subtle frosted background */
+	background:transparent;
 	padding: 4px 10px;
 	margin: 2px 4px;
-	border: 1px solid rgba(255, 255, 255, 0.1);
+	/* border: 1px solid rgba(255, 255, 255, 0.1); */
+	border:none;
 	border-radius: 10px;
 	transition: all 0.3s ease;
 	/* Smooth transitions */
@@ -91,23 +95,27 @@ window#waybar.hidden {
 #custom-memory:hover,
 #pulseaudio:hover,
 #battery:hover,
-#clock:hover,
 #custom-web-links:hover,
 #memory:hover,
 #mpd:hover,
 #custom-playerctl:hover,
 #bluetooth:hover,
-#network:hover,
-#mpris:hover {
+#network:hover{
 	background: rgba(255, 255, 255, 0.15);
-	border: 1px solid rgba(255, 255, 255, 0.25);
+	/* border: 1px solid rgba(255, 255, 255, 0.25); */
+	border:none;
 	box-shadow: 0 4px 16px 0 rgba(255, 255, 255, 0.1);
 	border-radius: 10px;
 
 }
 
+#clock:hover{
+	border:1px solid #F43F3F;
+}
+
 /* Compact Workspaces */
 #workspaces button {
+		background:transparent;
     border-radius: 3px;
 		padding:1px 1px;
 		margin:1px 1px;
@@ -121,7 +129,7 @@ window#waybar.hidden {
 }
 
 #workspaces button.active {
-	background: rgba(255, 255, 255, 0.25);
+	background: rgba(234, 234, 234, 0.25);
 	color: #4CAF50;
 	border: 1px solid rgba(255, 255, 255, 0.3);
 	box-shadow: 0 4px 16px 0 rgba(76, 175, 80, 0.3);
@@ -138,6 +146,11 @@ window#waybar.hidden {
 	background: rgba(255, 64, 64, 0.4);
 	color: #FF4040;
 	border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+#workspaces button.focused {
+	background:#58504A;
+	border-radius:12px;
 }
 
 
@@ -160,6 +173,7 @@ window#waybar.hidden {
 	color: #FFFFFF;
 	background: rgba(255, 255, 255, 0.08);
 }
+
 
 #tray {
 	padding: 4px 8px;
@@ -268,8 +282,9 @@ window#waybar.hidden {
 }
 
 #mpris:hover {
-	background-color: rgba(255, 255, 255, 0.15);
+	/* background-color: rgba(255, 255, 255, 0.15); */
 	/* box-shadow: 0 4px 16px 0 rgba(255, 255, 255, 0.2); */
+	border:1px solid #F43F3F;
 }
 
 #custom-weather {
@@ -289,5 +304,6 @@ window#waybar.hidden {
 	/* background-color: rgba(255, 255, 255, 0.08); */
 	font-weight: 500;
 	border-radius: 12px;
-	border: 1px solid rgba(255, 255, 255, 0.15);
+	border:none
+	/* border: 1px solid rgba(255, 255, 255, 0.15); */
 }

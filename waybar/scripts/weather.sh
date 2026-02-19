@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # weather.sh — Waybar JSON with WAQI AQI integration
 
 # Configuration
-CITY="Mathura"
+CITY="Delhi"
 BASE_URL="https://wttr.in/${CITY}"
 WAQI_TOKEN="ae2f9b9c286f882b46c8a38430436c303ad23f67"
 
