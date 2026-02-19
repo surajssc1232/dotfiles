@@ -1,4 +1,3 @@
-
 #
 # Copy this to ~/.config/sway/config and edit it to your liking.
 #
@@ -7,9 +6,11 @@
 ### Variables
 
 # Logo key. Use Mod1 for Alt.
-exec autotiling-rs
+exec autotiling
 exec swww-daemon & disown
 exec env DISPLAY=:0 xwayland-satellite
+exec_always snappy-switcher --daemon
+
 # Home row direction keys, like vim
 set $left h
 set $down j
@@ -24,7 +25,7 @@ set $mod Super
 ### Output configuration
 #
 # Default wallpaper (more resolutions are available in /usr/share/backgrounds/sway/)
-output * bg /usr/share/backgrounds/sway/Sway_Wallpaper_Blue_1920x1080.png fill
+output * bg /home/suraj/Downloads/wallpaper.jpg fill
 #
 # Example configuration:
 #
@@ -238,36 +239,42 @@ bindsym alt+r mode "resize"
     bindsym --locked XF86MonBrightnessUp exec brightnessctl set 5%+
     # Special key to take a screenshot with grim
     bindsym Print exec grim
+    exec_always --no-startup-id waybar
 
+    bindsym Mod1+Tab exec snappy-switcher next
+    bindsym Mod1+Shift+Tab exec snappy-switcher prev
+
+    
 #
 # Status Bar:
 #
 # Read `man 5 sway-bar` for more information about this section.
-bar {
-    position top
-    # status_command while date +'%Y-%m-%d %X'; do sleep 1; done
-		status_command i3status
-    workspace_buttons yes
-    font "IosevkaTerm Nerd Font 10"
-    height 25
-    # gaps 5 10
-    tray_output *
-    tray_padding 0
+# bar {
+#     position top
+#     # status_command while date +'%Y-%m-%d %X'; do sleep 1; done
+# 		status_command waybar
+# 		mode invisible
+#     workspace_buttons yes
+#     font "IosevkaTerm Nerd Font 10"
+#     height 25
+#     # gaps 5 10
+#     tray_output *
+#     tray_padding 0
 
-    colors {
-        statusline          #e0def4
-        background          #191724
-        focused_background  #26233a
-        focused_statusline  #e0def4
-        separator           #6e6a86
-        focused_separator   #c4a7e7
+#     colors {
+#         statusline          #e0def4
+#         background          #191724
+#         focused_background  #26233a
+#         focused_statusline  #e0def4
+#         separator           #6e6a86
+#         focused_separator   #c4a7e7
 
-        focused_workspace   #c4a7e7 #26233a #e0def4
-        active_workspace    #31748f #26233a #c4a7e7
-        urgent_workspace    #eb6f92 #eb6f92 #191724
-        binding_mode        #eb6f92 #191724 #e0def4
-    }
-}
+#         focused_workspace   #c4a7e7 #26233a #e0def4
+#         active_workspace    #31748f #26233a #c4a7e7
+#         urgent_workspace    #eb6f92 #eb6f92 #191724
+#         binding_mode        #eb6f92 #191724 #e0def4
+#     }
+# }
 
 
 include /etc/sway/config.d/*
@@ -295,21 +302,38 @@ set $base09 #f6c177
 set $base0A #ebbcba
 set $base0B #31748f
 set $base0C #9ccfd8
-set $base0D #c4a7e7
+set $base0D #F43F3F
 set $base0E #f6c177
 set $base0F #524f67
 
 ## Window Colours
-client.focused   $base0D  $base00  $base06  $base08  #ffffff
-client.focused_inactive  $base02  $base00  $base06  $base08  $base02
-client.unfocused   $base01  $base00  $base06  $base08  $base02
-client.urgent   $base07  $base00  $base08  $base0B  $base02
-client.placeholder       $base02  $base00  $base06  $base03  $base04
-client.background        $base00
+# class                 border    backgr.   text      indicator  child_border
+client.focused          $base0D   $base00   $base06   $base0D    $base0D
+client.focused_inactive $base02   $base00   $base06   $base02    $base02
+client.unfocused        $base01   $base00   $base06   $base01    $base01
+client.urgent           $base08   $base00   $base08   $base08    $base08
+client.placeholder      $base02   $base00   $base06   $base02    $base02
+client.background       $base00
 
 
 # disabling the border and title
-# default_border pixel 2
+default_border pixel 2
 # default_floating_border pixel 2
-gaps inner 10
-gaps outer 2
+gaps inner 5
+gaps outer 10
+corner_radius 14
+blur enable
+blur_passes 1
+blur_radius 2
+
+
+
+layer_effects "waybar" blur enable; blur_ignore_transparent enable; corner_radius 12
+layer_effects "launcher" blur enable; blur_ignore_transparent enable;
+
+
+shadows enable
+shadow_blur_radius 14
+shadow_color #0000007F
+
+for_window [floating] border pixel 2

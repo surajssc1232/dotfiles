@@ -38,23 +38,26 @@
   # --- Important: Match your NixOS version ---
   home.stateVersion = "25.05"; # Or whatever your unstable channel uses
 
-  qt = {
-    enable = true; # Required to manage Qt settings
+  qt.enable = true;
+  qt.platformTheme.name = "adwaita";
+  qt.style.name = "adwaita";
+  qt.style.package = pkgs.adwaita-qt;
+  
 
-
-    # Makes Qt apps follow your GTK theme where possible (good integration)
-    platformTheme.name = "adwaita"; # Or "gnome" for GNOME-like behavior
-    style.name = "adwaita-dark";
-  };
-
+  user.sessionVariables.EDITOR="hx";
   programs.neovim = {
     enable = true;
     defaultEditor = true;
   };
 
+  home.packages = with pkgs; [
+    adwaita-qt6
+  ];
+
   
   xdg.configFile."gtk-3.0/settings.ini".force = true;
   home.file.".icons/default/index.theme".force = true;
+
 
   
 }

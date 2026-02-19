@@ -6,11 +6,6 @@
       # Include the results of the hardware scan.
       ./hardware-configuration.nix
     ];
-    
-  services.gnome.gnome-keyring.enable=true;
-
-  security.pam.services.ly.enableGnomeKeyring = true;
-  security.pam.services.login.enableGnomeKeyring = true;
   
   programs.git = {
     enable = true;
@@ -24,6 +19,7 @@
       "https://mirrors.bfsu.edu.cn/nix-channels/store"
       "https://cache.nixos.org"
     ];
+    trusted-users = [ "root" "suraj" "@wheel" ];
 
     trusted-public-keys = ["cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="];
 
@@ -202,6 +198,7 @@ programs.tmux = {
     LC_ALL = "en_US.UTF-8";
     LIBVA_DRIVER_NAME = "iHD"; # Use iHD for intel-media-driver
     EDITOR = "hx";
+    QT_QPA_PLATFORMTHEME="qt6ct";
   };
 
   environment.variables = {
@@ -288,8 +285,29 @@ programs.tmux = {
   services.udev.packages = [pkgs.game-devices-udev-rules];
   
   services.power-profiles-daemon.enable = true;
+  services.greetd = {
+    enable = true;
+    useTextGreeter = true;
+    settings = {
+      default_session = {
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd niri-session";
+        user = "suraj";
+      };
+    }
+    ;
+    };
 
-  services.displayManager.ly.enable = true;
+  systemd.services.greetd.serviceConfig = {
+    Type = "idle";
+    StandardInput = "tty";
+    StandardOutput = "tty";
+    StandardError = "journal";
+    TTYReset = true;
+    TTYVHangup = true;
+    TTYVDisallocate = true;
+  };
+
+
   
   services.dbus.enable = true;
   services.dbus.packages = [ pkgs.playerctl ];
@@ -304,6 +322,9 @@ programs.tmux = {
 
   programs.niri.enable = true;
   programs.mango.enable=true;
+
+
+  
 
 
   environment.plasma6.excludePackages = with pkgs;[
@@ -329,10 +350,12 @@ programs.tmux = {
     odin
     wineWowPackages.waylandFull
     ols
+    tuigreet
+    ruff
+    python3
+    waybar
     ninja
     swaybg
-    libcanberra
-    sound-theme-freedesktop
     pulseaudio
     umu-launcher
     quickshell
@@ -364,7 +387,6 @@ programs.tmux = {
     brightnessctl
     keyd
     wl-clipboard
-    zsh
     tmux
     heroic
     grim
@@ -388,6 +410,7 @@ programs.tmux = {
     jq
     pyright
     pavucontrol
+    lutris
     gnumake
     xwayland
     nixpkgs-fmt
@@ -509,5 +532,4 @@ programs.tmux = {
 
   qt.enable = true;
 
-  
 }
