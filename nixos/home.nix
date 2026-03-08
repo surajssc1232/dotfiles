@@ -14,13 +14,13 @@
     icon = "/home/suraj/Downloads/planet-of-lana-2.jpg";
   };
 
-  home.pointerCursor = {
-    name = "Bibata-Modern-Classic";
-    package = pkgs.bibata-cursors;
-    size = 24;
-    gtk.enable = true;
-    x11.enable = true;
-  };
+  # home.pointerCursor = {
+  #   name = "Bibata-Modern-Classic";
+  #   package = pkgs.bibata-cursors;
+  #   size = 24;
+  #   gtk.enable = true;
+  #   x11.enable = true;
+  # };
 
   xdg.mimeApps.enable = true; # Ensure this is set to true
   xdg.mimeApps.defaultApplications = {
@@ -81,8 +81,6 @@
 
   
   xdg.configFile."gtk-3.0/settings.ini".force = true;
-  home.file.".icons/default/index.theme".force = true;
-
 
   
 }
