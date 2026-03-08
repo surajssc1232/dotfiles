@@ -1,4 +1,4 @@
-{ pkgs, inputs, system, ... }:
+{ pkgs, inputs, ... }:
 
 {
   imports =
@@ -6,6 +6,7 @@
       # Include the results of the hardware scan.
       ./hardware-configuration.nix
     ];
+
   
   programs.git = {
     enable = true;
@@ -16,7 +17,6 @@
 
   nix.settings = {
     substituters = [
-      "https://mirrors.bfsu.edu.cn/nix-channels/store"
       "https://cache.nixos.org"
     ];
     trusted-users = [ "root" "suraj" "@wheel" ];
@@ -33,7 +33,22 @@
 
   documentation.enable = true;
   documentation.man.enable = true;
-  documentation.man.generateCaches = true;
+  documentation.man.cache.enable=true;
+
+  hardware.nvidia = {
+    modesetting.enable = true;
+    powerManagement.enable = true;
+    open = true;
+  };
+
+
+  nixpkgs.config.packageOverrides = pkgs: {
+    bottles = pkgs.bottles.override {
+    removeWarningPopup = true;
+    };
+  };
+  
+  
 
   # Enable hardware acceleration
   hardware.graphics = {
@@ -45,9 +60,10 @@
       libvdpau-va-gl
     ];
   };
-
   
   programs.fish.enable = true;
+  programs.direnv.enable = true;
+  programs.direnv.nix-direnv.enable = true;
   users.defaultUserShell = pkgs.fish;
 
   # nix-ld
@@ -127,22 +143,26 @@ programs.tmux = {
   # Bootloader section
   boot.loader.systemd-boot.enable = false;
   boot.loader.grub.enable = false;
-
+  boot.loader.efi.canTouchEfiVariables = false;
   boot.loader.limine = {
     enable = true;
     style.backdrop = "282828";
     style.wallpapers = [];
     efiSupport = true;
     efiInstallAsRemovable = true;
-    maxGenerations = 2;
+    maxGenerations = 3;
   };
   
   services.libinput.enable = true;
+  services.displayManager.ly.enable = true;
+  services.displayManager.defaultSession = "niri";
+  services.gvfs.enable = true;
+  services.flatpak.enable = true;
 
   services.logind.settings = {
     Login = {
-      HandlePowerKey = "ignore";
-      HandleLidSwitch = "suspend";
+      HandlePowerKey = "suspend";
+      HandleLidSwitch = "ignore";
     };
   };
   # Add these lines AFTER the boot.loader section
@@ -197,15 +217,13 @@ programs.tmux = {
     LANG = "en_US.UTF-8";
     LC_ALL = "en_US.UTF-8";
     LIBVA_DRIVER_NAME = "iHD"; # Use iHD for intel-media-driver
-    EDITOR = "hx";
-    QT_QPA_PLATFORMTHEME="qt6ct";
+    # EDITOR = "hx";
   };
 
   environment.variables = {
     XCURSOR_THEME = "Bibata-Modern-Classic";
-    XCURSOR_SIZE = "18";
+    XCURSOR_SIZE = "14";
     EDITOR = "hx";
-    NIXPKGS_ALLOW_UNFREE=1;
     XDG_SOUND_THEME="freedesktop";
   };
 
@@ -285,17 +303,17 @@ programs.tmux = {
   services.udev.packages = [pkgs.game-devices-udev-rules];
   
   services.power-profiles-daemon.enable = true;
-  services.greetd = {
-    enable = true;
-    useTextGreeter = true;
-    settings = {
-      default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd niri-session";
-        user = "suraj";
-      };
-    }
-    ;
-    };
+  # services.greetd = {
+  #   enable = true;
+  #   useTextGreeter = true;
+  #   settings = {
+  #     default_session = {
+  #       command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd niri-session";
+  #       user = "suraj";
+  #     };
+  #   }
+  #   ;
+  #   };
 
   systemd.services.greetd.serviceConfig = {
     Type = "idle";
@@ -313,20 +331,20 @@ programs.tmux = {
   services.dbus.packages = [ pkgs.playerctl ];
 
   # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
+  nixpkgs.config = {
+      allowUnfree = true;
+    };
 
+  services.xserver.videoDrivers = [ "nvidia" "amdgpu" ];
 
-  # nixpkgs.overlays = [
-  #   inputs.nur.overlays.default # This exposes all NUR repos
-  # ];
+  nixpkgs.overlays = [
+    inputs.nur.overlays.default # This exposes all NUR repos
+  ];
 
   programs.niri.enable = true;
   programs.mango.enable=true;
 
-
-  
-
-
+ 
   environment.plasma6.excludePackages = with pkgs;[
     kdePackages.elisa
     kdePackages.dolphin
@@ -347,10 +365,15 @@ programs.tmux = {
 
   environment.systemPackages = with pkgs; [
     acpi
-    odin
-    wineWowPackages.waylandFull
-    ols
+    wineWow64Packages.waylandFull
+    bottles
+    any-nix-shell
+    pkgs.nur.repos.Ev357.helium
+    libudev-zero
+    pkg-config
     tuigreet
+    gleam
+    erlang
     ruff
     python3
     waybar
@@ -358,7 +381,6 @@ programs.tmux = {
     swaybg
     pulseaudio
     umu-launcher
-    quickshell
     fish
     meson
     wlsunset
@@ -368,7 +390,6 @@ programs.tmux = {
     playerctl
     dbus
     starship
-    nnn
     gcc
     zig
     rustup
@@ -439,21 +460,14 @@ programs.tmux = {
     nix-search-tv
     bat
     fish-lsp
-    wineWowPackages.stable
-    wineWowPackages.waylandFull
     xdg-desktop-portal-gnome
     xdg-desktop-portal-gtk    
     papirus-icon-theme
     xwayland-satellite
-    bibata-cursors
+    bibata-cursors    
+  ];
 
-  ] ++ [ inputs.zen-browser.packages."${system}".default ];
 
-  xdg.mime = {
-    enable = true;
-    defaultApplications = { "application/pdf" = "firefox.desktop"; "application/wine-extension-ini"="wine.desktop"; "application/x-ms-dos-executable"="wine.desktop";"application/x-msdownload"="wine.desktop";"application/x-msdos-program"="wine.desktop";};
-
-  };
 
   fonts.packages = with pkgs;[
     nerd-fonts.jetbrains-mono
@@ -469,6 +483,8 @@ programs.tmux = {
   };
 
   hardware.graphics.enable32Bit = true;
+
+  powerManagement.powertop.enable = true;
 
   hardware.bluetooth = {
     enable = true;
@@ -503,7 +519,7 @@ programs.tmux = {
   # List services that you want to enable:
 
   # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
+  services.openssh.enable = true;
 
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
@@ -527,9 +543,7 @@ programs.tmux = {
     dates = "daily";
   };
 
-  nix.settings.auto-optimise-store = true; # For automatic dedup
-  # Create Wayland session file
 
-  qt.enable = true;
+  nix.settings.auto-optimise-store = true; 
 
 }

@@ -4,7 +4,7 @@
   inputs = {
 
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-    zen-browser.url = "github:0xc000022070/zen-browser-flake";
+    # zen-browser.url = "github:0xc000022070/zen-browser-flake";
 
     nur = {
       url = "github:nix-community/NUR";
@@ -20,10 +20,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-
     nix-gaming.url = "github:fufexan/nix-gaming";
-
-
 
   };
 
@@ -51,7 +48,7 @@
               useUserPackages = true;
 
               # This imports your separate home.nix file
-              users.suraj = import ./home.nix; # Replace "yourUsername" with your actual username
+              users.suraj = import ./home.nix; 
 
               # Optional: Make inputs available in home.nix (e.g., for zen-browser)
               extraSpecialArgs = { inherit inputs; };

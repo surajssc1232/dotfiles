@@ -1,9 +1,18 @@
-{ pkgs, ... }: # You can add more args like inputs if needed
+{ pkgs,lib, ... }: # You can add more args like inputs if needed
 
 {
   # --- Required basics ---
   home.username = "suraj"; # Replace with your actual username
   home.homeDirectory = "/home/suraj";
+
+  xdg.desktopEntries."planet-of-lana-2" = {
+    name = "Planet of lana 2";
+    exec = "bottles-cli run -b \"planet of lana 2\" -p \"Planet of Lana 2\"";
+    terminal = false;
+    type = "Application";
+    categories = ["Game"];
+    icon = "/home/suraj/Downloads/planet-of-lana-2.jpg";
+  };
 
   home.pointerCursor = {
     name = "Bibata-Modern-Classic";
@@ -13,6 +22,13 @@
     x11.enable = true;
   };
 
+  xdg.mimeApps.enable = true; # Ensure this is set to true
+  xdg.mimeApps.defaultApplications = {
+    "application/x-bittorrent" = "org.qbittorrent.qBittorrent.desktop";
+    "x-scheme-handler/magnet" = "org.qbittorrent.qBittorrent.desktop";
+  };
+  xdg.configFile."mimeapps.list".force = true;
+  xdg.dataFile."applications/mimeapps.list".force = true;
 
   # --- Example: Dark GTK theme (from your earlier questions) ---
   gtk = {
@@ -33,24 +49,33 @@
     color-scheme = "prefer-dark";
   };
 
-
-
   # --- Important: Match your NixOS version ---
   home.stateVersion = "25.05"; # Or whatever your unstable channel uses
 
-  qt.enable = true;
-  qt.platformTheme.name = "adwaita";
-  qt.style.name = "adwaita";
-  qt.style.package = pkgs.adwaita-qt;
-  
+  qt = {
+    enable = true;
+    platformTheme.name = "adwaita";
+    style = {
+      name="adwaita-dark";
+      package = pkgs.adwaita-qt6;
+    };
+  };
 
-  user.sessionVariables.EDITOR="hx";
+
+  home.sessionVariables = {
+    EDITOR=lib.mkForce "hx";
+    QT_STYLE_OVERRIDE = lib.mkForce "adwaita-dark";
+    QT_QPA_PLATFORMTHEME = lib.mkForce "adwaita";
+    QT_QPA_PLATFORM = lib.mkForce "adwaita";
+  };
+
+  
   programs.neovim = {
     enable = true;
-    defaultEditor = true;
   };
 
   home.packages = with pkgs; [
+    adwaita-qt
     adwaita-qt6
   ];
 
