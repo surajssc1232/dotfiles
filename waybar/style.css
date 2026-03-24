@@ -19,12 +19,11 @@ window#waybar {
 	/* Increased padding for more spacing */
 	margin: 8px 12px 0px 15px;
 	/* More space all around for true floating effect */
-	border-radius: 12px;
+	border-radius: 8px;
 	/* Rounded corners for floating effect */
 	border: 1px solid #1D2021;
 	/* Subtle border for glass edge */
-	box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.6);
-	/* Shadow for depth */
+	/* box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.6); */
 }
 
 /* Hidden state */
@@ -67,10 +66,10 @@ window#waybar.hidden {
 	/* Very subtle frosted background */
 	background:transparent;
 	padding: 4px 10px;
-	margin: 2px 4px;
+	margin: 2px 2px;
 	/* border: 1px solid rgba(255, 255, 255, 0.1); */
 	border:none;
-	border-radius: 10px;
+	border-radius: 8px;
 	transition: all 0.3s ease;
 	/* Smooth transitions */
 }
@@ -110,7 +109,7 @@ window#waybar.hidden {
 }
 
 #clock:hover{
-	border:1px solid #F43F3F;
+	/* border:1px solid #F43F3F; */
 }
 
 /* Compact Workspaces */
