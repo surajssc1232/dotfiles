@@ -1,7 +1,10 @@
-theme="onedark"
+theme="gruvbox"
 
 [editor]
 clipboard-provider="wayland"
+gutters=["diff","line-numbers","spacer"]
+auto-completion=true
+completion-trigger-len = 1
 
 [keys.normal]
 a="insert_mode"
@@ -10,3 +13,13 @@ a="insert_mode"
 w=":write"
 q=":quit!"
 
+# [editor.indent-guides]
+# render=true
+# character="│"
+# skip-levels=0
+
+[editor.inline-diagnostics]
+cursor-line = "info"
+# other-lines = "error"
+prefix-len = 2
+max-diagnostics=1

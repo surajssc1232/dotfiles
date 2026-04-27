@@ -1,4 +1,4 @@
-{ pkgs, inputs, ... }:
+{lib, pkgs, inputs, ... }:
 
 {
   imports =
@@ -6,7 +6,6 @@
       # Include the results of the hardware scan.
       ./hardware-configuration.nix
     ];
-
   
   programs.git = {
     enable = true;
@@ -15,6 +14,7 @@
     };
   };
 
+  
   nix.settings = {
     substituters = [
       "https://cache.nixos.org"
@@ -31,9 +31,15 @@
 
   hardware.xpadneo.enable = true;
 
-  documentation.enable = true;
-  documentation.man.enable = true;
-  documentation.man.cache.enable=true;
+  documentation = {
+    enable = true;
+    man = {
+      enable = true;
+      man-db.enable = true;
+    };
+
+    dev.enable = true;
+  };
 
   hardware.nvidia = {
     modesetting.enable = true;
@@ -47,12 +53,11 @@
     removeWarningPopup = true;
     };
   };
-  
-  
 
   # Enable hardware acceleration
   hardware.graphics = {
     enable = true;
+    enable32Bit = true;
     extraPackages = with pkgs; [
       intel-media-driver # For Tiger Lake and newer Intel GPUs
       vulkan-loader
@@ -67,13 +72,13 @@
   users.defaultUserShell = pkgs.fish;
 
   # nix-ld
-  programs.nix-ld.enable = true;
+  # programs.nix-ld.enable = true;
 
-programs.tmux = {
-  enable = true;
-  terminal = "screen-256color";
-  clock24 = true;  # Use 24-hour format
-  escapeTime =  0;
+  programs.tmux = {
+    enable = true;
+    terminal = "screen-256color";
+    clock24 = true;  # Use 24-hour format
+    escapeTime =  0;
 
   
   extraConfig = ''
@@ -129,14 +134,14 @@ programs.tmux = {
   '';
 };
 
-    programs.nix-ld.libraries = with pkgs; [
-    stdenv.cc.cc.lib
-    zlib
-    openssl
-    curl
-    glibc
-    libgcc
-  ];
+  #   programs.nix-ld.libraries = with pkgs; [
+  #   stdenv.cc.cc.lib
+  #   zlib
+  #   openssl
+  #   curl
+  #   glibc
+  #   libgcc
+  # ];
 
 
 
@@ -152,7 +157,7 @@ programs.tmux = {
     efiInstallAsRemovable = true;
     maxGenerations = 3;
   };
-  
+
   services.libinput.enable = true;
   services.displayManager.ly.enable = true;
   services.displayManager.defaultSession = "niri";
@@ -161,10 +166,18 @@ programs.tmux = {
 
   services.logind.settings = {
     Login = {
-      HandlePowerKey = "suspend";
-      HandleLidSwitch = "ignore";
+      HandlePowerKey = lib.mkForce "suspend";
+      HandleLidSwitch = lib.mkForce "suspend";
+      HandleLidSwitchExternalPower=lib.mkForce "suspend";
+      HandleLidSwitchDocked=lib.mkForce "ignore";
+      LidSwitchIgnoreInhibited = lib.mkForce "yes";
     };
   };
+
+  services.autorandr.ignoreLid = true;
+  services.upower.ignoreLid = true;
+  services.autorandr.enable = true;
+  
   # Add these lines AFTER the boot.loader section
   boot.kernelParams = [
     "video=1920x1080"
@@ -174,6 +187,7 @@ programs.tmux = {
     "rd.udev.log_level=0" # Reduce udev log verbosity
     "vt.global_cursor_default=0"
     "rd.systemd.show_status=false"
+    "usbcore.autosuspend=-1"
   ];
   
   boot.consoleLogLevel = 0;
@@ -221,7 +235,7 @@ programs.tmux = {
   };
 
   environment.variables = {
-    XCURSOR_THEME = "Bibata-Modern-Classic";
+    # XCURSOR_THEME = "Bibata-Modern-Classic";
     XCURSOR_SIZE = "14";
     EDITOR = "hx";
     XDG_SOUND_THEME="freedesktop";
@@ -236,6 +250,7 @@ programs.tmux = {
   };
 
   services.xserver.enable = true;
+  services.xserver.excludePackages = [ pkgs.xorg.xorgserver ];
   services.upower.enable = true;
 
   services.pipewire = {
@@ -344,11 +359,13 @@ programs.tmux = {
   programs.niri.enable = true;
   programs.mango.enable=true;
 
- 
+  environment.budgie.excludePackages = [ pkgs.mate-terminal ];
+
   environment.plasma6.excludePackages = with pkgs;[
     kdePackages.elisa
     kdePackages.dolphin
     kdePackages.kate
+    kdePackages.konsole
     kdePackages.kwallet
     kdePackages.kwalletmanager
     kdePackages.kwallet-pam
@@ -356,16 +373,31 @@ programs.tmux = {
     kdePackages.okular
     kdePackages.ark
   ];
+  environment.cosmic.excludePackages = [ pkgs.cosmic-player
+    pkgs.cosmic-applibrary
+    pkgs.cosmic-edit
+    pkgs.cosmic-files
+    pkgs.cosmic-term
+  ];
 
-  
-  programs.steam = {
-    enable = true;
-    extraCompatPackages = with pkgs; [proton-ge-bin];
-  };
+  environment.gnome.excludePackages = [
+     pkgs.showtime
+     pkgs.epiphany
+     pkgs.gnome-calculator
+     pkgs.gnome-calendar
+     pkgs.gnome-feeds
+  ];
+
 
   environment.systemPackages = with pkgs; [
     acpi
+    csharp-ls
+    omnisharp-roslyn
+    bash-language-server
+    dotnet-sdk
+    ffmpeg
     wineWow64Packages.waylandFull
+    tealdeer
     bottles
     any-nix-shell
     pkgs.nur.repos.Ev357.helium
@@ -386,18 +418,19 @@ programs.tmux = {
     wlsunset
     git
     winetricks
+    vulkan-loader
+    quickshell
     google-chrome
     playerctl
     dbus
     starship
     gcc
+    gdb
     zig
     rustup
-    steam
     neovim
     libva
     fuzzel
-    waybar
     wireplumber
     libsForQt5.qt5.qtgraphicaleffects # Required for themes
     libsForQt5.qt5.qtquickcontrols2
@@ -414,7 +447,6 @@ programs.tmux = {
     cargo
     clippy
     slurp
-    dunst
     libnotify
     zoxide
     lxappearance
@@ -437,9 +469,13 @@ programs.tmux = {
     nixpkgs-fmt
     power-profiles-daemon
     nemo
-    steam-run
     kdePackages.qtlanguageserver
     clang-tools
+    # (pkgs.writeShellScriptBin "clangd" ''
+    #     exec ${pkgs.clang-tools}/bin/clangd \
+    #       --query-driver=${pkgs.gcc}/bin/g++,${pkgs.clang}/bin/clang++ \
+    #       "$@"
+    #   '')
     pulseaudio
     lua-language-server
     lua
@@ -482,9 +518,8 @@ programs.tmux = {
     options = [ "nofail" ];
   };
 
-  hardware.graphics.enable32Bit = true;
 
-  powerManagement.powertop.enable = true;
+  powerManagement.powertop.enable = false;
 
   hardware.bluetooth = {
     enable = true;

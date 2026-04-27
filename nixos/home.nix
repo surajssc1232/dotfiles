@@ -1,26 +1,18 @@
-{ pkgs,lib, ... }: # You can add more args like inputs if needed
+{ pkgs,lib,... }: # You can add more args like inputs if needed
 
 {
   # --- Required basics ---
   home.username = "suraj"; # Replace with your actual username
   home.homeDirectory = "/home/suraj";
-
-  xdg.desktopEntries."planet-of-lana-2" = {
-    name = "Planet of lana 2";
-    exec = "bottles-cli run -b \"planet of lana 2\" -p \"Planet of Lana 2\"";
-    terminal = false;
-    type = "Application";
-    categories = ["Game"];
-    icon = "/home/suraj/Downloads/planet-of-lana-2.jpg";
+   
+  home.pointerCursor = {
+    name = "capitaine-cursors-white";
+    package = pkgs.capitaine-cursors;
+    size = 24;
+    gtk.enable = true;
+    x11.enable = true;
   };
 
-  # home.pointerCursor = {
-  #   name = "Bibata-Modern-Classic";
-  #   package = pkgs.bibata-cursors;
-  #   size = 24;
-  #   gtk.enable = true;
-  #   x11.enable = true;
-  # };
 
   xdg.mimeApps.enable = true; # Ensure this is set to true
   xdg.mimeApps.defaultApplications = {
@@ -79,8 +71,7 @@
     adwaita-qt6
   ];
 
-  
   xdg.configFile."gtk-3.0/settings.ini".force = true;
 
-  
 }
+

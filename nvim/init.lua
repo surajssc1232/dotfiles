@@ -1,3 +1,1 @@
--- Neovim Configuration Entry Point
--- Load modular configuration
-require("config")
+/nix/store/fwawm9d0w7lczbz42gksi96l0frhx82i-home-manager-files/.config/nvim/init.lua

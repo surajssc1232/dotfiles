@@ -1,6 +1,55 @@
 [language-server]
 lean = { command = "lake", args = ["serve"] }
 clangd = { command = "clangd" }
+gleam = {command = "gleam",args = ["lsp"]}
+
+
+
+[[language]]
+name = "qml"
+language-servers = ["qmlls"]
+
+[language-server.qmlls]
+command = "qmlls"
+args = ["-E"]
+
+[[language]]
+name = "c-sharp"
+scope = "source.cs"
+injection-regex = "c-sharp|cs"
+file-types = ["cs"]
+roots = ["*.sln", "*.csproj"]
+language-servers = [ "csharp-ls","omnisharp" ]
+indent = { tab-width = 4, unit = "    " }
+
+[language-server.omnisharp]
+command = "OmniSharp"
+args = ["-lsp"]
+# it lags  sometimes because its old so timeout is a good idea
+timeout = 60
+
+[[language]]
+name = "go"
+auto-format = true
+# Use goimports for automatic organized imports on save
+formatter = { command = "goimports" }
+
+[language-server.gopls.config]
+# Enable advanced gopls features
+"ui.diagnostic.staticcheck" = true
+"formatting.gofumpt" = true
+"ui.completion.usePlaceholders" = true
+"ui.navigation.importShortcut" = "Both"
+
+[language-server.gopls.config.hints]
+# Enable inlay hints (inline type information)
+assignVariableTypes = true
+compositeLiteralFields = true
+compositeLiteralTypes = true
+constantValues = true
+functionTypeParameters = true
+parameterNames = true
+rangeVariableTypes = true
 
 
 [[language]]
@@ -137,3 +186,60 @@ args = { console = "internalConsole", attachCommands = [ "platform select remote
 [[grammar]]
 name = "cpp"
 source = { git = "https://github.com/tree-sitter/tree-sitter-cpp", rev = "56455f4245baf4ea4e0881c5169de69d7edd5ae7" }
+
+[[language]]
+name = "gleam"
+scope = "source.gleam"
+injection-regex = "gleam"
+file-types = ["gleam"]
+roots = ["gleam.toml"]
+auto-format = true
+language-servers = [ "gleam" ]
+
+
+# Bash Configuration
+[[language]]
+name = "bash"
+language-servers = [ "bash-language-server" ]
+
+[language-server.bash-language-server]
+command = "bash-language-server"
+args = ["start"]
+
+# Fish Configuration
+[[language]]
+name = "fish"
+language-servers = [ "fish-lsp" ]
+
+[language-server.fish-lsp]
+command = "fish-lsp"
+args = ["start"]
+
+
+
+# Define the Language Server
+[language-server.ols]
+command = "ols"
+
+# Define the Odin Language
+[[language]]
+name = "odin"
+scope = "source.odin"
+injection-regex = "odin"
+file-types = ["odin"]
+roots = ["ols.json", ".git"]
+comment-token = "//"
+language-servers = ["ols"]
+indent = { tab-width = 4, unit = "    " }
+
+[language.auto-pairs]
+'(' = ')'
+'{' = '}'
+'[' = ']'
+'"' = '"'
+'`' = '`'
+
+# Add Tree-sitter Grammar (if your version doesn't have it)
+[[grammar]]
+name = "odin"
+source = { git = "https://github.com/tree-sitter-grammars/tree-sitter-odin" }

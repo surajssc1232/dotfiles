@@ -1,10 +1,9 @@
 if status is-interactive
-    bind \em toggle-touchpad
-    starship init fish | source
-    zoxide init fish | source
-    set -U fish_greeting
-    fastfetch -s OS:HOST:Kernel:Uptime:Shell:WM:Terminal:CPU:GPU:Disk:Memory
+    # Commands to run in interactive sessions can go here
+    alias ns="nix-search-tv print | fzf --preview 'nix-search-tv preview {}' --scheme history"
+    abbr -a --position anywhere -- --help '--help | bat -plhelp'
+    abbr -a --position anywhere -- -h '-h | bat -plhelp'
 
+    alias fp='fzf --preview "bat --color=always --style=numbers --line-range=:500 {}"'
+    export MANPAGER="bat -plman"
 end
-
-set -gx NIXPKGS_ALLOW_UNFREE 1
