@@ -1,4 +1,6 @@
 # This file contains fish universal variable definitions.
 # VERSION: 3.0
+SETUVAR --export EDITOR:nvim
 SETUVAR __fish_initialized:4300
-SETUVAR fish_user_paths:/usr/bin\x1e/home/suraj/\x2ecargo/bin
+SETUVAR fish_greeting:
+SETUVAR fish_user_paths:/home/suraj/\x2elocal/bin\x1e/home/suraj/\x2enpm\x2dglobal
