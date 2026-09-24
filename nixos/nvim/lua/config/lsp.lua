@@ -18,6 +18,30 @@ local servers = {
 		filetypes = { "fish" },
 	},
 
+	-- Option completion comes from evaluating the system flake, so it always
+	-- matches the NixOS and home-manager versions actually in use.
+	nixd = {
+		cmd = { "nixd" },
+		filetypes = { "nix" },
+		root_markers = { "flake.nix", ".git" },
+		settings = {
+			nixd = {
+				nixpkgs = {
+					expr = 'import (builtins.getFlake "/home/suraj/dotfiles/nixos").inputs.nixpkgs { }',
+				},
+				formatting = { command = { "nixpkgs-fmt" } },
+				options = {
+					nixos = {
+						expr = '(builtins.getFlake "/home/suraj/dotfiles/nixos").nixosConfigurations.nixos.options',
+					},
+					home_manager = {
+						expr = '(builtins.getFlake "/home/suraj/dotfiles/nixos").nixosConfigurations.nixos.options.home-manager.users.type.getSubOptions []',
+					},
+				},
+			},
+		},
+	},
+
 	ols = {
 		cmd = { "ols" },
 		filetypes = { "odin" },
