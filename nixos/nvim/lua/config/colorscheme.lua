@@ -1,7 +1,7 @@
 -- Colorscheme, plus highlight overrides that make floats and the completion
 -- popup follow whatever theme is active.
 
-vim.cmd.colorscheme("gruvbox-material")
+vim.cmd.colorscheme("gruvbox")
 
 vim.api.nvim_create_autocmd("ColorScheme", {
 	pattern = "*",
