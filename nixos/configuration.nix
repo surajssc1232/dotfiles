@@ -52,7 +52,11 @@
     ];
 
     http-connections = 25;
-    connect-timeout = 5;
+    # Phone-hotspot DNS can take longer than 5s to answer, which made every
+    # rebuild print "Resolving timed out" retries.
+    connect-timeout = 15;
+    # Uncommitted edits in ~/dotfiles are normal between rebuilds.
+    warn-dirty = false;
     download-attempts = 3;
 
   };
@@ -361,6 +365,10 @@
   # Enable networking
   networking.networkmanager.enable = true;
 
+  # Local DNS cache: a rebuild asks for cache.nixos.org thousands of times,
+  # and without this every one of those went out to the upstream resolver.
+  services.resolved.enable = true;
+
   nix.settings.experimental-features = [
     "nix-command"
     "flakes"
@@ -578,9 +586,7 @@
   environment.systemPackages = with pkgs; [
     acpi
     google-chrome
-    activitywatch
     prismlauncher
-    nushell
     uv
     chiaki-ng
     streamlink
@@ -591,7 +597,6 @@
     nix-search-tv
     ffmpeg
     wineWow64Packages.waylandFull
-    jetbrains.idea
     tealdeer
     nur.repos.Ev357.helium
     pkg-config
