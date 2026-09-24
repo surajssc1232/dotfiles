@@ -14,6 +14,16 @@ Rectangle {
 	property bool showActions: true
 	signal closed()
 
+	// The "default" action is what a notification means by "clicking me does
+	// the obvious thing" — opening the chat, focusing the download. Most apps
+	// label it "Activate", and showing that as a button next to the others is
+	// noise: the whole card is the button. So it is pulled out of the row and
+	// wired to the card body instead.
+	readonly property var defaultAction:
+		notif.actions.find(a => a.identifier === "default") ?? null
+	readonly property var otherActions:
+		notif.actions.filter(a => a.identifier !== "default")
+
 	readonly property color urgencyColor: notif.urgency === NotificationUrgency.Critical
 		? Config.red
 		: notif.urgency === NotificationUrgency.Low ? Config.fgDim : Config.accent
@@ -24,6 +34,21 @@ Rectangle {
 	color: Config.bg
 	border.width: 1
 	border.color: notif.urgency === NotificationUrgency.Critical ? Config.red : Config.border
+
+	// Behind everything, so the action buttons and the close button still take
+	// their own clicks. With no default action there is nothing to activate,
+	// and dismissing is the only sensible thing a click can mean.
+	MouseArea {
+		anchors.fill: parent
+		z: -1
+
+		hoverEnabled: true
+		cursorShape: Qt.PointingHandCursor
+		onClicked: {
+			root.defaultAction?.invoke();
+			root.closed();
+		}
+	}
 
 	// Urgency stripe down the leading edge.
 	Rectangle {
@@ -95,10 +120,10 @@ Rectangle {
 			RowLayout {
 				Layout.topMargin: 4
 				spacing: 6
-				visible: root.showActions && root.notif.actions.length > 0
+				visible: root.showActions && root.otherActions.length > 0
 
 				Repeater {
-					model: root.notif.actions
+					model: root.otherActions
 
 					MouseArea {
 						id: action

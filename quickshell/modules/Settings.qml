@@ -327,6 +327,27 @@ Pill {
 								Layout.preferredHeight: root.unit
 
 								variant: "mini"
+								icon: Config.icons.disconnect
+								label: "Log out"
+								detail: "Log out"
+								// Ends the systemd session rather than killing
+								// the compositor: terminate-user is the fallback
+								// for a session id that is not set.
+								onTriggered: {
+									root.pane = "";
+									layer.open = false;
+									Quickshell.execDetached({ command: ["sh", "-c",
+										'loginctl terminate-session "${XDG_SESSION_ID:-}" '
+										+ '|| loginctl terminate-user "$USER"'] });
+								}
+							}
+
+							Tile {
+								Layout.fillWidth: true
+								Layout.minimumWidth: 0
+								Layout.preferredHeight: root.unit
+
+								variant: "mini"
 								icon: Config.icons.nightLight
 								label: "Suspend"
 								detail: "Suspend"
@@ -359,6 +380,7 @@ Pill {
 								Layout.preferredHeight: root.unit
 
 								variant: "mini"
+								danger: true
 								icon: Config.icons.plug
 								label: "Shut down"
 								detail: "Shut down"

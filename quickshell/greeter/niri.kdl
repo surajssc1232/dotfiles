@@ -1,0 +1,34 @@
+// Compositor config for the login screen only.
+//
+// Deliberately bare: this niri exists to hold one layer-shell surface and to
+// hand it a keyboard. No keybinds are defined on purpose — there is nothing to
+// bind to, and a greeter that can spawn a terminal is not a greeter.
+
+input {
+    keyboard {
+        xkb {
+        }
+    }
+
+    touchpad {
+        tap
+        natural-scroll
+    }
+}
+
+// The greeter itself. Everything else about this session is incidental.
+//
+// An absolute path because the greetd session does not inherit a login shell's
+// PATH, and /etc/greeter rather than ~/.config because this runs as the
+// `greeter` user, which cannot read /home/suraj (0700).
+spawn-at-startup "/run/current-system/sw/bin/qs" "-p" "/etc/greeter"
+
+hotkey-overlay {
+    skip-at-startup
+}
+
+// A greeter has no wallpaper of its own to fall back on; the shell paints its
+// own background, so this only shows for the frame before it maps.
+layout {
+    background-color "#282828"
+}

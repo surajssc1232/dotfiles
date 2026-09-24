@@ -116,6 +116,41 @@ Singleton {
 
 	Process { id: stopper }
 
+	// ---- greeter backdrop ----
+	//
+	// The login screen runs as the `greeter` user, which cannot read /home
+	// (0700), so it cannot open this file itself. A copy goes somewhere
+	// world-readable instead, with its path written alongside — the greeter
+	// reads that pointer rather than guessing at a file extension.
+	//
+	// Best effort throughout: if the directory is missing because the system
+	// has not been rebuilt with its tmpfiles rule yet, the copy fails and the
+	// greeter falls back to a flat colour.
+	readonly property string greeterDir: "/var/lib/quickshell-greeter"
+
+	function publishToGreeter() {
+		const source = root.lockEffective;
+		if (!source) return;
+
+		const dot = source.lastIndexOf(".");
+		const suffix = dot > source.lastIndexOf("/") ? source.slice(dot) : "";
+		const target = root.greeterDir + "/wallpaper" + suffix;
+
+		publish.command = ["sh", "-c",
+			'[ -d "$1" ] || exit 0; '
+			// Written to a temporary name and moved into place, so the greeter
+			// can never open a half-copied file.
+			+ 'cp -f -- "$2" "$3.tmp" && mv -f -- "$3.tmp" "$3" && chmod 0644 "$3" && '
+			+ 'printf %s "$3" > "$1/current.tmp" && mv -f "$1/current.tmp" "$1/current" && '
+			+ 'chmod 0644 "$1/current"',
+			"sh", root.greeterDir, source, target];
+		publish.running = true;
+	}
+
+	Process { id: publish }
+
+	onLockEffectiveChanged: root.publishToGreeter()
+
 	Component.onCompleted: {
 		const saved = stateFile.text().trim();
 		if (saved) root.current = saved;
@@ -123,5 +158,6 @@ Singleton {
 		const savedLock = lockFile.text().trim();
 		if (savedLock) root.lock = savedLock;
 		adopt.running = true;
+		root.publishToGreeter();
 	}
 }

@@ -268,12 +268,27 @@ Singleton {
 		onTriggered: root.refresh()
 	}
 
-	// While the menu is open, keep signal strengths moving.
+	// While the menu is open, keep asking for a fresh scan.
 	Timer {
 		interval: 10000
 		repeat: true
 		running: root.active && root.wifiEnabled
 		onTriggered: root.rescan()
+	}
+
+	// And keep re-reading the result. NetworkManager fills its list over the
+	// seconds *after* a scan is asked for, so reading once when the scan
+	// command returns shows whatever was already known and misses everything
+	// found a moment later — which is why a network you could see only ever
+	// appeared on the second press of the refresh icon.
+	//
+	// This reads NM's cache rather than scanning, which is cheap enough to do
+	// on a short cycle.
+	Timer {
+		interval: 2000
+		repeat: true
+		running: root.active && root.wifiEnabled
+		onTriggered: listProbe.running = true
 	}
 
 	Component.onCompleted: root.refresh()

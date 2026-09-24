@@ -92,6 +92,7 @@ PanelWindow {
 			anchors.verticalCenter: parent.verticalCenter
 			spacing: Config.spacing
 
+			KeyLayer {}
 			RecordIndicator {}
 			SysTray {}
 			NotificationCenter {}

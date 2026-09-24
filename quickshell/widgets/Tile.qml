@@ -26,12 +26,21 @@ MouseArea {
 	signal triggered()
 	signal toggled()
 
+	// Marks a destructive action. The tile keeps its usual dark surface and
+	// turns its glyph and label red instead: among a grid of dark tiles a
+	// fully filled red one reads as "currently on" rather than "careful".
+	property bool danger: false
+
 	// Filled when lit, so an enabled feature reads at a glance.
 	readonly property color surface: on ? Config.accent : Config.bgAlt
-	readonly property color ink: on ? Config.bg : Config.fg
-	readonly property color inkDim: on
-		? Qt.rgba(Config.bg.r, Config.bg.g, Config.bg.b, 0.7)
-		: Config.fgDim
+	readonly property color ink: root.danger
+		? Config.red
+		: on ? Config.bg : Config.fg
+	readonly property color inkDim: root.danger
+		? Qt.alpha(Config.red, 0.75)
+		: on
+			? Qt.rgba(Config.bg.r, Config.bg.g, Config.bg.b, 0.7)
+			: Config.fgDim
 
 	implicitHeight: 54
 

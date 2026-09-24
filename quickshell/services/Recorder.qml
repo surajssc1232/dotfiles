@@ -18,7 +18,10 @@ Singleton {
 	// auto follows what is plugged in: a headset's microphone if one is
 	// connected, silence otherwise. That is the behaviour you want by default
 	// — recording the laptop's built-in mic unasked is rarely wanted.
+	// Restored in Component.onCompleted rather than as an initialiser: reading
+	// the store in a binding makes writing back to it a binding loop.
 	property string audioMode: "auto"
+	onAudioModeChanged: Persist.set("recorderAudio", root.audioMode)
 
 	property bool recording: false
 	property bool finishing: false
@@ -204,6 +207,7 @@ Singleton {
 	}
 
 	Component.onCompleted: {
+		root.audioMode = Persist.get("recorderAudio", "auto");
 		mkdir.command = ["mkdir", "-p", root.directory];
 		mkdir.running = true;
 	}

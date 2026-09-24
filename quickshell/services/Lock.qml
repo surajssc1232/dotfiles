@@ -111,6 +111,9 @@ Singleton {
 		// PAM drives the conversation: it asks, and only then is there
 		// somewhere to put the password.
 		onPamMessage: {
+			console.log("LOCK pamMessage msg=" + JSON.stringify(pam.message)
+				+ " responseRequired=" + pam.responseRequired
+				+ " pendingLen=" + root.pending.length);
 			if (pam.responseRequired) {
 				pam.respond(root.pending);
 				root.pending = "";
@@ -123,6 +126,7 @@ Singleton {
 		}
 
 		onCompleted: result => {
+			console.log("LOCK completed result=" + result);
 			root.authenticating = false;
 			root.pending = "";
 
@@ -138,6 +142,7 @@ Singleton {
 		}
 
 		onError: err => {
+			console.log("LOCK error " + err);
 			root.authenticating = false;
 			root.pending = "";
 			root.error = "Authentication unavailable";
@@ -154,6 +159,12 @@ Singleton {
 
 		function lock(): void {
 			root.lock();
+		}
+
+		function auth(password: string): void {
+			console.log("LOCK auth() called, authenticating=" + root.authenticating);
+			root.submit(password);
+			console.log("LOCK after submit, authenticating=" + root.authenticating);
 		}
 
 		function isLocked(): bool {

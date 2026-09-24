@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs
+import qs.services
 
 // Screen colour temperature, via wlsunset over wlr-gamma-control.
 //
@@ -11,8 +12,7 @@ import qs
 // temperatures, so a constant tint is expressed by pinning sunset to 00:00 and
 // sunrise to 23:59: it then stays in "night" all day at the low temperature.
 //
-// The toggle is deliberately not persisted: night light always starts off on
-// login, so a session that ended tinted does not come back tinted.
+// The toggle is persisted, so a session that ended tinted comes back tinted.
 //
 // The temperature is fixed at Config.nightTemp. It is deliberately not
 // adjustable while running: wlsunset reads it once at startup, so changing it
@@ -32,6 +32,7 @@ Singleton {
 		// deliberate stop from a crash.
 		root.enabled = on;
 		sunset.running = on;
+		Persist.set("nightLight", on);
 	}
 
 	function toggle() {
@@ -57,4 +58,8 @@ Singleton {
 		// asked for has already cleared `enabled`, and is ignored.
 		onExited: if (root.enabled) root.enabled = false
 	}
+
+	// wlsunset is spawned here the same way the toggle would, so a restored
+	// "on" goes through exactly one code path.
+	Component.onCompleted: root.setEnabled(Persist.get("nightLight", false))
 }

@@ -2,7 +2,9 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Notifications
+import qs.services
 
 // Owns org.freedesktop.Notifications. Nothing else on this system claims it
 // (no mako/dunst/swaync), so the bar can serve notifications directly.
@@ -45,6 +47,8 @@ Singleton {
 
 			root.history = [notification, ...root.history].slice(0, root.historyLimit);
 
+			if (root.bootWindow) root.record(notification);
+
 			// transient notifications (progress bars, volume OSDs) are meant
 			// to flash and vanish, and never belong in a toast stack.
 			if (!root.dnd && !notification.transient)
@@ -84,8 +88,84 @@ Singleton {
 		for (const n of all) n.dismiss();
 	}
 
+	// ---- boot-time capture ----
+	//
+	// Something sends a notification on the first boot and it cannot be traced
+	// afterwards: notifications travel over D-Bus and leave nothing in the
+	// journal. Anything arriving in the first two minutes of a session is
+	// written down here so the next boot names the sender.
+	//
+	// App name, summary and time only — never the body, which is where the
+	// contents of your messages would be. Delete this block once it has done
+	// its job.
+	property bool bootWindow: true
+	property var bootLog: []
+
+	readonly property int bootLogLimit: 50
+
+	function record(n) {
+		root.bootLog = [({
+			at: new Date().toISOString(),
+			app: n.appName,
+			summary: n.summary
+		}), ...root.bootLog].slice(0, root.bootLogLimit);
+		bootFile.setText(JSON.stringify(root.bootLog, null, 1));
+	}
+
+	Timer {
+		interval: 120000
+		running: true
+		onTriggered: root.bootWindow = false
+	}
+
+	FileView {
+		id: bootFile
+
+		path: Quickshell.statePath("boot-notifications")
+		blockLoading: true
+		printErrors: false
+	}
+
+	// The history panel hangs off the bell in the bar, so a keybind cannot
+	// reach it directly — it asks here and the panel listens.
+	signal centerToggled()
+	signal centerClosed()
+
 	function toggleDnd() {
 		root.dnd = !root.dnd;
 		if (root.dnd) root.popups = [];
+		Persist.set("dnd", root.dnd);
+	}
+
+	// Silence is a choice you make once and expect to hold, so it outlives
+	// the session that made it.
+	Component.onCompleted: {
+		root.dnd = Persist.get("dnd", false);
+		try {
+			const saved = JSON.parse(bootFile.text().trim() || "[]");
+			if (Array.isArray(saved)) root.bootLog = saved;
+		} catch (err) {
+			root.bootLog = [];
+		}
+	}
+
+	IpcHandler {
+		target: "notifs"
+
+		function toggle(): void {
+			root.centerToggled();
+		}
+
+		function close(): void {
+			root.centerClosed();
+		}
+
+		function dnd(): void {
+			root.toggleDnd();
+		}
+
+		function clear(): void {
+			root.clearAll();
+		}
 	}
 }

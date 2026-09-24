@@ -15,6 +15,20 @@ Pill {
 	interactive: true
 	onClicked: layer.open = !layer.open
 
+	// PopupLayer closes itself on a click outside, so `open` stays the one
+	// source of truth and the keybind flips it rather than driving a binding.
+	Connections {
+		target: Notifs
+
+		function onCenterToggled(): void {
+			layer.open = !layer.open;
+		}
+
+		function onCenterClosed(): void {
+			layer.open = false;
+		}
+	}
+
 	Label {
 		text: Notifs.dnd ? Config.icons.bellOff : Config.icons.bell
 		color: Notifs.dnd ? Config.fgDim

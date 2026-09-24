@@ -206,6 +206,7 @@ Singleton {
 		terminal: "\uf120",
 		calculator: "\uf1ec",
 		window: "\uf2d0",      // window-maximize
+		keyboard: "\uf11c",
 		history: "\uf1da",
 		question: "\uf059",
 		rocket: "\uf135",
