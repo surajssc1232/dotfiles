@@ -1,8 +1,7 @@
-{
-  lib,
-  pkgs,
-  inputs,
-  ...
+{ lib
+, pkgs
+, inputs
+, ...
 }:
 
 {
@@ -47,8 +46,10 @@
       "@wheel"
     ];
 
-    trusted-public-keys = [ "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
-                          "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=" ];
+    trusted-public-keys = [
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+    ];
 
     http-connections = 25;
     connect-timeout = 5;
@@ -155,7 +156,7 @@
     '';
   };
 
-    programs.nix-ld.libraries = with pkgs; [
+  programs.nix-ld.libraries = with pkgs; [
     stdenv.cc.cc.lib
     zlib
     openssl
@@ -204,7 +205,6 @@
   };
 
   services.libinput.enable = true;
-  services.timekpr.enable = true;
   services.displayManager.defaultSession = "niri";
 
   # Login is the shell's own screen rather than ly's TUI: greetd starts a bare
@@ -264,7 +264,7 @@
   services.flatpak.enable = true;
   services.postgresql = {
     enable = true;
-    ensureDatabases = [ "taskdb" "suraj"];
+    ensureDatabases = [ "taskdb" "suraj" ];
     ensureUsers = [{
       name = "suraj";
       ensureDBOwnership = true;
@@ -593,31 +593,23 @@
     wineWow64Packages.waylandFull
     jetbrains.idea
     tealdeer
-    any-nix-shell
     nur.repos.Ev357.helium
-    libudev-zero
     pkg-config
     ruff
     python3
-    waybar
     ninja
     swaybg
     umu-launcher
     meson
     wlsunset
     winetricks
-    vulkan-loader
     quickshell
     playerctl
-    starship
     gcc
     gdb
     zig
     rustup
-    libva
     wireplumber
-    libsForQt5.qt5.qtgraphicaleffects
-    libsForQt5.qt5.qtquickcontrols2
     btop
     fastfetch
     brightnessctl
@@ -625,11 +617,6 @@
     wl-clipboard
     heroic
     libnotify
-    lxappearance
-    gtk3
-    orchis-theme
-    bluez
-    bluez-tools
     fzf
     unzip
     cmake
@@ -640,28 +627,20 @@
     xwayland
     nixpkgs-fmt
     nemo
-    kdePackages.qtlanguageserver
     pulseaudio
     lua
     ripgrep
-    matugen
     nil
     nixd
     unrar
     fd
-    dxvk
-    wl-screenrec
     wf-recorder
     libva-utils
     pciutils
     mpv
     qbittorrent
     bat
-    xdg-desktop-portal-gnome
-    xdg-desktop-portal-gtk
-    papirus-icon-theme
     xwayland-satellite
-    bibata-cursors
   ];
 
   fonts.packages = with pkgs; [
