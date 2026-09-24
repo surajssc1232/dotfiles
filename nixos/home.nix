@@ -1,77 +1,82 @@
-{ pkgs,lib,... }: # You can add more args like inputs if needed
+{ pkgs, lib, config, inputs, ... }: {
+  imports = [
+    ./nvim.nix
+    ./helix.nix
+  ];
 
-{
-  # --- Required basics ---
-  home.username = "suraj"; # Replace with your actual username
-  home.homeDirectory = "/home/suraj";
-   
-  home.pointerCursor = {
-    name = "capitaine-cursors-white";
-    package = pkgs.capitaine-cursors;
-    size = 24;
-    gtk.enable = true;
-    x11.enable = true;
+  # --- System & Profile Basics ---
+  home = {
+    username = "suraj";
+    homeDirectory = "/home/suraj";
+    stateVersion = "25.05";
+    
+    packages = with pkgs; [
+      adwaita-qt
+      adwaita-qt6
+    ];
+
+    sessionVariables = {
+      QT_STYLE_OVERRIDE = lib.mkForce "adwaita-dark";
+      QT_QPA_PLATFORMTHEME = lib.mkForce "adwaita";
+    };
+
+    pointerCursor = {
+      name = "capitaine-cursors-white";
+      package = pkgs.capitaine-cursors;
+      size = 24;
+      gtk.enable = true;
+      x11.enable = true;
+    };
   };
 
-
-  xdg.mimeApps.enable = true; # Ensure this is set to true
-  xdg.mimeApps.defaultApplications = {
-    "application/x-bittorrent" = "org.qbittorrent.qBittorrent.desktop";
-    "x-scheme-handler/magnet" = "org.qbittorrent.qBittorrent.desktop";
-  };
-  xdg.configFile."mimeapps.list".force = true;
-  xdg.dataFile."applications/mimeapps.list".force = true;
-
-  # --- Example: Dark GTK theme (from your earlier questions) ---
+  # --- Theming (GTK & QT) ---
   gtk = {
     enable = true;
-
     theme = {
       package = pkgs.gnome-themes-extra;
       name = "Adwaita-dark";
     };
-
     iconTheme = {
       package = pkgs.tela-icon-theme;
-      name = "Tela-pink-dark"; # Or Tela-circle-dark, Tela-purple, etc.
+      name = "Tela-pink-dark";
     };
+    # Silences the 26.05 GTK4 theme warning completely
+    gtk4.theme = null; 
+    gtk4.extraConfig.gtk-application-prefer-dark-theme = 1;
   };
-
-  dconf.settings."org/gnome/desktop/interface" = {
-    color-scheme = "prefer-dark";
-  };
-
-  # --- Important: Match your NixOS version ---
-  home.stateVersion = "25.05"; # Or whatever your unstable channel uses
 
   qt = {
     enable = true;
     platformTheme.name = "adwaita";
     style = {
-      name="adwaita-dark";
+      name = "adwaita-dark";
       package = pkgs.adwaita-qt6;
     };
   };
 
+  dconf.settings."org/gnome/desktop/interface".color-scheme = "prefer-dark";
 
-  home.sessionVariables = {
-    EDITOR=lib.mkForce "hx";
-    QT_STYLE_OVERRIDE = lib.mkForce "adwaita-dark";
-    QT_QPA_PLATFORMTHEME = lib.mkForce "adwaita";
-    QT_QPA_PLATFORM = lib.mkForce "adwaita";
+  # --- MIME & Applications ---
+  xdg = {
+    mimeApps = {
+      enable = true;
+      defaultApplications = {
+        "application/x-bittorrent" = [ "org.qbittorrent.qBittorrent.desktop" ];
+        "x-scheme-handler/magnet"   = [ "org.qbittorrent.qBittorrent.desktop" ];
+        "video/mp4"                 = [ "mpv.desktop" ];
+        "video/x-matroska"          = [ "mpv.desktop" ];
+        "video/webm"                = [ "mpv.desktop" ];
+        "video/ogg"                 = [ "mpv.desktop" ];
+        "video/quicktime"           = [ "mpv.desktop" ];
+        "video/x-msvideo"           = [ "mpv.desktop" ];
+        "video/x-flv"               = [ "mpv.desktop" ];
+      };
+    };
+    
+    configFile = {
+      "gtk-3.0/settings.ini".force = true;
+      "mimeapps.list".force = true;
+    };
   };
-
-  
-  programs.neovim = {
-    enable = true;
-  };
-
-  home.packages = with pkgs; [
-    adwaita-qt
-    adwaita-qt6
-  ];
-
-  xdg.configFile."gtk-3.0/settings.ini".force = true;
 
 }
-

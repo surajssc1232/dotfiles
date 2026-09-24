@@ -1,0 +1,27 @@
+theme = "gruvbox_dark_hard"
+
+[editor]
+clipboard-provider = "wayland"
+gutters = ["diff", "line-numbers", "spacer"]
+auto-completion = true
+completion-trigger-len = 1
+
+[editor.inline-diagnostics]
+cursor-line = "info"
+prefix-len = 2
+max-diagnostics = 1
+
+[editor.cursor-shape]
+insert = "bar"
+
+
+[editor.lsp]
+display-messages = true
+auto-signature-help = true
+
+[keys.normal]
+a = "insert_mode"
+
+[keys.normal.space]
+w = ":write"
+q = ":quit!"
