@@ -117,8 +117,31 @@ Singleton {
 	readonly property bool clipboardHistory: true
 	readonly property int clipboardLimit: 200
 
+	// Images are kept as files under the cache directory. Fewer of them than
+	// text entries, because each one is a screenshot-sized file.
+	// A notification with a thumbnail whenever an image is copied — which on
+	// this system means whenever a screenshot is taken, since niri puts them
+	// straight on the clipboard. With this on, niri's own plain "Screenshot
+	// captured" is suppressed so there is one notification rather than two.
+	readonly property bool screenshotPreview: true
+
+	readonly property bool clipboardImages: true
+	readonly property int clipboardImageLimit: 20
+
+	// How often the wallpaper slideshow moves on, in minutes.
+	readonly property int slideshowMinutes: 15
+
 	// Where the wallpaper picker looks for images.
 	readonly property string wallpaperDir: Quickshell.env("HOME") + "/Downloads"
+
+	// Weather. The only part of this shell that makes a network request.
+	//
+	// Leave the coordinates at 0 and the location is looked up once from your
+	// IP address (through ipapi.co) and cached; set them and nothing but
+	// open-meteo is ever contacted. Set weather to false and neither happens.
+	readonly property bool weather: true
+	readonly property real weatherLatitude: 0
+	readonly property real weatherLongitude: 0
 
 	// Night light. Lower is warmer; 6500 is neutral daylight. Applied when the
 	// toggle is switched on, so a change here takes effect at the next toggle.
@@ -207,6 +230,16 @@ Singleton {
 		calculator: "\uf1ec",
 		window: "\uf2d0",      // window-maximize
 		keyboard: "\uf11c",
+		play: "\uf04b",
+		pause: "\uf04c",
+		next: "\uf051",
+		prev: "\uf048",
+		music: "\uf001",
+		mixer: "\uf1de",       // sliders
+		pin: "\uf08d",
+		timer: "\uf017",       // clock
+		emoji: "\uf118",       // smile
+		cloud: "\uf0c2",
 		history: "\uf1da",
 		question: "\uf059",
 		rocket: "\uf135",

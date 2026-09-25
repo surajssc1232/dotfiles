@@ -35,6 +35,9 @@ Singleton {
 		if (q.startsWith("!")) return "command";
 		if (q.startsWith(";")) return "clip";
 		if (q.startsWith("/")) return "file";
+		if (q.startsWith(":")) return "emoji";
+		if (q.startsWith("%")) return "unit";
+		if (q.startsWith("&")) return "bt";
 		if (q.startsWith("?")) return "help";
 		return "app";
 	}
@@ -46,27 +49,33 @@ Singleton {
 	readonly property var modeLabel: ({
 		app: "Applications", run: "Run", calc: "Calculator",
 		window: "Windows", command: "Commands", clip: "Clipboard",
-		file: "Files", help: "Modes"
+		file: "Files", emoji: "Emoji", unit: "Failed units",
+		bt: "Bluetooth", help: "Modes"
 	})
 
 	readonly property var modeIcon: ({
 		app: Config.icons.apps, run: Config.icons.rocket,
 		calc: Config.icons.calculator, window: Config.icons.window,
 		command: Config.icons.settings, clip: Config.icons.clipboard,
-		file: Config.icons.inbox, help: Config.icons.question
+		file: Config.icons.inbox, emoji: Config.icons.emoji,
+		unit: Config.icons.settings, bt: Config.icons.bluetooth,
+		help: Config.icons.question
 	})
 
 	readonly property var modePlaceholder: ({
 		app: "Search applications", run: "Command to run",
 		calc: "Expression", window: "Open windows",
 		command: "Shell commands", clip: "Clipboard history",
-		file: "Find a file under ~", help: "Modes"
+		file: "Find a file under ~", emoji: "Search emoji by name",
+		unit: "Failed systemd units", bt: "Connect a device",
+		help: "Modes"
 	})
 
 	// What the delegate should highlight in each row. Only the modes that
 	// actually match against the row's name have anything to mark up.
 	readonly property string highlightTerm:
-		["app", "command", "clip", "file", "run"].indexOf(root.mode) !== -1
+		["app", "command", "clip", "file", "run", "emoji", "unit", "bt"]
+			.indexOf(root.mode) !== -1
 			? root.term.toLowerCase() : ""
 
 	// Keeps the clipboard watcher alive. Quickshell only builds a singleton
@@ -256,6 +265,9 @@ Singleton {
 		if (root.mode === "clip") return root.clipRows(needle);
 		if (root.mode === "file") return root.fileRows();
 		if (root.mode === "command") return root.commandRows(needle);
+		if (root.mode === "emoji") return root.emojiRows(needle);
+		if (root.mode === "unit") return root.unitRows(needle);
+		if (root.mode === "bt") return root.btRows(needle);
 
 		// Nothing typed: the applications you actually use, most first. This
 		// is the state the launcher spends most of its life in, so it is worth
@@ -342,7 +354,13 @@ Singleton {
 			{ kind: "help", key: "?clip", name: "Clipboard history", detail: "; prefix",
 			  glyph: Config.icons.clipboard, iconName: "", prefix: ";" },
 			{ kind: "help", key: "?file", name: "Files", detail: "/ prefix",
-			  glyph: Config.icons.inbox, iconName: "", prefix: "/" }
+			  glyph: Config.icons.inbox, iconName: "", prefix: "/" },
+			{ kind: "help", key: "?emoji", name: "Emoji", detail: ": prefix",
+			  glyph: Config.icons.emoji, iconName: "", prefix: ":" },
+			{ kind: "help", key: "?unit", name: "Failed units", detail: "% prefix",
+			  glyph: Config.icons.settings, iconName: "", prefix: "%" },
+			{ kind: "help", key: "?bt", name: "Bluetooth", detail: "& prefix",
+			  glyph: Config.icons.bluetooth, iconName: "", prefix: "&" }
 		];
 	}
 
@@ -374,6 +392,20 @@ Singleton {
 	// ranking them by name shape would be ranking noise.
 	function clipRows(needle: string): var {
 		const rows = [];
+
+		// Images first: there are few of them, they are the most recent thing
+		// copied more often than not, and a thumbnail is unmistakable.
+		for (const image of Clipboard.images) {
+			const name = FileSearch.name(image.path);
+			if (needle && name.toLowerCase().indexOf(needle) === -1) continue;
+			rows.push({
+				kind: "clipImage", key: "clipimg:" + rows.length,
+				name: "Image",
+				detail: Qt.formatDateTime(new Date(image.at), "d MMM hh:mm"),
+				iconName: "", glyph: Config.icons.image,
+				thumb: image.path, path: image.path
+			});
+		}
 		for (const text of Clipboard.entries) {
 			if (needle && text.toLowerCase().indexOf(needle) === -1) continue;
 			rows.push({
@@ -385,6 +417,95 @@ Singleton {
 			});
 		}
 		return rows;
+	}
+
+	// Known devices, connected first — the point of this mode is reconnecting
+	// a headset without opening a panel and aiming at a row.
+	function btRows(needle: string): var {
+		if (!Bt.available) {
+			return [({
+				kind: "info", key: "bt:none",
+				name: "No Bluetooth adapter",
+				detail: "Nothing to connect to",
+				iconName: "", glyph: Config.icons.bluetooth
+			})];
+		}
+
+		if (!Bt.enabled) {
+			return [({
+				kind: "btEnable", key: "bt:enable",
+				name: "Turn Bluetooth on",
+				detail: "The adapter is switched off",
+				iconName: "", glyph: Config.icons.bluetooth
+			})];
+		}
+
+		const rows = [];
+		for (const device of Bt.devices) {
+			if (!Bt.isKnown(device)) continue;
+			const name = Bt.label(device);
+			if (needle && name.toLowerCase().indexOf(needle) === -1) continue;
+			rows.push({
+				kind: "bt", key: "bt:" + device.address,
+				name: name,
+				detail: device.connected
+					? Bt.status(device) + " · enter disconnects"
+					: Bt.status(device) + " · enter connects",
+				iconName: "", glyph: Bt.icon(device),
+				device: device
+			});
+		}
+
+		if (rows.length === 0) {
+			rows.push({
+				kind: "info", key: "bt:empty",
+				name: "No paired devices",
+				detail: "Pair one from the Bluetooth panel first",
+				iconName: "", glyph: Config.icons.bluetooth
+			});
+		}
+
+		return rows;
+	}
+
+	// Enter restarts; Delete opens the journal, because "why did it fail" is
+	// the question you actually have.
+	function unitRows(needle: string): var {
+		const rows = [];
+		for (const entry of Units.failed) {
+			if (needle && entry.unit.toLowerCase().indexOf(needle) === -1) continue;
+			rows.push({
+				kind: "unit", key: "unit:" + entry.scope + ":" + entry.unit,
+				name: entry.unit,
+				detail: entry.scope + " · " + (entry.description || "failed")
+					+ " · enter restarts, del shows the log",
+				iconName: "", glyph: Config.icons.warning,
+				entry: entry
+			});
+		}
+
+		if (rows.length === 0) {
+			rows.push({
+				kind: "info", key: "unit:none",
+				name: "Nothing has failed",
+				detail: "All system and user units are healthy",
+				iconName: "", glyph: Config.icons.check
+			});
+		}
+
+		return rows;
+	}
+
+	// The glyph itself is the row's icon, so the list reads as emoji rather
+	// than as a list of their names.
+	function emojiRows(needle: string): var {
+		return Emoji.search(needle, 60).map((e, i) => ({
+			kind: "emoji", key: "emoji:" + i,
+			name: e.name,
+			detail: "Copy " + e.char,
+			iconName: "", glyph: e.char,
+			text: e.char
+		}));
 	}
 
 	// Recently used files until something is typed, then an fd search.
@@ -674,7 +795,26 @@ Singleton {
 			return;
 		}
 
-		if (row.kind === "calcError") return;
+		if (row.kind === "calcError" || row.kind === "info") return;
+
+		if (row.kind === "unit") {
+			Units.restart(row.entry);
+			root.close();
+			return;
+		}
+
+		if (row.kind === "bt") {
+			Bt.activate(row.device);
+			root.close();
+			return;
+		}
+
+		// Left open: turning the adapter on is a step towards picking
+		// something, not the thing you came to do.
+		if (row.kind === "btEnable") {
+			Bt.setEnabled(true);
+			return;
+		}
 
 		if (row.kind === "calc") {
 			Clipboard.copy(root.formatNumber(row.value));
@@ -682,7 +822,13 @@ Singleton {
 			return;
 		}
 
-		if (row.kind === "clip") {
+		if (row.kind === "clipImage") {
+			Clipboard.copyImage(row.path);
+			root.close();
+			return;
+		}
+
+		if (row.kind === "clip" || row.kind === "emoji") {
 			Clipboard.copy(row.text);
 			root.close();
 			return;
@@ -733,6 +879,8 @@ Singleton {
 		if (!row) return;
 
 		if (row.kind === "clip") Clipboard.remove(row.text);
+		else if (row.kind === "clipImage") Clipboard.removeImage(row.path);
+		else if (row.kind === "unit") Units.journal(row.entry);
 		else if (row.kind === "run" && row.detail === "Recent")
 			root.forgetCommand(row.command);
 	}

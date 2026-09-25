@@ -13,79 +13,93 @@ Item {
 	readonly property int columns: 2
 	readonly property int rows: Math.ceil(Themes.list.length / columns)
 
-	implicitHeight: grid.implicitHeight
+	// Past this the pane is taller than the screen it is drawn on, so the
+	// rest scrolls rather than the control centre growing without limit.
+	readonly property int maxVisibleRows: 7
+	readonly property int maxHeight: root.maxVisibleRows * (root.entryHeight + 2)
 
-	GridLayout {
-		id: grid
+	implicitHeight: Math.min(grid.implicitHeight, root.maxHeight)
 
+	Flickable {
 		anchors.fill: parent
-		columns: root.columns
-		rowSpacing: 2
-		columnSpacing: 2
 
-		Repeater {
-			model: Themes.list
+		contentHeight: grid.implicitHeight
+		clip: true
+		boundsBehavior: Flickable.StopAtBounds
+		flickDeceleration: 6000
 
-			MouseArea {
-				id: entry
+		GridLayout {
+			id: grid
 
-				required property var modelData
-				readonly property bool current: modelData.id === Config.themeId
+			width: parent.width
+			columns: root.columns
+			rowSpacing: 2
+			columnSpacing: 2
 
-				Layout.fillWidth: true
-				Layout.preferredHeight: root.entryHeight
+			Repeater {
+				model: Themes.list
 
-				hoverEnabled: true
-				cursorShape: Qt.PointingHandCursor
-				onClicked: Config.setTheme(modelData.id)
+				MouseArea {
+					id: entry
 
-				Rectangle {
-					anchors.fill: parent
-					radius: Config.radius - 4
-					color: entry.containsMouse ? Config.bgAlt : "transparent"
-					border.width: entry.current ? 1 : 0
-					border.color: Config.accent
-				}
+					required property var modelData
+					readonly property bool current: modelData.id === Config.themeId
 
-				RowLayout {
-					anchors.fill: parent
-					anchors.leftMargin: 8
-					anchors.rightMargin: 8
-					spacing: 8
+					Layout.fillWidth: true
+					Layout.preferredHeight: root.entryHeight
 
-					// Each entry previews itself in its own colors.
+					hoverEnabled: true
+					cursorShape: Qt.PointingHandCursor
+					onClicked: Config.setTheme(modelData.id)
+
 					Rectangle {
-						Layout.preferredWidth: 14
-						Layout.preferredHeight: 14
+						anchors.fill: parent
+						radius: Config.radius - 4
+						color: entry.containsMouse ? Config.bgAlt : "transparent"
+						border.width: entry.current ? 1 : 0
+						border.color: Config.accent
+					}
 
-						radius: 4
-						color: entry.modelData.bg
-						border.width: 1
-						border.color: entry.modelData.border
+					RowLayout {
+						anchors.fill: parent
+						anchors.leftMargin: 8
+						anchors.rightMargin: 8
+						spacing: 8
 
+						// Each entry previews itself in its own colors.
 						Rectangle {
-							anchors.centerIn: parent
-							width: 7
-							height: 7
+							Layout.preferredWidth: 14
+							Layout.preferredHeight: 14
+
 							radius: 4
-							color: entry.modelData.accent
+							color: entry.modelData.bg
+							border.width: 1
+							border.color: entry.modelData.border
+
+							Rectangle {
+								anchors.centerIn: parent
+								width: 7
+								height: 7
+								radius: 4
+								color: entry.modelData.accent
+							}
 						}
-					}
 
-					Label {
-						Layout.fillWidth: true
-						Layout.minimumWidth: 0
-						text: entry.modelData.name
-						font.pixelSize: Config.fontSize - 2
-						elide: Text.ElideRight
-						color: entry.current ? Config.accent : Config.fg
-					}
+						Label {
+							Layout.fillWidth: true
+							Layout.minimumWidth: 0
+							text: entry.modelData.name
+							font.pixelSize: Config.fontSize - 2
+							elide: Text.ElideRight
+							color: entry.current ? Config.accent : Config.fg
+						}
 
-					Label {
-						text: Config.icons.check
-						color: Config.accent
-						visible: entry.current
-						font.pixelSize: Config.fontSize - 4
+						Label {
+							text: Config.icons.check
+							color: Config.accent
+							visible: entry.current
+							font.pixelSize: Config.fontSize - 4
+						}
 					}
 				}
 			}

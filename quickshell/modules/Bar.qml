@@ -82,6 +82,7 @@ PanelWindow {
 			anchors.verticalCenter: parent.verticalCenter
 			spacing: Config.spacing
 
+			Weather {}
 			Clock {}
 			Settings {}
 		}

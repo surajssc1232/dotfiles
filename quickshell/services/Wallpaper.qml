@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import Qt.labs.folderlistmodel
 import qs
+import qs.services
 
 // Which image the desktop is showing.
 //
@@ -58,6 +59,41 @@ Singleton {
 		if (!path || path === root.lock) return;
 		root.lock = path;
 		lockFile.setText(path);
+	}
+
+	// ---- slideshow ----
+	// Rotates through the folder on a timer. Off by default and remembered,
+	// because a wallpaper that changes when you did not ask reads as a fault.
+	property bool slideshow: false
+
+	function random() {
+		const n = root.count;
+		if (n <= 0) return;
+		if (n === 1) { root.set(root.pathAt(0)); return; }
+
+		// Never the one already up: a slideshow that sometimes "changes" to
+		// the same picture looks broken.
+		let index = Math.floor(Math.random() * n);
+		if (root.pathAt(index) === root.current)
+			index = (index + 1) % n;
+		root.set(root.pathAt(index));
+	}
+
+	function setSlideshow(on: bool) {
+		if (root.slideshow === on) return;
+		root.slideshow = on;
+		Persist.set("slideshow", on);
+	}
+
+	function toggleSlideshow() {
+		root.setSlideshow(!root.slideshow);
+	}
+
+	Timer {
+		interval: Config.slideshowMinutes * 60000
+		repeat: true
+		running: root.slideshow && root.count > 1
+		onTriggered: root.random()
 	}
 
 	// Back to following the desktop.
@@ -152,6 +188,8 @@ Singleton {
 	onLockEffectiveChanged: root.publishToGreeter()
 
 	Component.onCompleted: {
+		root.slideshow = Persist.get("slideshow", false);
+
 		const saved = stateFile.text().trim();
 		if (saved) root.current = saved;
 

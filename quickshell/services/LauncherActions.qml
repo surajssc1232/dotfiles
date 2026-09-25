@@ -80,6 +80,13 @@ Singleton {
 			run: () => root.randomWallpaper()
 		}),
 		({
+			id: "slideshow",
+			name: Wallpaper.slideshow ? "Stop wallpaper slideshow" : "Start wallpaper slideshow",
+			detail: "Every " + Config.slideshowMinutes + " minutes",
+			glyph: Config.icons.image,
+			run: () => Wallpaper.toggleSlideshow()
+		}),
+		({
 			id: "wifi",
 			name: Network.wifiEnabled ? "Turn Wi-Fi off" : "Turn Wi-Fi on",
 			detail: Network.connected ? Network.activeSsid : "Not connected",

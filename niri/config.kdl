@@ -77,14 +77,14 @@ input {
 output "HDMI-A-1" {
     mode "1920x1080@120"
     scale 1
-    variable-refresh-rate 
-    position x=-1920 y=0
+    variable-refresh-rate
+    position x=1600 y=0
 }
 
 output "eDP-1" {
     
     mode "1920x1080@120"
-    scale 1
+    scale 1.2
     transform "normal"
     position x=0 y=0
     variable-refresh-rate
@@ -265,14 +265,12 @@ spawn-at-startup "./.config/mango/screen-rec.sh --clean"
 // spawn-at-startup "~/.config/waybar/scripts/volume-monitor.sh"
 // spawn-at-startup "~/.config/waybar/scripts/brightness-monitor.sh"
 spawn-sh-at-startup "swaybg -i ~/Downloads/wallhaven-zpoy6g.png"
-spawn-at-startup "xwayland-satellite"
 // spawn-at-startup "swww-daemon"
 
 
 
 environment {
 	QT_QPA_PLATFORM "wayland"
-    DISPLAY ":0"
 }
 //
 //
@@ -408,6 +406,7 @@ window-rule {
 binds {
     Mod+S {spawn "~/websearch.sh";}
     Mod+E {spawn "~/remind.sh";}
+    Mod+Z {spawn-sh "/etc/nixos/scripts/fontpicker.sh";}
     Mod+Shift+W {spawn "quickshell" "--path" "~/launcher.qml";}
 	// Mod+Shift+L {spawn "~/.config/sway/swaylock.sh";}
     // Keys consist of modifiers separated by + signs, followed by an XKB key name
@@ -427,10 +426,23 @@ binds {
 
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
-    Mod+Q repeat=true hotkey-overlay-title="Open a Terminal foot" { spawn "alacritty"; }
-    Mod+R hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
+    Mod+Q repeat=true hotkey-overlay-title="Open a Terminal foot" { spawn "ghostty"; }
+    Mod+R hotkey-overlay-title="Run an Application" { spawn "sh" "-c" "~/.config/quickshell/scripts/launcher.sh"; }
 
-    Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
+    // Notification history, the same panel the bell in the bar opens.
+    Alt+Backslash hotkey-overlay-title="Show Notifications" { spawn "sh" "-c" "~/.config/quickshell/scripts/notifications.sh"; }
+
+    // Locking is the shell's own, through modules/LockScreen.qml — it raises
+    // the session lock via ext-session-lock-v1 rather than shelling out to a
+    // separate locker. Ctrl+Alt+L is the shortcut the launcher's command list
+    // advertises, so it is the one that has to work.
+    //
+    // spawn goes through sh because niri does not expand ~ itself.
+    Ctrl+Alt+L hotkey-overlay-title="Lock the Screen" { spawn "sh" "-c" "~/.config/quickshell/scripts/lock.sh"; }
+
+    // Kept as an alias for the same thing. It used to run swaylock, which is
+    // not installed, so the bind had been dead.
+    Super+Alt+L hotkey-overlay-title=null { spawn "sh" "-c" "~/.config/quickshell/scripts/lock.sh"; }
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
     // For example, this is a standard bind to toggle the screen reader (orca).
@@ -451,8 +463,11 @@ binds {
     // Example brightness key mappings for brightnessctl.
     // You can use regular spawn with multiple arguments too (to avoid going through "sh"),
     // but you need to manually put each argument in separate "" quotes.
-    XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "+10%"; }
-    XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "10%-"; }
+    // Through the shell's script rather than brightnessctl directly, so the
+    // on-screen readout appears: brightnessctl writes sysfs, which nothing
+    // reports back, and the bar would otherwise never know it changed.
+    XF86MonBrightnessUp allow-when-locked=true { spawn "sh" "-c" "~/.config/quickshell/scripts/brightness.sh up"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "sh" "-c" "~/.config/quickshell/scripts/brightness.sh down"; }
 
     // Open/close the Overview: a zoomed-out view of workspaces and windows.
     // You can also move the mouse into the top-left hot corner,
@@ -467,7 +482,6 @@ binds {
     Mod+J     { focus-workspace-down; }
     Mod+K     { focus-workspace-up; }
     Mod+L     { focus-column-right; }
-	Alt+O {spawn "~/.config/waybar/scripts/wlsunset.sh";}
 
     Mod+Ctrl+Left  { move-column-left; }
     Mod+Ctrl+Down  { move-window-down; }
@@ -604,7 +618,6 @@ binds {
     // If the window is already in a column, they will expel it out.
     Mod+BracketLeft  { consume-or-expel-window-left; }
     Mod+BracketRight { consume-or-expel-window-right; }
-		Mod+B {spawn "~/.config/waybar/scripts/blue.sh";}
 
     // Consume one window from the right to the bottom of the focused column.
     Mod+Comma  { consume-window-into-column; }
@@ -644,15 +657,31 @@ binds {
     Mod+Shift+Equal { set-window-height "+10%"; }
 
     // Move the focused window between the floating and the tiling layout.
-    Mod+V       { toggle-window-floating; }
-    Mod+Shift+V { switch-focus-between-floating-and-tiling; }
+    Mod+T       { toggle-window-floating; }
+    Mod+Shift+T { switch-focus-between-floating-and-tiling; }
+
+    // Mod+V is the clipboard history instead, the way Super+V is on Windows.
+    Mod+V hotkey-overlay-title="Clipboard History" { spawn "sh" "-c" "~/.config/quickshell/scripts/clipboard.sh"; }
 
     // Toggle tabbed column display mode.
     // Windows in this column will appear as vertical tabs,
     // rather than stacked on top of each other.
     Mod+W { toggle-column-tabbed-display; }
-	Mod+Alt+j {spawn "~/Downloads/screen-record-toggle.sh";}
-	Mod+Shift+R {spawn "~/.config/mango/screen-rec.sh";}
+	// Screen recording is the shell's own, through modules/RecorderPanel.qml:
+	// the audio source follows whatever the control centre's Record tile is
+	// set to, and the same script is bound to Ctrl+Alt+R under mango, which is
+	// the shortcut the launcher's command list advertises.
+	//
+	// spawn goes through sh because niri does not expand ~ itself.
+	Ctrl+Alt+R hotkey-overlay-title="Start or stop a screen recording" { spawn "sh" "-c" "~/.config/quickshell/scripts/record-toggle.sh"; }
+
+	// Kept because it is the one already in your fingers. It used to run
+	// ~/.config/mango/screen-rec.sh, which picks its mode through fuzzel and
+	// stops working now that fuzzel is gone.
+	Mod+Shift+R { spawn "sh" "-c" "~/.config/quickshell/scripts/record-toggle.sh"; }
+
+	// Mod+Alt+j pointed at ~/Downloads/screen-record-toggle.sh, which does not
+	// exist — the bind has been dead for a while.
 
     // Actions to switch layouts.
     // Note: if you uncomment these, make sure you do NOT have
@@ -725,3 +754,8 @@ recent-windows {
         Mod+Shift+grave { previous-window filter="app-id"; }
     }
 }
+
+// Dank Material Shell removed 2026-08-27; the outputs it generated here
+// duplicated the eDP-1 / HDMI-A-1 blocks above, which is what niri was
+// already using. Its generated files are kept in dms.backup-2026-08-27.
+// include "dms/outputs.kdl"

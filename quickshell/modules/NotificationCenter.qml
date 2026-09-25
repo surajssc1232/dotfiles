@@ -121,7 +121,7 @@ Pill {
 					Layout.fillHeight: true
 
 					visible: Notifs.count > 0
-					model: Notifs.history
+					model: Notifs.entries
 					spacing: Config.spacing
 					clip: true
 					boundsBehavior: Flickable.StopAtBounds

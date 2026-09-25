@@ -409,11 +409,34 @@ PanelWindow {
 							anchors.rightMargin: 12
 							spacing: 12
 
+							// A copied image shows itself; nothing else says
+							// "that screenshot" as quickly.
+							Rectangle {
+								Layout.preferredWidth: 28
+								Layout.preferredHeight: 28
+
+								visible: (entry.modelData.thumb ?? "") !== ""
+								radius: 4
+								color: Config.bgAlt
+								clip: true
+
+								Image {
+									anchors.fill: parent
+									source: entry.modelData.thumb
+										? "file://" + entry.modelData.thumb : ""
+									fillMode: Image.PreserveAspectCrop
+									asynchronous: true
+									sourceSize.width: 56
+									sourceSize.height: 56
+								}
+							}
+
 							IconImage {
 								Layout.preferredWidth: 28
 								Layout.preferredHeight: 28
 								source: entry.iconPath
 								visible: entry.iconPath !== ""
+									&& (entry.modelData.thumb ?? "") === ""
 							}
 
 							// Not everything has an icon — a calculator result
@@ -421,6 +444,7 @@ PanelWindow {
 							Label {
 								Layout.preferredWidth: 28
 								visible: entry.iconPath === ""
+									&& (entry.modelData.thumb ?? "") === ""
 								text: entry.modelData.glyph ?? ""
 								color: entry.current ? Config.accent : Config.fgDim
 								font.pixelSize: Config.fontSize + 4

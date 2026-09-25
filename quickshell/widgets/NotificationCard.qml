@@ -19,10 +19,12 @@ Rectangle {
 	// label it "Activate", and showing that as a button next to the others is
 	// noise: the whole card is the button. So it is pulled out of the row and
 	// wired to the card body instead.
+	// Restored notifications carry no actions at all, hence the fallbacks.
+	readonly property var allActions: notif.actions ?? []
 	readonly property var defaultAction:
-		notif.actions.find(a => a.identifier === "default") ?? null
+		root.allActions.find(a => a.identifier === "default") ?? null
 	readonly property var otherActions:
-		notif.actions.filter(a => a.identifier !== "default")
+		root.allActions.filter(a => a.identifier !== "default")
 
 	readonly property color urgencyColor: notif.urgency === NotificationUrgency.Critical
 		? Config.red
@@ -69,16 +71,38 @@ Rectangle {
 		anchors.leftMargin: Config.padding + 4
 		spacing: 8
 
-		// App image if the notification carries one, else its icon.
+		// A notification carrying an image is usually showing you something —
+		// a screenshot, a track's artwork — and 28 pixels of it shows nothing.
+		Rectangle {
+			Layout.preferredWidth: 92
+			Layout.preferredHeight: 58
+			Layout.alignment: Qt.AlignVCenter
+
+			visible: root.notif.image !== ""
+			radius: Config.radius - 4
+			color: Config.bgAlt
+			clip: true
+
+			Image {
+				anchors.fill: parent
+				anchors.margins: 1
+				source: root.notif.image
+				fillMode: Image.PreserveAspectCrop
+				asynchronous: true
+				sourceSize.width: 184
+				sourceSize.height: 116
+			}
+		}
+
+		// Otherwise the sending application's icon.
 		IconImage {
 			Layout.preferredWidth: 28
 			Layout.preferredHeight: 28
 			Layout.alignment: Qt.AlignTop
 
-			source: root.notif.image !== "" ? root.notif.image
-				: root.notif.appIcon !== "" ? Quickshell.iconPath(root.notif.appIcon, true)
-				: ""
-			visible: source !== ""
+			source: root.notif.appIcon !== ""
+				? Quickshell.iconPath(root.notif.appIcon, true) : ""
+			visible: source !== "" && root.notif.image === ""
 		}
 
 		ColumnLayout {

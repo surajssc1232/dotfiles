@@ -24,6 +24,23 @@ Pill {
 	interactive: true
 	onClicked: layer.open = !layer.open
 
+	// Mice, headsets and controllers report through UPower too, but their
+	// icon names are battery levels rather than device types, so the type is
+	// what gets mapped.
+	function deviceIcon(type): string {
+		switch (type) {
+		case UPowerDeviceType.Mouse: return Config.icons.device["input-mouse"];
+		case UPowerDeviceType.Keyboard: return Config.icons.device["input-keyboard"];
+		case UPowerDeviceType.Headset: return Config.icons.device["audio-headset"];
+		case UPowerDeviceType.Headphones: return Config.icons.device["audio-headphones"];
+		case UPowerDeviceType.Speakers: return Config.icons.device["audio-speakers"];
+		case UPowerDeviceType.GamingInput: return Config.icons.device["input-gaming"];
+		case UPowerDeviceType.Phone: return Config.icons.device["phone"];
+		case UPowerDeviceType.Tablet: return Config.icons.device["input-tablet"];
+		default: return Config.icons.device["unknown"];
+		}
+	}
+
 	// Seconds to a human phrase; UPower reports 0 when it has no estimate yet.
 	function remaining(): string {
 		if (!root.battery) return "";
@@ -129,6 +146,47 @@ Pill {
 					text: "Health " + Math.round((root.battery?.healthPercentage ?? 0)) + "%"
 					color: Config.fgDim
 					font.pixelSize: Config.fontSize - 4
+				}
+
+				// ---- other batteries ----
+				// Finding out a headset is flat by having it cut out mid-call
+				// is the thing this exists to avoid.
+				Repeater {
+					model: UPower.devices.values.filter(d => d !== UPower.displayDevice
+						&& d.isPresent && !d.isLaptopBattery && d.percentage > 0)
+
+					RowLayout {
+						required property var modelData
+
+						Layout.fillWidth: true
+						Layout.leftMargin: 8
+						Layout.rightMargin: 8
+						Layout.topMargin: 4
+						spacing: 8
+
+						Label {
+							text: root.deviceIcon(modelData.type)
+							color: Config.fgDim
+							font.pixelSize: Config.fontSize - 2
+						}
+
+						Label {
+							Layout.fillWidth: true
+							Layout.minimumWidth: 0
+							text: modelData.model || UPowerDeviceType.toString(modelData.type)
+							color: Config.fg
+							font.pixelSize: Config.fontSize - 2
+							elide: Text.ElideRight
+						}
+
+						Label {
+							text: Math.round(modelData.percentage) + "%"
+							color: modelData.percentage <= 15 ? Config.red
+								: modelData.percentage <= 30 ? Config.yellow
+								: Config.fgDim
+							font.pixelSize: Config.fontSize - 2
+						}
+					}
 				}
 
 				Rectangle {

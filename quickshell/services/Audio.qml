@@ -20,9 +20,29 @@ Singleton {
 	readonly property var sink: Pipewire.defaultAudioSink
 	readonly property var source: Pipewire.defaultAudioSource
 
+	// Individual applications playing audio. A playback stream reports itself
+	// as a sink — it is the thing a sink plays — which is what separates it
+	// from a capture stream rather than from hardware.
+	readonly property var streams: Pipewire.nodes.values.filter(
+		n => n.audio && n.isStream && n.isSink)
+
 	// Keeps the default devices' volume and mute properties live.
 	PwObjectTracker {
 		objects: [root.sink, root.source].filter(n => n !== null)
+	}
+
+	// And the same for every application stream, or their sliders would sit
+	// at whatever value they held when the panel opened.
+	PwObjectTracker {
+		objects: root.streams
+	}
+
+	// What to call an application. media.name is usually the nicest ("Spotify"
+	// rather than "spotify"), then the app name it registered, then the node.
+	function streamLabel(node): string {
+		if (!node) return "Unknown";
+		const p = node.properties ?? ({});
+		return p["media.name"] || p["application.name"] || node.name || "Unknown";
 	}
 
 	function label(node): string {

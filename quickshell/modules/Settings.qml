@@ -106,7 +106,12 @@ Pill {
 		contentHeight: body.implicitHeight + Config.padding
 
 		// Only while a Wi-Fi password is actually being typed.
-		keyboardFocus: root.pane === "wifi" && wifiPane.wantsKeyboard
+		// Focusable for as long as the panel is open rather than only while a
+		// field is up. A layer surface is mapped with its keyboard mode already
+		// decided, and flipping it afterwards is not something a compositor is
+		// obliged to honour — which is why the Wi-Fi password field and the
+		// weather city field would appear but refuse to take a keystroke.
+		keyboardFocus: layer.open
 
 		onOpenChanged: {
 			if (!open) {
@@ -460,6 +465,47 @@ Pill {
 					current: Audio.source
 					emptyText: "No input devices"
 					onPicked: device => Audio.setInput(device)
+				}
+
+				// ---- per-application volume ----
+				// Only present while something is playing: a section that is
+				// permanently empty is worse than one that appears when it
+				// has something to say.
+				Label {
+					Layout.fillWidth: true
+					Layout.leftMargin: 4
+					Layout.topMargin: 2
+					visible: Audio.streams.length > 0
+					text: "Applications"
+					color: Config.accent
+					font.pixelSize: Config.fontSize - 2
+				}
+
+				Repeater {
+					model: Audio.streams
+
+					SliderTile {
+						required property var modelData
+
+						Layout.fillWidth: true
+
+						icon: (modelData.audio?.muted ?? false)
+							? Config.icons.volMute : Config.icons.mixer
+						label: Audio.streamLabel(modelData)
+						readout: (modelData.audio?.muted ?? false) ? "muted"
+							: Math.round((modelData.audio?.volume ?? 0) * 100) + "%"
+						value: modelData.audio?.volume ?? 0
+						dimmed: modelData.audio?.muted ?? false
+						fill: Config.blue
+
+						onMoved: value => {
+							if (!modelData.audio) return;
+							modelData.audio.muted = false;
+							modelData.audio.volume = value;
+						}
+						onIconClicked: if (modelData.audio)
+							modelData.audio.muted = !modelData.audio.muted
+					}
 				}
 
 				SliderTile {

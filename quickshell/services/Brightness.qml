@@ -31,6 +31,12 @@ Singleton {
 		if (!writer.running) root.flush();
 	}
 
+	// Asked for by the OSD: the backlight keys run brightnessctl themselves,
+	// so a re-read is the only way the shell learns the new value.
+	function refresh() {
+		if (!writer.running) reader.running = true;
+	}
+
 	function flush() {
 		if (root.pending < 0) return;
 		writer.command = ["brightnessctl", "-q", "set", root.pending + "%"];
