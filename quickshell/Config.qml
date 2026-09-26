@@ -240,6 +240,8 @@ Singleton {
 		timer: "\uf017",       // clock
 		emoji: "\uf118",       // smile
 		cloud: "\uf0c2",
+		wind: "\ue34b",        // nf-weather-strong_wind
+		leaf: "\uf06c",        // air quality
 		history: "\uf1da",
 		question: "\uf059",
 		rocket: "\uf135",

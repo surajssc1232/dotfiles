@@ -35,6 +35,7 @@ Singleton {
 
 	property int humidity: 0
 	property real wind: 0
+	property real gusts: 0
 	property int windDirection: 0
 	property real precipitation: 0
 	property bool daylight: true
@@ -49,6 +50,37 @@ Singleton {
 
 	// The next twelve hours: [{ hour, temp, code, rain }]
 	property var hourly: []
+
+	// ---- air quality, from open-meteo's separate air-quality API ----
+	//
+	// US AQI (0–500). The forecast only runs about five or six days ahead,
+	// so `airDays` is however many days actually have readings.
+	property bool airValid: false
+	property int aqi: 0
+	property real pm25: 0
+	property real pm10: 0
+
+	// [{ day, min, max }], today first.
+	property var airDays: []
+
+	// EPA bands. Colours are fixed rather than themed: these six are what
+	// every AQI scale uses, and a theme's "red" meaning "unhealthy" in one
+	// palette and "a bit warm" in another would make the bar unreadable.
+	readonly property var airBands: [
+		({ upTo: 50, text: "Good", color: "#5fb85f" }),
+		({ upTo: 100, text: "Moderate", color: "#e6c229" }),
+		({ upTo: 150, text: "Unhealthy for sensitive groups", short: "Sensitive", color: "#ee8a2e" }),
+		({ upTo: 200, text: "Unhealthy", color: "#e0453a" }),
+		({ upTo: 300, text: "Very unhealthy", color: "#9b59b6" }),
+		({ upTo: 500, text: "Hazardous", color: "#8c2f45" })
+	]
+
+	function airBand(value: int): var {
+		for (const band of root.airBands) {
+			if (value <= band.upTo) return band;
+		}
+		return root.airBands[root.airBands.length - 1];
+	}
 
 	// Compass point from the direction the wind is coming from.
 	function bearing(degrees: int): string {
@@ -144,13 +176,22 @@ Singleton {
 				+ "?latitude=" + root.latitude
 				+ "&longitude=" + root.longitude
 				+ "&current=temperature_2m,apparent_temperature,weather_code"
-					+ ",relative_humidity_2m,wind_speed_10m,wind_direction_10m"
+					+ ",relative_humidity_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m"
 					+ ",precipitation,is_day"
 				+ "&hourly=temperature_2m,weather_code,precipitation_probability"
 				+ "&daily=weather_code,temperature_2m_max,temperature_2m_min"
 					+ ",sunrise,sunset,precipitation_probability_max,uv_index_max"
-				+ "&timezone=auto&forecast_days=5"]);
+				+ "&timezone=auto&forecast_days=4"]);
 		fetch.running = true;
+
+		airFetch.command = root.whenOnline(["curl", "-sS", "--max-time", "12",
+			"https://air-quality-api.open-meteo.com/v1/air-quality"
+				+ "?latitude=" + root.latitude
+				+ "&longitude=" + root.longitude
+				+ "&current=us_aqi,pm2_5,pm10"
+				+ "&hourly=us_aqi"
+				+ "&timezone=auto&forecast_days=4"]);
+		airFetch.running = true;
 	}
 
 	// ---- choosing a place by hand ----
@@ -297,6 +338,7 @@ Singleton {
 					root.code = now.weather_code;
 					root.humidity = now.relative_humidity_2m ?? 0;
 					root.wind = now.wind_speed_10m ?? 0;
+					root.gusts = now.wind_gusts_10m ?? 0;
 					root.windDirection = now.wind_direction_10m ?? 0;
 					root.precipitation = now.precipitation ?? 0;
 					root.daylight = (now.is_day ?? 1) === 1;
@@ -355,6 +397,53 @@ Singleton {
 					// that is fine is what made the bar look broken.
 					if (!root.valid) root.error = "Weather unavailable";
 					root.retryLater();
+				}
+			}
+		}
+	}
+
+	// Air quality is extra: a failure here just hides the section rather
+	// than joining the retry loop the weather itself uses.
+	Process {
+		id: airFetch
+
+		stdout: StdioCollector {
+			onStreamFinished: {
+				try {
+					const data = JSON.parse(text);
+					const now = data.current;
+					if (!now || now.us_aqi === null || now.us_aqi === undefined)
+						throw new Error("no current air quality");
+
+					root.aqi = Math.round(now.us_aqi);
+					root.pm25 = now.pm2_5 ?? 0;
+					root.pm10 = now.pm10 ?? 0;
+
+					// Hourly readings folded into a low and a high per day.
+					// Hours with no reading are null; days with none at all
+					// are past the end of the forecast and dropped.
+					const days = [];
+					const series = data.hourly ?? ({});
+					const stamps = series.time ?? [];
+					const values = series.us_aqi ?? [];
+					for (let i = 0; i < stamps.length; i++) {
+						const value = values[i];
+						if (value === null || value === undefined) continue;
+
+						const day = stamps[i].slice(0, 10);
+						const last = days[days.length - 1];
+						if (last && last.day === day) {
+							last.min = Math.min(last.min, value);
+							last.max = Math.max(last.max, value);
+						} else {
+							days.push({ day: day, min: value, max: value });
+						}
+					}
+					root.airDays = days;
+					root.airValid = true;
+				} catch (err) {
+					// Keep whatever was shown last; it hides only if there
+					// has never been a reading.
 				}
 			}
 		}
