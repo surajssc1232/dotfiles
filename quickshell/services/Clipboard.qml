@@ -20,6 +20,12 @@ Singleton {
 
 	property var entries: []
 
+	// When each text entry was last copied, keyed by the text: { text: ms }.
+	// Kept beside the history rather than in it so `entries` stays a plain
+	// list of strings. This is what lets text and images be told apart in time.
+	// Entries from before this existed have no time and sort as oldest.
+	property var textTimes: ({})
+
 	// Copied images, newest first: [{ path, at }]. Kept as files rather than
 	// inline data because a screenshot is megabytes, and the text history is
 	// re-read and rewritten far too often to carry that.
@@ -40,7 +46,36 @@ Singleton {
 	// survives the two hundredth thing you copy after it.
 	property var pinned: []
 
-	// One list for the panel: pinned first, then images, then text.
+	// Text and images in the order they were copied, newest first:
+	// [{ kind: "image", path, at } | { kind: "text", text, at }].
+	//
+	// Both lists are already newest-first, so this is a merge, not a sort:
+	// text without a recorded time keeps its place relative to other text.
+	readonly property var history: {
+		const out = [];
+		const images = root.images;
+		const texts = root.entries;
+		let i = 0;
+		let t = 0;
+
+		while (i < images.length || t < texts.length) {
+			const textAt = t < texts.length ? (root.textTimes[texts[t]] ?? 0) : -1;
+			const imageAt = i < images.length ? (images[i].at ?? 0) : -1;
+
+			if (imageAt > textAt) {
+				out.push({ kind: "image", path: images[i].path, at: imageAt });
+				i++;
+			} else {
+				out.push({ kind: "text", text: texts[t], at: textAt });
+				t++;
+			}
+		}
+
+		return out;
+	}
+
+	// One list for the panel: pinned first, then everything else in the
+	// order it was copied.
 	//
 	// Images drop out as soon as anything is typed — they carry no text to
 	// match, and leaving them at the top of a filtered list would push the
@@ -64,18 +99,17 @@ Singleton {
 			}
 		}
 
-		if (!needle) {
-			for (const image of root.images) {
-				if (seen["i:" + image.path]) continue;
-				out.push({ kind: "image", path: image.path, at: image.at,
+		for (const entry of root.history) {
+			if (entry.kind === "image") {
+				if (needle || seen["i:" + entry.path]) continue;
+				out.push({ kind: "image", path: entry.path, at: entry.at,
+					pinned: false, group: "Recent" });
+			} else {
+				if (seen["t:" + entry.text]) continue;
+				if (needle && entry.text.toLowerCase().indexOf(needle) === -1) continue;
+				out.push({ kind: "text", text: entry.text,
 					pinned: false, group: "Recent" });
 			}
-		}
-
-		for (const text of root.entries) {
-			if (seen["t:" + text]) continue;
-			if (needle && text.toLowerCase().indexOf(needle) === -1) continue;
-			out.push({ kind: "text", text: text, pinned: false, group: "Recent" });
 		}
 
 		return out;
@@ -89,7 +123,9 @@ Singleton {
 			.map(e => e.path);
 
 		root.entries = [];
+		root.textTimes = ({});
 		store.setText("[]");
+		timeStore.setText("{}");
 
 		for (const image of root.images.slice()) {
 			if (keep.indexOf(image.path) !== -1) continue;
@@ -182,6 +218,15 @@ Singleton {
 		// Enormous pastes are someone moving a file through the clipboard, not
 		// something they will ever want to pick out of a list.
 		if (text.length > 64000) return;
+
+		// Stamped even when it is already at the top of the text list: an
+		// image may have been copied since, and copying this again has to
+		// bring it back above that image.
+		const times = Object.assign({}, root.textTimes);
+		times[text] = Date.now();
+		root.textTimes = times;
+		saveDelay.restart();
+
 		if (root.entries.length > 0 && root.entries[0] === text) return;
 
 		root.entries = [text]
@@ -248,7 +293,9 @@ Singleton {
 
 	function clear() {
 		root.entries = [];
+		root.textTimes = ({});
 		store.setText("[]");
+		timeStore.setText("{}");
 	}
 
 	// The watcher fires once per copy. `--list-types` is checked first so
@@ -308,7 +355,26 @@ Singleton {
 		id: saveDelay
 
 		interval: 800
-		onTriggered: store.setText(JSON.stringify(root.entries))
+		onTriggered: {
+			store.setText(JSON.stringify(root.entries));
+
+			// Only times for text still in the history, so entries that fell
+			// off the end or were deleted do not pile up in the file.
+			const kept = ({});
+			for (const text of root.entries) {
+				if (root.textTimes[text] !== undefined) kept[text] = root.textTimes[text];
+			}
+			root.textTimes = kept;
+			timeStore.setText(JSON.stringify(kept));
+		}
+	}
+
+	FileView {
+		id: timeStore
+
+		path: Quickshell.statePath("clipboard-times")
+		blockLoading: true
+		printErrors: false
 	}
 
 	FileView {
@@ -325,6 +391,14 @@ Singleton {
 			if (Array.isArray(saved)) root.entries = saved;
 		} catch (err) {
 			root.entries = [];
+		}
+
+		try {
+			const savedTimes = JSON.parse(timeStore.text().trim() || "{}");
+			if (savedTimes && typeof savedTimes === "object" && !Array.isArray(savedTimes))
+				root.textTimes = savedTimes;
+		} catch (err) {
+			root.textTimes = ({});
 		}
 
 		try {

@@ -393,28 +393,29 @@ Singleton {
 	function clipRows(needle: string): var {
 		const rows = [];
 
-		// Images first: there are few of them, they are the most recent thing
-		// copied more often than not, and a thumbnail is unmistakable.
-		for (const image of Clipboard.images) {
-			const name = FileSearch.name(image.path);
-			if (needle && name.toLowerCase().indexOf(needle) === -1) continue;
-			rows.push({
-				kind: "clipImage", key: "clipimg:" + rows.length,
-				name: "Image",
-				detail: Qt.formatDateTime(new Date(image.at), "d MMM hh:mm"),
-				iconName: "", glyph: Config.icons.image,
-				thumb: image.path, path: image.path
-			});
-		}
-		for (const text of Clipboard.entries) {
-			if (needle && text.toLowerCase().indexOf(needle) === -1) continue;
-			rows.push({
-				kind: "clip", key: "clip:" + rows.length,
-				name: Clipboard.preview(text),
-				detail: Clipboard.describe(text),
-				iconName: "", glyph: Config.icons.clipboard,
-				text: text
-			});
+		// In the order things were copied, images and text together.
+		for (const entry of Clipboard.history) {
+			if (entry.kind === "image") {
+				const name = FileSearch.name(entry.path);
+				if (needle && name.toLowerCase().indexOf(needle) === -1) continue;
+				rows.push({
+					kind: "clipImage", key: "clipimg:" + rows.length,
+					name: "Image",
+					detail: Qt.formatDateTime(new Date(entry.at), "d MMM hh:mm"),
+					iconName: "", glyph: Config.icons.image,
+					thumb: entry.path, path: entry.path
+				});
+			} else {
+				const text = entry.text;
+				if (needle && text.toLowerCase().indexOf(needle) === -1) continue;
+				rows.push({
+					kind: "clip", key: "clip:" + rows.length,
+					name: Clipboard.preview(text),
+					detail: Clipboard.describe(text),
+					iconName: "", glyph: Config.icons.clipboard,
+					text: text
+				});
+			}
 		}
 		return rows;
 	}
