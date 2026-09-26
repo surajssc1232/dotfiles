@@ -439,6 +439,8 @@ ShellRoot {
 					verticalAlignment: TextInput.AlignVCenter
 					echoMode: TextInput.Password
 					passwordCharacter: "•"
+					// Room between the dots, which otherwise run together.
+					font.letterSpacing: 4
 					color: "#ffffff"
 					font.family: root.font
 					font.pixelSize: root.fontSize + 1

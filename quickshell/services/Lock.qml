@@ -47,6 +47,22 @@ Singleton {
 
 	signal failed()
 
+	// Auto-login at boot sets QS_LOCK_ON_START, so the session comes up behind
+	// the lock rather than open. The variable stays in the environment for the
+	// whole session, so a marker in the runtime directory makes it fire once:
+	// restarting the shell later must not lock the screen again.
+	Component.onCompleted: {
+		if (Quickshell.env("QS_LOCK_ON_START") !== "1") return;
+		const marker = (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/qs-locked-on-start";
+		startLock.command = ["sh", "-c", "[ -e \"$1\" ] && exit 1; touch \"$1\"", "sh", marker];
+		startLock.running = true;
+	}
+
+	Process {
+		id: startLock
+		onExited: code => { if (code === 0) root.lock(); }
+	}
+
 	function lock() {
 		if (root.locked) return;
 		root.error = "";

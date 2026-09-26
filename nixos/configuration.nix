@@ -222,8 +222,18 @@
   #
   # The greeter files live in /etc rather than ~/.config because this runs as
   # the unprivileged `greeter` user, which cannot read /home/suraj (0700).
+  #
+  # At boot, though, the greeter is skipped: initial_session logs suraj straight
+  # into niri, and QS_LOCK_ON_START tells the desktop shell to raise its own
+  # lock screen as soon as it starts. greetd runs initial_session once per boot
+  # only, so logging out still lands on the greeter below. This gives up the
+  # guarantee above: if the shell fails to start, the desktop is left unlocked.
   services.greetd = {
     enable = true;
+    settings.initial_session = {
+      command = "env QS_LOCK_ON_START=1 niri-session";
+      user = "suraj";
+    };
     settings.default_session = {
       command = "${pkgs.niri}/bin/niri -c /etc/greeter/niri.kdl";
       user = "greeter";
@@ -585,6 +595,7 @@
 
   environment.systemPackages = with pkgs; [
     acpi
+    nushell
     google-chrome
     prismlauncher
     uv

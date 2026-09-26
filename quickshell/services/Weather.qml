@@ -122,6 +122,14 @@ Singleton {
 	readonly property string icon: root.iconFor(root.code, root.daylight)
 	readonly property string summary: root.describe(root.code)
 
+	// Holds a request back until NetworkManager has a connection, for up to
+	// 30s. The shell comes up before Wi-Fi does — at boot, and again on
+	// resume — and a request sent into that gap fails, leaving the lock
+	// screen showing "unavailable" for the first thing anyone sees.
+	function whenOnline(command) {
+		return ["sh", "-c", "nm-online -q -t 30; exec \"$@\"", "sh"].concat(command);
+	}
+
 	function refresh() {
 		if (!root.enabled) return;
 
@@ -131,7 +139,7 @@ Singleton {
 			return;
 		}
 
-		fetch.command = ["curl", "-sS", "--max-time", "12",
+		fetch.command = root.whenOnline(["curl", "-sS", "--max-time", "12",
 			"https://api.open-meteo.com/v1/forecast"
 				+ "?latitude=" + root.latitude
 				+ "&longitude=" + root.longitude
@@ -141,7 +149,7 @@ Singleton {
 				+ "&hourly=temperature_2m,weather_code,precipitation_probability"
 				+ "&daily=weather_code,temperature_2m_max,temperature_2m_min"
 					+ ",sunrise,sunset,precipitation_probability_max,uv_index_max"
-				+ "&timezone=auto&forecast_days=5"];
+				+ "&timezone=auto&forecast_days=5"]);
 		fetch.running = true;
 	}
 
@@ -243,7 +251,7 @@ Singleton {
 	// happen again on every login.
 	function locate() {
 		if (locator.running) return;
-		locator.command = ["curl", "-sS", "--max-time", "12", "https://ipapi.co/json"];
+		locator.command = root.whenOnline(["curl", "-sS", "--max-time", "12", "https://ipapi.co/json"]);
 		locator.running = true;
 	}
 
@@ -268,6 +276,7 @@ Singleton {
 					root.refresh();
 				} catch (err) {
 					root.error = "Could not work out where this is";
+					root.retryLater();
 				}
 			}
 		}
@@ -338,10 +347,34 @@ Singleton {
 
 					root.valid = true;
 					root.error = "";
+					retry.interval = 30000;
+					retry.stop();
 				} catch (err) {
-					root.error = "Weather unavailable";
+					// Old data is still worth showing: it is at most a few
+					// retries out of date, and a warning icon over a reading
+					// that is fine is what made the bar look broken.
+					if (!root.valid) root.error = "Weather unavailable";
+					root.retryLater();
 				}
 			}
+		}
+	}
+
+	// A failed request is tried again soon rather than at the next 15-minute
+	// tick. The shell starts before Wi-Fi is up, especially on an auto-login,
+	// so the first request of every boot and every resume tends to fail.
+	// Waits 30s, then twice as long each time, up to 5 minutes.
+	function retryLater() {
+		if (retry.running) return;
+		retry.start();
+	}
+
+	Timer {
+		id: retry
+		interval: 30000
+		onTriggered: {
+			retry.interval = Math.min(retry.interval * 2, 5 * 60000);
+			root.refresh();
 		}
 	}
 
