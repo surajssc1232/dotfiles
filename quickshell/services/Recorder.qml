@@ -33,6 +33,18 @@ Singleton {
 	signal finished(string path)
 	signal failed(string reason)
 
+	// Nothing else listens for a failure, and a recording that silently
+	// never happened is the worst way for this to go wrong. The last line
+	// wf-recorder printed usually names the actual problem.
+	onFailed: reason => {
+		const lines = (recorder.stderr.text || "").trim().split("\n")
+			.filter(l => l.trim() && !l.startsWith("["));
+		const detail = lines.length > 0 ? lines[lines.length - 1] : "";
+		notify.command = ["notify-send", "-a", "Recorder", "-u", "critical",
+			"Recording failed", reason + (detail ? "\n" + detail : "")];
+		notify.running = true;
+	}
+
 	// What `auto` actually resolves to right now, for display.
 	readonly property string effectiveMode: {
 		if (root.audioMode !== "auto") return root.audioMode;

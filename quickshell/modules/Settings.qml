@@ -66,6 +66,23 @@ Pill {
 		onTriggered: {
 			// slurp draws its own layer-shell selection surface, so it works
 			// on any wlroots compositor rather than needing one of its own.
+			//
+			// Its default is a 25% white wash, which over anything bright —
+			// a video, a white page — is close enough to invisible that the
+			// selection looks like it never opened. Dimmed instead, with the
+			// border in the theme's accent and the size shown while dragging.
+			//
+			// stdin is pointed at /dev/null: when it is not a terminal, slurp
+			// first reads a list of predefined boxes from it and shows nothing
+			// until that input ends. A Process's stdin is an open pipe that
+			// never ends, so slurp would sit there forever with no surface.
+			const accent = String(Config.accent).replace("#", "").slice(-6);
+			picker.command = ["sh", "-c", 'exec slurp "$@" < /dev/null', "sh", "-d",
+				"-b", "#00000088",
+				"-c", "#" + accent + "ff",
+				"-s", "#00000000",
+				"-w", "2",
+				"-f", "%x,%y %wx%h"];
 			picker.running = true;
 		}
 	}
@@ -73,14 +90,34 @@ Pill {
 	Process {
 		id: picker
 
-		command: ["slurp", "-f", "%x,%y %wx%h"]
-
 		stdout: StdioCollector {
-			onStreamFinished: {
-				const geometry = text.trim();
-				// Empty means the selection was cancelled with Escape.
-				if (geometry) Recorder.start(geometry);
+			id: pickerOut
+		}
+
+		stderr: StdioCollector {
+			id: pickerErr
+		}
+
+		// Decided on exit rather than when stdout closes, so the exit code
+		// is known: slurp exits 1 with "selection cancelled" on Escape,
+		// which is not an error, and anything else is.
+		onExited: code => {
+			const geometry = pickerOut.text.trim();
+			if (code === 0 && geometry) {
+				Recorder.start(geometry);
+				return;
 			}
+
+			// Cancelled with Escape, or killed from outside (a signal leaves
+			// no message): neither is something to report.
+			const why = pickerErr.text.trim();
+			if (!why || /cancel/i.test(why)) return;
+
+			Quickshell.execDetached({
+				command: ["notify-send", "-a", "Recorder", "-u", "critical",
+					"Region selection failed",
+					why]
+			});
 		}
 	}
 
