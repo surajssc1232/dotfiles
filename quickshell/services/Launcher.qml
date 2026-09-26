@@ -770,6 +770,23 @@ Singleton {
 		root.index = 0;
 	}
 
+	// Icon theme lookups are synchronous and walk the theme directories, so
+	// the same name is resolved once and remembered. A list being scrolled
+	// rebuilds its rows constantly, and paying that cost per row per frame is
+	// what made scrolling stutter.
+	property var iconCache: ({})
+
+	function icon(name: string): string {
+		if (!name) return "";
+
+		const hit = root.iconCache[name];
+		if (hit !== undefined) return hit;
+
+		const path = Quickshell.iconPath(name, true);
+		root.iconCache[name] = path;
+		return path;
+	}
+
 	function step(delta: int) {
 		const n = root.results.length;
 		if (n === 0) return;

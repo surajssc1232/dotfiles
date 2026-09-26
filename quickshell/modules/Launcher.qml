@@ -332,12 +332,72 @@ PanelWindow {
 					interactive: false
 					currentIndex: Launcher.index
 					highlightMoveDuration: 0
+
+					// Rows are recycled rather than destroyed and rebuilt as
+					// they scroll, and a few are kept alive just outside the
+					// viewport so a notch of the wheel does not have to build
+					// one from scratch.
+					reuseItems: true
+					cacheBuffer: root.rowHeight * 6
 					highlightRangeMode: ListView.ApplyRange
 					preferredHighlightBegin: 0
 					preferredHighlightEnd: Math.max(0, height - root.rowHeight)
 
-					WheelHandler {
-						onWheel: event => Launcher.step(event.angleDelta.y > 0 ? -1 : 1)
+					// A transparent capture layer rather than a WheelHandler:
+					// the row delegates are hover-enabled MouseAreas sitting
+					// above it, and the wheel never reached the handler
+					// underneath them. NoButton lets clicks fall straight
+					// through to the rows as before.
+					MouseArea {
+						anchors.fill: parent
+						z: 10
+
+						acceptedButtons: Qt.NoButton
+						propagateComposedEvents: true
+
+						// A notch is 120; a touchpad sends much smaller
+						// deltas, so they accumulate into whole rows instead
+						// of either doing nothing or flying down the list.
+						property int wheelAccumulator: 0
+
+						onWheel: wheel => {
+							wheelAccumulator += wheel.angleDelta.y;
+
+							while (wheelAccumulator >= 120) {
+								Launcher.step(-1);
+								wheelAccumulator -= 120;
+							}
+
+							while (wheelAccumulator <= -120) {
+								Launcher.step(1);
+								wheelAccumulator += 120;
+							}
+						}
+					}
+
+					// Where you are in a long result list. Only present when
+					// there is more than one screenful.
+					Rectangle {
+						anchors.right: parent.right
+						anchors.rightMargin: 3
+						width: 3
+						radius: 2
+
+						visible: Launcher.results.length > root.maxRows
+						color: Config.fgDim
+						opacity: 0.4
+
+						height: Math.max(24, parent.height
+							* (root.maxRows / Math.max(1, Launcher.results.length)))
+
+						y: Launcher.results.length > root.maxRows
+							? (parent.height - height)
+								* (Launcher.index / Math.max(1, Launcher.results.length - 1))
+							: 0
+
+						Behavior on y {
+							NumberAnimation { duration: 90; easing.type: Easing.OutQuad }
+						}
 					}
 
 					delegate: MouseArea {
@@ -347,11 +407,10 @@ PanelWindow {
 						required property int index
 						readonly property bool current: index === Launcher.index
 
-						// Resolved once per delegate: iconPath walks the icon
-						// theme on the calling thread, and with a hundred rows
-						// under a changing filter that cost is paid constantly.
-						readonly property string iconPath: modelData.iconName
-							? Quickshell.iconPath(modelData.iconName, true) : ""
+						// Memoised in the service: iconPath walks the icon
+						// theme on the calling thread, and a recycled row
+						// re-evaluates this every time it is reused.
+						readonly property string iconPath: Launcher.icon(modelData.iconName)
 
 						width: list.width
 						height: root.rowHeight
@@ -435,6 +494,9 @@ PanelWindow {
 								Layout.preferredWidth: 28
 								Layout.preferredHeight: 28
 								source: entry.iconPath
+								// Decoded off the render thread, so a row
+								// scrolling into view cannot stall a frame.
+								asynchronous: true
 								visible: entry.iconPath !== ""
 									&& (entry.modelData.thumb ?? "") === ""
 							}
