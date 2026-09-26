@@ -242,6 +242,10 @@ Singleton {
 		cloud: "\uf0c2",
 		wind: "\ue34b",        // nf-weather-strong_wind
 		leaf: "\uf06c",        // air quality
+		plus: "\uf067",
+		close: "\uf00d",
+		meeting: "\uf0c0",     // users
+		repeat: "\uf01e",
 		history: "\uf1da",
 		question: "\uf059",
 		rocket: "\uf135",
