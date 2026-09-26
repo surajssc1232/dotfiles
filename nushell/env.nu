@@ -1,7 +1,7 @@
 # env.nu
 #
 # Installed by:
-# version = "0.107.0"
+# version = "0.112.2"
 #
 # Previously, environment variables were typically configured in `env.nu`.
 # In general, most configuration can and should be performed in `config.nu`
@@ -16,9 +16,9 @@
 #
 # You can remove these comments if you want or leave
 # them for future reference.
-#
-# carpace
-$env.CARAPACE_BRIDGES = 'zsh,fish,bash,inshellisense' # optional
-mkdir ~/.cache/carapace
-carapace _carapace nushell | save --force ~/.cache/carapace/init.nu
+use std/util "path add"
+path add $"($env.HOME)/.local/bin"
 
+# Let the prompt render the venv indicator itself instead of activate.nu
+# prepending a plain "(name) " to it.
+$env.VIRTUAL_ENV_DISABLE_PROMPT = "1"
