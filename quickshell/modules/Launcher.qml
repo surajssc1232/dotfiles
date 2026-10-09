@@ -224,7 +224,18 @@ PanelWindow {
 								return;
 							}
 
+							// A slider row takes Left and Right for itself; the
+							// text cursor gets them back as soon as the
+							// selection moves off it.
+							const slider = Launcher.selected?.kind === "slider"
+								? Launcher.selected.control : "";
+
 							switch (event.key) {
+							case Qt.Key_Left:
+							case Qt.Key_Right:
+								if (!slider) return;
+								Launcher.nudge(slider, event.key === Qt.Key_Right ? 1 : -1);
+								break;
 							// Delete drops the selected row from whatever
 							// history produced it, and does nothing elsewhere.
 							case Qt.Key_Delete:
@@ -361,6 +372,19 @@ PanelWindow {
 						property int wheelAccumulator: 0
 
 						onWheel: wheel => {
+							// Over a slider row the wheel moves the slider
+							// instead of the selection, as it does on the tile
+							// in the control centre.
+							const under = list.itemAt(wheel.x + list.contentX,
+								wheel.y + list.contentY);
+							if (under?.isSlider) {
+								wheelAccumulator = 0;
+								const dir = wheel.angleDelta.y > 0 ? 1
+									: wheel.angleDelta.y < 0 ? -1 : 0;
+								if (dir !== 0) Launcher.nudge(under.modelData.control, dir);
+								return;
+							}
+
 							wheelAccumulator += wheel.angleDelta.y;
 
 							while (wheelAccumulator >= 120) {
@@ -406,6 +430,15 @@ PanelWindow {
 						required property var modelData
 						required property int index
 						readonly property bool current: index === Launcher.index
+
+						// Read live, never carried in the model: see the
+						// slider section of services/Launcher.qml.
+						readonly property bool isSlider: modelData.kind === "slider"
+						readonly property string control: isSlider ? modelData.control : ""
+						readonly property real level: isSlider
+							? Launcher.sliderValue(control) : 0
+						readonly property bool muted: isSlider
+							&& Launcher.sliderMuted(control)
 
 						// Memoised in the service: iconPath walks the icon
 						// theme on the calling thread, and a recycled row
@@ -507,7 +540,9 @@ PanelWindow {
 								Layout.preferredWidth: 28
 								visible: entry.iconPath === ""
 									&& (entry.modelData.thumb ?? "") === ""
-								text: entry.modelData.glyph ?? ""
+								text: entry.isSlider
+									? Launcher.sliderGlyph(entry.control)
+									: (entry.modelData.glyph ?? "")
 								color: entry.current ? Config.accent : Config.fgDim
 								font.pixelSize: Config.fontSize + 4
 								horizontalAlignment: Text.AlignHCenter
@@ -556,6 +591,64 @@ PanelWindow {
 								}
 							}
 
+							// ---- inline slider ----
+							Item {
+								id: track
+
+								Layout.preferredWidth: Math.round(list.width * 0.32)
+								Layout.preferredHeight: 18
+								visible: entry.isSlider
+
+								function commit(x) {
+									Launcher.index = entry.index;
+									Launcher.setSlider(entry.control,
+										Math.max(0, Math.min(1, x / track.width)));
+								}
+
+								Rectangle {
+									anchors.verticalCenter: parent.verticalCenter
+									width: parent.width
+									height: 6
+									radius: 3
+									color: Config.bg
+									border.width: 1
+									border.color: Config.border
+
+									Rectangle {
+										width: Math.round(parent.width
+											* Math.max(0, Math.min(1, entry.level)))
+										height: parent.height
+										radius: parent.radius
+										color: entry.muted ? Config.fgDim : Config.accent
+									}
+								}
+
+								// Above the row's own MouseArea, so pressing the
+								// bar sets the level rather than committing
+								// (which would mute).
+								MouseArea {
+									anchors.fill: parent
+									anchors.leftMargin: -4
+									anchors.rightMargin: -4
+									preventStealing: true
+									cursorShape: Qt.PointingHandCursor
+
+									onPressed: event => track.commit(event.x)
+									onPositionChanged: event => {
+										if (pressed) track.commit(event.x);
+									}
+								}
+							}
+
+							Label {
+								Layout.preferredWidth: 44
+								visible: entry.isSlider
+								text: entry.isSlider ? Launcher.sliderReadout(entry.control) : ""
+								color: entry.current ? Config.accent : Config.fgDim
+								font.pixelSize: Config.fontSize - 2
+								horizontalAlignment: Text.AlignRight
+							}
+
 							// Alt-number badge, shown only while Alt is down,
 							// and only for the rows that have a digit.
 							Rectangle {
@@ -576,7 +669,7 @@ PanelWindow {
 							}
 
 							Label {
-								visible: entry.current && !root.numbering
+								visible: entry.current && !root.numbering && !entry.isSlider
 								text: Config.icons.enter
 								color: Config.accent
 								font.pixelSize: Config.fontSize
@@ -597,7 +690,11 @@ PanelWindow {
 				Label {
 					Layout.fillWidth: true
 					text: Config.icons.keyUp + Config.icons.keyDown + " select   "
-						+ Config.icons.dot + "   Enter open   "
+						+ (Launcher.selected?.kind === "slider"
+							? Config.icons.dot + "   \u2190\u2192 adjust   "
+								+ (Launcher.selected.control !== "brightness"
+									? Config.icons.dot + "   Enter mute   " : "")
+							: Config.icons.dot + "   Enter open   ")
 						+ Config.icons.dot + "   Alt+n jump   "
 						+ (Launcher.mode === "clip" || Launcher.mode === "run"
 							? Config.icons.dot + "   Del forget   " : "")

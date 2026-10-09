@@ -1,4 +1,3 @@
-function lsd --description 'alias lsd=lsd -al'
- command lsd -al $argv
-        
+function lsd --wraps='eza --icons always' --description 'alias lsd eza --icons always'
+    eza --icons always $argv
 end

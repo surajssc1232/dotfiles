@@ -372,6 +372,14 @@ window-rule {
     default-window-height { fixed 800; }
 }
 
+window-rule {
+    // Cheating Daddy overlay: float it, don't steal focus, and black it out of screencasts
+    match app-id="^cheating-daddy$"
+    open-floating true
+    open-focused false
+    block-out-from "screencast"
+}
+
 // Open the Firefox picture-in-picture player as floating by default.
 window-rule {
     // This app-id regular expression will work for both:
@@ -404,6 +412,15 @@ window-rule {
 
 
 binds {
+    // Cheating Daddy (niri has no GlobalShortcuts portal, so forward actions to the running app)
+    Mod+Alt+Backslash    hotkey-overlay-title="Cheating Daddy: Toggle" { spawn "cheating-daddy" "--action=toggleVisibility"; }
+    Mod+Alt+Return       hotkey-overlay-title="Cheating Daddy: Next Step" { spawn "cheating-daddy" "--action=nextStep"; }
+    Mod+Alt+M            hotkey-overlay-title="Cheating Daddy: Click-through" { spawn "cheating-daddy" "--action=toggleClickThrough"; }
+    Mod+Alt+BracketLeft  { spawn "cheating-daddy" "--action=previousResponse"; }
+    Mod+Alt+BracketRight { spawn "cheating-daddy" "--action=nextResponse"; }
+    Mod+Alt+Up           { spawn "cheating-daddy" "--action=scrollUp"; }
+    Mod+Alt+Down         { spawn "cheating-daddy" "--action=scrollDown"; }
+    Mod+Alt+E            { spawn "cheating-daddy" "--action=emergencyErase"; }
     Mod+S {spawn "~/websearch.sh";}
     Mod+E {spawn "~/remind.sh";}
     Mod+Z {spawn-sh "/etc/nixos/scripts/fontpicker.sh";}

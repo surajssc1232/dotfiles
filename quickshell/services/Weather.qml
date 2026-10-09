@@ -255,6 +255,23 @@ Singleton {
 		root.locate();
 	}
 
+	// Worth having permanently: "is the bar empty because the weather never
+	// loaded, or because it is hidden?" is otherwise unanswerable.
+	IpcHandler {
+		target: "weather"
+
+		function state(): string {
+			if (root.error !== "") return "error: " + root.error
+				+ " (retrying" + (retry.running ? " in " + Math.round(retry.interval / 1000) + "s" : "") + ")";
+			if (!root.valid) return "no data yet";
+			return Math.round(root.temperature) + "° " + root.summary
+				+ " @ " + (root.place || "unknown")
+				+ " · " + root.forecast.length + " day forecast";
+		}
+
+		function refresh(): void { root.refresh(); }
+	}
+
 	Process {
 		id: geocoder
 
@@ -464,6 +481,18 @@ Singleton {
 		onTriggered: {
 			retry.interval = Math.min(retry.interval * 2, 5 * 60000);
 			root.refresh();
+		}
+	}
+
+	// At login the shell is usually up before the network is, so the first
+	// attempt fails and the backoff above would leave the bar empty for the
+	// best part of a minute. This asks again the moment there is a connection.
+	Connections {
+		target: Network
+		enabled: root.enabled
+
+		function onConnectedChanged(): void {
+			if (Network.connected) root.refresh();
 		}
 	}
 

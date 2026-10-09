@@ -21,6 +21,11 @@ ShellRoot {
 		// would never run at all, silently.
 		Services.BatteryAlert.check();
 		Services.Units.refresh();
+
+		// Weather is built on first use like every other singleton, and the
+		// bar pill is its only user. Naming it here means it starts fetching
+		// at login rather than when something first looks at it.
+		Services.Weather.refresh();
 	}
 
 	// Painted under everything else, one per monitor.

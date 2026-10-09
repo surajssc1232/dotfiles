@@ -1,7 +1,9 @@
 # This is the configuration file for Ghostty.
 #
 # This template file has been automatically created at the following
-# path since Ghostty couldn't find any existing config files on your system: # #   /home/suraj/.config/ghostty/config
+# path since Ghostty couldn't find any existing config files on your system:
+#
+#   /home/suraj/.config/ghostty/config
 #
 # The template does not set any default options, since Ghostty ships
 # with sensible defaults for all options. Users should only need to set
@@ -39,18 +41,11 @@
 # # which is explained in the docs for that config option.
 # # Just for example:
 # resize-overlay-duration = 4s 200ms
-# window-padding-color=background
+theme = Gruvbox Dark
+font-size = 14
+font-family = JetBrainsMonoNL Nerd Font
 
-# window-padding-x=0
-# window-padding-y=0
-# window-padding-balance=true
-# window-step-resize=true
-cursor-style=block
-theme=Adventure
-confirm-close-surface=false
-cursor-color=#689D6A
-font-size=16
-font-family=IosevkaTermNerdFont
-window-decoration=none
-background-opacity=1
-
+# New windows start in $HOME instead of inheriting the cwd of the
+# window they were launched from. Tabs and splits still inherit.
+working-directory = home
+window-inherit-working-directory = false

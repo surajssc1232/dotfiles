@@ -38,6 +38,7 @@ Singleton {
 		if (q.startsWith(":")) return "emoji";
 		if (q.startsWith("%")) return "unit";
 		if (q.startsWith("&")) return "bt";
+		if (q.startsWith("+")) return "controls";
 		if (q.startsWith("?")) return "help";
 		return "app";
 	}
@@ -50,7 +51,7 @@ Singleton {
 		app: "Applications", run: "Run", calc: "Calculator",
 		window: "Windows", command: "Commands", clip: "Clipboard",
 		file: "Files", emoji: "Emoji", unit: "Failed units",
-		bt: "Bluetooth", help: "Modes"
+		bt: "Bluetooth", controls: "Controls", help: "Modes"
 	})
 
 	readonly property var modeIcon: ({
@@ -59,7 +60,7 @@ Singleton {
 		command: Config.icons.settings, clip: Config.icons.clipboard,
 		file: Config.icons.inbox, emoji: Config.icons.emoji,
 		unit: Config.icons.settings, bt: Config.icons.bluetooth,
-		help: Config.icons.question
+		controls: Config.icons.mixer, help: Config.icons.question
 	})
 
 	readonly property var modePlaceholder: ({
@@ -68,13 +69,13 @@ Singleton {
 		command: "Shell commands", clip: "Clipboard history",
 		file: "Find a file under ~", emoji: "Search emoji by name",
 		unit: "Failed systemd units", bt: "Connect a device",
-		help: "Modes"
+		controls: "Volume, mic and brightness", help: "Modes"
 	})
 
 	// What the delegate should highlight in each row. Only the modes that
 	// actually match against the row's name have anything to mark up.
 	readonly property string highlightTerm:
-		["app", "command", "clip", "file", "run", "emoji", "unit", "bt"]
+		["app", "command", "clip", "file", "run", "emoji", "unit", "bt", "controls"]
 			.indexOf(root.mode) !== -1
 			? root.term.toLowerCase() : ""
 
@@ -171,7 +172,50 @@ Singleton {
 		})
 	}))
 
-	readonly property var catalog: root.appCatalog.concat(root.commandCatalog)
+	// Volume and brightness, as rows that are their own control: Left and
+	// Right move them, the wheel and a drag on the bar do too. The row carries
+	// no level of its own — the delegate reads that live — or every notch would
+	// rebuild the list. Only which controls exist is part of the model.
+	readonly property var sliderCatalog: {
+		const out = [];
+		if (Audio.sink) {
+			out.push({
+				kind: "slider", key: "slider:volume", control: "volume",
+				name: "Volume", detail: Audio.label(Audio.sink) + " · enter mutes",
+				iconName: "", glyph: Config.icons.volHigh,
+				hay: ({
+					name: "volume", generic: "sound audio speaker",
+					keywords: "mute loud quiet output", comment: "", id: "volume"
+				})
+			});
+		}
+		if (Audio.source) {
+			out.push({
+				kind: "slider", key: "slider:mic", control: "mic",
+				name: "Microphone", detail: Audio.label(Audio.source) + " · enter mutes",
+				iconName: "", glyph: Config.icons.mic,
+				hay: ({
+					name: "microphone", generic: "mic input volume",
+					keywords: "mute record capture", comment: "", id: "mic"
+				})
+			});
+		}
+		if (Brightness.available) {
+			out.push({
+				kind: "slider", key: "slider:brightness", control: "brightness",
+				name: "Brightness", detail: "Display backlight",
+				iconName: "", glyph: Config.icons.brightness,
+				hay: ({
+					name: "brightness", generic: "screen display backlight",
+					keywords: "dim bright", comment: "", id: "brightness"
+				})
+			});
+		}
+		return out;
+	}
+
+	readonly property var catalog: root.appCatalog
+		.concat(root.commandCatalog).concat(root.sliderCatalog)
 
 	// ---- scoring ----
 	//
@@ -245,7 +289,7 @@ Singleton {
 		if (row.kind === "action") best -= 60;
 		// A shell command loses a tie with an application. You reach for this
 		// launcher to start something far more often than to flip a switch.
-		if (row.kind === "command") best -= 20;
+		if (row.kind === "command" || row.kind === "slider") best -= 20;
 		return best + root.useBonus(row.key);
 	}
 
@@ -268,6 +312,8 @@ Singleton {
 		if (root.mode === "emoji") return root.emojiRows(needle);
 		if (root.mode === "unit") return root.unitRows(needle);
 		if (root.mode === "bt") return root.btRows(needle);
+		if (root.mode === "controls") return root.sliderCatalog
+			.filter(r => !needle || root.score(r, needle) >= 0);
 
 		// Nothing typed: the applications you actually use, most first. This
 		// is the state the launcher spends most of its life in, so it is worth
@@ -360,7 +406,9 @@ Singleton {
 			{ kind: "help", key: "?unit", name: "Failed units", detail: "% prefix",
 			  glyph: Config.icons.settings, iconName: "", prefix: "%" },
 			{ kind: "help", key: "?bt", name: "Bluetooth", detail: "& prefix",
-			  glyph: Config.icons.bluetooth, iconName: "", prefix: "&" }
+			  glyph: Config.icons.bluetooth, iconName: "", prefix: "&" },
+			{ kind: "help", key: "?controls", name: "Volume, mic and brightness", detail: "+ prefix",
+			  glyph: Config.icons.mixer, iconName: "", prefix: "+" }
 		];
 	}
 
@@ -597,6 +645,65 @@ Singleton {
 			glyph: Config.icons.calculator, value: value }];
 	}
 
+	// ---- sliders ----
+	//
+	// Read by the delegate inside its bindings, so the bar and readout follow
+	// the device — including changes made from the keys or the bar.
+	function sliderValue(control: string): real {
+		if (control === "volume") return Audio.sink?.audio?.volume ?? 0;
+		if (control === "mic") return Audio.source?.audio?.volume ?? 0;
+		if (control === "brightness") return Brightness.percent / 100;
+		return 0;
+	}
+
+	function sliderMuted(control: string): bool {
+		const node = root.sliderNode(control);
+		return node?.audio?.muted ?? false;
+	}
+
+	// The Pipewire node behind an audio slider; null for brightness.
+	function sliderNode(control: string): var {
+		if (control === "volume") return Audio.sink;
+		if (control === "mic") return Audio.source;
+		return null;
+	}
+
+	function sliderReadout(control: string): string {
+		if (root.sliderMuted(control)) return "muted";
+		return Math.round(root.sliderValue(control) * 100) + "%";
+	}
+
+	function sliderGlyph(control: string): string {
+		if (control === "brightness") return Config.icons.brightness;
+		if (control === "mic")
+			return root.sliderMuted(control) ? Config.icons.micOff : Config.icons.mic;
+		if (root.sliderMuted(control)) return Config.icons.volMute;
+		return root.sliderValue(control) > 0.5 ? Config.icons.volHigh : Config.icons.volLow;
+	}
+
+	function setSlider(control: string, value: real) {
+		const v = Math.max(0, Math.min(1, value));
+		if (control === "volume" || control === "mic") {
+			const audio = root.sliderNode(control)?.audio;
+			if (!audio) return;
+			audio.muted = false;
+			audio.volume = v;
+		} else if (control === "brightness") {
+			Brightness.set(Math.max(1, v * 100));
+		}
+	}
+
+	// One step, snapped to the 5% grid so repeated presses land on round
+	// numbers — the same rule SliderTile keeps. A sink sitting above 100% is
+	// left alone when asked to go up, rather than snapped back down.
+	function nudge(control: string, dir: int) {
+		const step = 0.05;
+		const now = root.sliderValue(control);
+		if (dir > 0 && now >= 1) return;
+		const base = Math.min(1, now);
+		root.setSlider(control, Math.round((base + dir * step) / step) * step);
+	}
+
 	// ---- calculator ----
 	//
 	// A hand-written parser rather than eval: the input is whatever is in the
@@ -753,6 +860,9 @@ Singleton {
 	function show(prefix: string) {
 		// The bookmark file changes constantly and is only read on demand.
 		FileSearch.refreshRecent();
+		// Brightness is only polled while the control centre is up; the
+		// backlight keys may have moved it since.
+		Brightness.refresh();
 		root.query = prefix ?? "";
 		root.index = 0;
 		root.open = true;
@@ -814,6 +924,14 @@ Singleton {
 		}
 
 		if (row.kind === "calcError" || row.kind === "info") return;
+
+		// Stays open: a slider is adjusted, not launched. Enter mutes the
+		// one control where that means anything.
+		if (row.kind === "slider") {
+			const audio = root.sliderNode(row.control)?.audio;
+			if (audio) audio.muted = !audio.muted;
+			return;
+		}
 
 		if (row.kind === "unit") {
 			Units.restart(row.entry);

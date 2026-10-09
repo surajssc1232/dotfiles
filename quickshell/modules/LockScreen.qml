@@ -159,6 +159,43 @@ WlSessionLock {
 			}
 		}
 
+		// ---- weather ----
+		// The one thing worth knowing before you have unlocked anything.
+		RowLayout {
+			id: conditions
+
+			anchors.horizontalCenter: parent.horizontalCenter
+			anchors.top: info.bottom
+			anchors.topMargin: 22
+
+			spacing: 10
+
+			opacity: surface.prompting ? 0 : 1
+			visible: Config.weather && Weather.valid && opacity > 0
+
+			Behavior on opacity {
+				NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+			}
+
+			Label {
+				text: Weather.icon
+				color: "#d8d8d8"
+				font.pixelSize: Config.fontSize + 8
+			}
+
+			Label {
+				text: Math.round(Weather.temperature) + "°"
+				color: "#d8d8d8"
+				font.pixelSize: Config.fontSize + 6
+			}
+
+			Label {
+				text: Weather.summary + (Weather.place ? " · " + Weather.place : "")
+				color: "#9aa0a6"
+				font.pixelSize: Config.fontSize + 1
+			}
+		}
+
 		// ---- prompting: who, and the password ----
 		ColumnLayout {
 			id: auth

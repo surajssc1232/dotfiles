@@ -240,6 +240,12 @@
     };
   };
 
+  # Autologin above never sees a password, so gnome-keyring stays locked and
+  # Chromium-based browsers prompt for it. The desktop shell's lock screen
+  # authenticates through the swaylock stack; hooking gnome-keyring in there
+  # means the password typed at the boot lock screen unlocks the keyring too.
+  security.pam.services.swaylock.enableGnomeKeyring = true;
+
   environment.etc."greeter/niri.kdl".source = ./greeter/niri.kdl;
   environment.etc."greeter/shell.qml".source = ./greeter/shell.qml;
 

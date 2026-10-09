@@ -33,8 +33,8 @@ cyan    = "#8ec07c"
 white   = "#ebdbb2"
 
 [font]
-normal.family="JetBrainsMono Nerd Font"
-size = 14
+normal.family="JetBrainsMonoNL Nerd Font"
+size = 18
 
 [window]
 decorations = "Full"

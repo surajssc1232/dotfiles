@@ -1,0 +1,7 @@
+*.bak
+*.bak*
+history.txt
+.env
+*.msgpackz
+*.db
+*.db-*
