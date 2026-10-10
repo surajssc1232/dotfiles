@@ -90,29 +90,29 @@ Pill {
 				}
 
 				// ---- empty state ----
-				ColumnLayout {
+				Item {
 					Layout.fillWidth: true
 					Layout.fillHeight: true
 					visible: Notifs.count === 0
-					spacing: 6
 
-					Item { Layout.fillHeight: true }
+					Column {
+						anchors.centerIn: parent
+						spacing: 6
 
-					Label {
-						Layout.alignment: Qt.AlignHCenter
-						text: Config.icons.inbox
-						color: Config.fgDim
-						font.pixelSize: Config.fontSize + 10
+						Label {
+							anchors.horizontalCenter: parent.horizontalCenter
+							text: Config.icons.inbox
+							color: Config.fgDim
+							font.pixelSize: Config.fontSize + 10
+						}
+
+						Label {
+							anchors.horizontalCenter: parent.horizontalCenter
+							text: Notifs.dnd ? "Do not disturb is on" : "Nothing to catch up on"
+							color: Config.fgDim
+							font.pixelSize: Config.fontSize - 1
+						}
 					}
-
-					Label {
-						Layout.alignment: Qt.AlignHCenter
-						text: Notifs.dnd ? "Do not disturb is on" : "Nothing to catch up on"
-						color: Config.fgDim
-						font.pixelSize: Config.fontSize - 1
-					}
-
-					Item { Layout.fillHeight: true }
 				}
 
 				// ---- history ----

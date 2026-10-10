@@ -448,6 +448,7 @@ binds {
 
     // Notification history, the same panel the bell in the bar opens.
     Alt+Backslash hotkey-overlay-title="Show Notifications" { spawn "sh" "-c" "~/.config/quickshell/scripts/notifications.sh"; }
+    Mod+BackSpace hotkey-overlay-title="Show Notifications" { spawn "sh" "-c" "~/.config/quickshell/scripts/notifications.sh"; }
 
     // Locking is the shell's own, through modules/LockScreen.qml — it raises
     // the session lock via ext-session-lock-v1 rather than shelling out to a

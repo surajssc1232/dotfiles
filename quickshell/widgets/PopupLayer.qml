@@ -60,13 +60,26 @@ PanelWindow {
 		y: Config.barMargin * 2 + Config.barHeight
 
 		// Centred under the anchor, then pulled back inside the screen if a
-		// wide menu near an edge would otherwise hang off it.
-		x: {
-			if (!root.anchorItem) return Config.barMargin;
+		// wide menu near an edge would otherwise hang off it. Computed once per
+		// open: bar items resize as their content changes (a new notification
+		// bumps the bell's count), and a menu that follows would slide around
+		// under the cursor.
+		property int anchoredX: Config.barMargin
+
+		function place(): void {
+			if (!root.anchorItem) {
+				anchoredX = Config.barMargin;
+				return;
+			}
 			const p = root.anchorItem.mapToItem(null, 0, 0);
 			const centred = Config.barMargin + p.x + (root.anchorItem.width - width) / 2;
-			return Math.round(Math.max(Config.barMargin,
+			anchoredX = Math.round(Math.max(Config.barMargin,
 				Math.min(centred, root.width - width - Config.barMargin)));
 		}
+
+		x: anchoredX
 	}
+	// The layer is not sized yet at the moment it opens, so place again once it is.
+	onOpenChanged: if (open) container.place()
+	onWidthChanged: if (open) container.place()
 }
