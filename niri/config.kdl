@@ -475,6 +475,13 @@ binds {
     // Using spawn-sh allows to pass multiple arguments together with the command.
     XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"; }
     XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"; }
+    // Media: the same three keys the desktop media card lists.
+    Mod+Alt+Space allow-when-locked=true hotkey-overlay-title="Play / Pause" { spawn "playerctl" "play-pause"; }
+    Mod+Alt+Right allow-when-locked=true hotkey-overlay-title="Next Track" { spawn "playerctl" "next"; }
+    Mod+Alt+Left  allow-when-locked=true hotkey-overlay-title="Previous Track" { spawn "playerctl" "previous"; }
+    XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }
+    XF86AudioNext allow-when-locked=true { spawn "playerctl" "next"; }
+    XF86AudioPrev allow-when-locked=true { spawn "playerctl" "previous"; }
     XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
     XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
 

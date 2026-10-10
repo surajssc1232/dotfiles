@@ -35,6 +35,13 @@ ShellRoot {
 		WallpaperLayer {}
 	}
 
+	// What is playing, on the desktop; mapped only while something is.
+	Variants {
+		model: Quickshell.screens
+
+		DesktopMedia {}
+	}
+
 	// One bar per connected monitor, created and destroyed as they come and go.
 	Variants {
 		model: Quickshell.screens
