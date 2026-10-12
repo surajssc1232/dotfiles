@@ -47,4 +47,7 @@ if p.glass then
 	end
 end
 vim.g.quickshell_bg = p.bg
+vim.g.quickshell_border = p.border
+vim.g.quickshell_accent = p.accent
+vim.g.quickshell_glass = p.glass and true or false
 vim.o.background = (tonumber(p.bg:sub(2, 3), 16) > 127) and "light" or "dark"

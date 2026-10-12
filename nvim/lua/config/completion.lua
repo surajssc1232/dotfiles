@@ -93,8 +93,16 @@ cmp.setup({
 	},
 
 	window = {
-		completion = cmp.config.window.bordered(),
-		documentation = cmp.config.window.bordered(),
+		-- Solid, with a border in the theme's border colour rather than the
+		-- text colour, so the popup stays one clean box over a glass terminal.
+		completion = cmp.config.window.bordered({
+			border = "rounded",
+			winhighlight = "Normal:NormalFloat,FloatBorder:FloatBorder,CursorLine:PmenuSel,Search:None",
+		}),
+		documentation = cmp.config.window.bordered({
+			border = "rounded",
+			winhighlight = "Normal:NormalFloat,FloatBorder:FloatBorder,CursorLine:PmenuSel,Search:None",
+		}),
 	},
 
 	completion = { completeopt = "menu,menuone,preview,noselect" },

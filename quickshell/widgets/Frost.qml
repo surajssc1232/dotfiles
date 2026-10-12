@@ -39,6 +39,9 @@ Item {
 			blur: 1.0
 			blurMax: 48
 			saturation: 0.2
+			// Lifted under a light theme, so the frost reads as pale glass
+			// rather than a dark smudge behind dark text.
+			brightness: Config.lightTheme ? 0.35 : 0
 		}
 	}
 

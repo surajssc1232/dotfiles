@@ -607,7 +607,7 @@
     uv
     chiaki-ng
     streamlink
-    claude-code-bin
+    claude-code
     efibootmgr
     efibooteditor
     ncdu

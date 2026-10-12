@@ -784,3 +784,6 @@ recent-windows {
 // duplicated the eDP-1 / HDMI-A-1 blocks above, which is what niri was
 // already using. Its generated files are kept in dms.backup-2026-08-27.
 // include "dms/outputs.kdl"
+
+// Window colours from the quickshell theme (written by apply-theme.sh).
+include "quickshell-colors.kdl"

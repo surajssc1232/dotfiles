@@ -12,11 +12,21 @@ vim.api.nvim_create_autocmd("ColorScheme", {
 		local bg = normal.bg or (vim.g.quickshell_bg and tonumber(vim.g.quickshell_bg:sub(2), 16)) or 0x1d2021
 		local sel = vim.api.nvim_get_hl(0, { name = "Visual" }).bg or 0x3c3836
 
-		vim.api.nvim_set_hl(0, "NormalFloat", { bg = bg, fg = fg })
-		vim.api.nvim_set_hl(0, "FloatBorder", { bg = bg, fg = fg })
-		vim.api.nvim_set_hl(0, "Pmenu", { bg = bg, fg = fg })
+		local border = vim.g.quickshell_border and tonumber(vim.g.quickshell_border:sub(2), 16) or fg
+		-- The theme's border grey disappears against a wallpaper, so glass
+		-- outlines take the accent instead.
+		if vim.g.quickshell_glass and vim.g.quickshell_accent then
+			border = tonumber(vim.g.quickshell_accent:sub(2), 16)
+		end
+		-- In glass mode floats take no background of their own, so the
+		-- terminal's translucency shows through them like the editor itself.
+		local float = vim.g.quickshell_glass and "NONE" or bg
+
+		vim.api.nvim_set_hl(0, "NormalFloat", { bg = float, fg = fg })
+		vim.api.nvim_set_hl(0, "FloatBorder", { bg = float, fg = border })
+		vim.api.nvim_set_hl(0, "Pmenu", { bg = float, fg = fg })
 		vim.api.nvim_set_hl(0, "PmenuSel", { bg = sel })
-		vim.api.nvim_set_hl(0, "PmenuSbar", { bg = bg })
+		vim.api.nvim_set_hl(0, "PmenuSbar", { bg = float })
 		vim.api.nvim_set_hl(0, "PmenuThumb", { bg = sel })
 	end,
 })

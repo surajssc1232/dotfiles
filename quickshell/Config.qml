@@ -24,7 +24,12 @@ Singleton {
 	// niri 25.11 has no background blur, so the bar frosts itself: it paints
 	// a blurred copy of the wallpaper behind its tint (see Bar.qml).
 	property bool glass: false
-	readonly property real glassAlpha: 0.55
+	// Light themes put dark text on the tint, and the wallpaper behind is
+	// usually darker than the tint, so they need much more of it to stay
+	// readable.
+	readonly property bool lightTheme: (0.2126 * theme.bg.r + 0.7152 * theme.bg.g
+		+ 0.0722 * theme.bg.b) > 0.5
+	readonly property real glassAlpha: lightTheme ? 0.78 : 0.55
 	readonly property color surface: glass
 		? Qt.rgba(theme.bg.r, theme.bg.g, theme.bg.b, glassAlpha) : theme.bg
 	// Dropdown panels sit over windows, which cannot be blurred from here, so

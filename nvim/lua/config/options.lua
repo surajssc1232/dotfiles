@@ -49,6 +49,8 @@ vim.api.nvim_create_autocmd("FileType", {
 vim.opt.clipboard = "unnamedplus"
 vim.opt.updatetime = 200
 vim.opt.termguicolors = true
+-- Rounded, to match niri's window corners. Box drawing has no heavy rounded
+-- corners, so this is the thin line; glass mode colours it with the accent.
 vim.opt.winborder = "rounded"
 
 -- Completion popup sizing.

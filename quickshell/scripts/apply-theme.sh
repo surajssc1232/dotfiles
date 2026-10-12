@@ -6,7 +6,10 @@ set -u
 bg=${1#\#} bgAlt=${2#\#} border=${3#\#} fg=${4#\#} dim=${5#\#}
 accent=${6#\#} green=${7#\#} yellow=${8#\#} red=${9#\#} blue=${10#\#}
 glass=${11:-0}
-opacity=0.65
+# Light themes have dark text, which needs more of the pale background
+# behind it to stay readable over a wallpaper.
+lum=$(( (2126 * 0x${bg:0:2} + 7152 * 0x${bg:2:2} + 722 * 0x${bg:4:2}) / 10000 ))
+if [ "$lum" -gt 127 ]; then opacity=0.85; else opacity=0.65; fi
 
 # ---- foot: both sections identical so the USR1 switch always lands on it ----
 foot_colors() {
@@ -104,6 +107,23 @@ cat > "$hdir/manifest.json" <<EOT
     },
     "properties": { "ntp_background_alignment": "center" }
   }
+}
+EOT
+
+# ---- niri: window border and focus ring, in a file config.kdl includes.
+# niri watches its config, includes too, so this applies straight away. ----
+cat > ~/.config/niri/quickshell-colors.kdl <<EOT
+// Written by quickshell's apply-theme.sh on every theme change.
+layout {
+    focus-ring {
+        active-color "#$accent"
+        inactive-color "#$border"
+    }
+    border {
+        active-color "#$accent"
+        inactive-color "#$border"
+        urgent-color "#$red"
+    }
 }
 EOT
 

@@ -200,46 +200,6 @@ Pill {
 						text: Config.distroName
 						elide: Text.ElideRight
 					}
-
-					// Frosted bar and panels, plus transparent ghostty, foot
-					// and neovim.
-					MouseArea {
-						id: glassButton
-
-						implicitWidth: glassRow.implicitWidth + 16
-						implicitHeight: 24
-						hoverEnabled: true
-						cursorShape: Qt.PointingHandCursor
-						onClicked: Config.setGlass(!Config.glass)
-
-						Rectangle {
-							anchors.fill: parent
-							radius: Config.radius - 4
-							color: Config.glass ? Qt.rgba(Config.accent.r, Config.accent.g, Config.accent.b, 0.25)
-								: (glassButton.containsMouse ? Config.bgAlt : "transparent")
-							border.width: 1
-							border.color: Config.glass ? Config.accent : Config.border
-						}
-
-						Row {
-							id: glassRow
-
-							anchors.centerIn: parent
-							spacing: 6
-
-							Label {
-								text: Config.glass ? Config.icons.toggleOn : Config.icons.toggleOff
-								color: Config.glass ? Config.accent : Config.fgDim
-								font.pixelSize: Config.fontSize - 1
-							}
-
-							Label {
-								text: "Glass"
-								color: Config.glass ? Config.accent : Config.fgDim
-								font.pixelSize: Config.fontSize - 2
-							}
-						}
-					}
 				}
 
 				// ---- tiles ----
