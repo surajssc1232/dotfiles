@@ -100,6 +100,18 @@ Singleton {
 			run: () => Clipboard.clear()
 		}),
 		({
+			id: "storage", name: "Storage", detail: "Disk usage, junk and large files",
+			glyph: Config.icons.disk,
+			run: () => Storage.show()
+		}),
+		({
+			id: "glass",
+			name: Config.glass ? "Glass: turn off" : "Glass: turn on",
+			detail: "Frosted bar, transparent terminals and Neovim",
+			glyph: Config.glass ? Config.icons.toggleOn : Config.icons.toggleOff,
+			run: () => Config.setGlass(!Config.glass)
+		}),
+		({
 			id: "reload", name: "Reload the shell", detail: "Re-reads the config",
 			glyph: Config.icons.refresh,
 			run: () => Quickshell.reload(false)

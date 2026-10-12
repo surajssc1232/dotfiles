@@ -76,6 +76,12 @@ PanelWindow {
 		height: body.implicitHeight + Config.padding * 2
 		clip: true
 
+		// Sits on the desktop, so it can be frosted.
+		frosted: true
+		screen: root.screen
+		screenX: (root.screen?.width ?? 0) - Config.barMargin - width
+		screenY: Config.barMargin * 3 + Config.barHeight
+
 		MouseArea {
 			anchors.fill: parent
 			cursorShape: Qt.PointingHandCursor

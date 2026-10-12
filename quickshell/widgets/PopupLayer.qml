@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs
+import qs.services
 
 // A full-screen transparent layer that hosts one bar popup.
 //
@@ -40,8 +41,17 @@ PanelWindow {
 	// reserved strip shrink this layer and drop the menu ~40px too low.
 	exclusionMode: ExclusionMode.Ignore
 	color: "transparent"
-	focusable: keyboardFocus
-	WlrLayershell.layer: WlrLayer.Overlay
+	// Open popups stay up behind the launcher and clipboard, which take the
+	// keyboard while they are showing.
+	readonly property bool covered: Launcher.open || Clipboard.shown
+	focusable: keyboardFocus && !covered
+	WlrLayershell.layer: covered ? WlrLayer.Top : WlrLayer.Overlay
+
+	Shortcut {
+		sequence: "Escape"
+		enabled: root.open && root.keyboardFocus
+		onActivated: root.open = false
+	}
 
 	// Sits below the content, so anything not on a menu closes it.
 	MouseArea {

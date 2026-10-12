@@ -74,14 +74,10 @@ PanelWindow {
 	// Nothing here is clickable, so the whole surface stays out of the way.
 	mask: Region {}
 
-	Rectangle {
+	Panel {
 		id: card
 
 		anchors.fill: parent
-		radius: Config.radius
-		color: Config.bg
-		border.width: 1
-		border.color: Config.border
 
 		opacity: Osd.shown ? 1 : 0
 		y: Osd.shown ? 0 : 8

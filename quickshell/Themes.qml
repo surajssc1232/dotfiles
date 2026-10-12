@@ -256,6 +256,422 @@ Singleton {
 			bg: "#0d1117", bgAlt: "#161b22", border: "#30363d",
 			fg: "#c9d1d9", fgDim: "#8b949e", accent: "#58a6ff",
 			green: "#3fb950", yellow: "#d29922", red: "#f85149", blue: "#79c0ff"
+		},
+		{
+			id: "monokai",
+			name: "Monokai",
+			dark: true,
+			bg: "#272822", bgAlt: "#3e3d32", border: "#49483e",
+			fg: "#f8f8f2", fgDim: "#75715e", accent: "#a6e22e",
+			green: "#a6e22e", yellow: "#e6db74", red: "#f92672", blue: "#66d9ef"
+		},
+		{
+			id: "monokai-pro",
+			name: "Monokai Pro",
+			dark: true,
+			bg: "#2d2a2e", bgAlt: "#403e41", border: "#5b595c",
+			fg: "#fcfcfa", fgDim: "#727072", accent: "#ffd866",
+			green: "#a9dc76", yellow: "#ffd866", red: "#ff6188", blue: "#78dce8"
+		},
+		{
+			id: "gruvbox-material",
+			name: "Gruvbox Material",
+			dark: true,
+			bg: "#292828", bgAlt: "#32302f", border: "#45403d",
+			fg: "#d4be98", fgDim: "#928374", accent: "#a9b665",
+			green: "#a9b665", yellow: "#d8a657", red: "#ea6962", blue: "#7daea3"
+		},
+		{
+			id: "gruvbox-material-light",
+			name: "Gruvbox Material Light",
+			dark: false,
+			bg: "#fbf1c7", bgAlt: "#f2e5bc", border: "#e0d4a8",
+			fg: "#654735", fgDim: "#928374", accent: "#6c782e",
+			green: "#6c782e", yellow: "#b47109", red: "#c14a4a", blue: "#45707a"
+		},
+		{
+			id: "material-ocean",
+			name: "Material Ocean",
+			dark: true,
+			bg: "#0f111a", bgAlt: "#1a1c25", border: "#2b2f40",
+			fg: "#8f93a2", fgDim: "#464b5d", accent: "#84ffff",
+			green: "#c3e88d", yellow: "#ffcb6b", red: "#f07178", blue: "#82aaff"
+		},
+		{
+			id: "material-darker",
+			name: "Material Darker",
+			dark: true,
+			bg: "#212121", bgAlt: "#292929", border: "#424242",
+			fg: "#eeffff", fgDim: "#545454", accent: "#82aaff",
+			green: "#c3e88d", yellow: "#ffcb6b", red: "#f07178", blue: "#89ddff"
+		},
+		{
+			id: "material-lighter",
+			name: "Material Lighter",
+			dark: false,
+			bg: "#fafafa", bgAlt: "#eceff1", border: "#cfd8dc",
+			fg: "#546e7a", fgDim: "#90a4ae", accent: "#6182b8",
+			green: "#91b859", yellow: "#f6a434", red: "#e53935", blue: "#39adb5"
+		},
+		{
+			id: "night-owl",
+			name: "Night Owl",
+			dark: true,
+			bg: "#011627", bgAlt: "#0b2942", border: "#5f7e97",
+			fg: "#d6deeb", fgDim: "#637777", accent: "#82aaff",
+			green: "#addb67", yellow: "#ecc48d", red: "#ef5350", blue: "#7fdbca"
+		},
+		{
+			id: "cobalt2",
+			name: "Cobalt2",
+			dark: true,
+			bg: "#193549", bgAlt: "#1f4662", border: "#2d5b7e",
+			fg: "#ffffff", fgDim: "#7aa6c0", accent: "#ffc600",
+			green: "#3ad900", yellow: "#ffc600", red: "#ff628c", blue: "#0088ff"
+		},
+		{
+			id: "synthwave-84",
+			name: "Synthwave '84",
+			dark: true,
+			bg: "#262335", bgAlt: "#34294f", border: "#495495",
+			fg: "#ffffff", fgDim: "#848bbd", accent: "#ff7edb",
+			green: "#72f1b8", yellow: "#fede5d", red: "#fe4450", blue: "#36f9f6"
+		},
+		{
+			id: "horizon",
+			name: "Horizon",
+			dark: true,
+			bg: "#1c1e26", bgAlt: "#232530", border: "#2e303e",
+			fg: "#d5d8da", fgDim: "#6c6f93", accent: "#e95678",
+			green: "#29d398", yellow: "#fab795", red: "#e95678", blue: "#26bbd9"
+		},
+		{
+			id: "poimandres",
+			name: "Poimandres",
+			dark: true,
+			bg: "#1b1e28", bgAlt: "#252b37", border: "#404758",
+			fg: "#e4f0fb", fgDim: "#767c9d", accent: "#5de4c7",
+			green: "#5de4c7", yellow: "#fffac2", red: "#d0679d", blue: "#89ddff"
+		},
+		{
+			id: "vesper",
+			name: "Vesper",
+			dark: true,
+			bg: "#101010", bgAlt: "#1c1c1c", border: "#343434",
+			fg: "#d0d0d0", fgDim: "#707070", accent: "#ffc799",
+			green: "#99ffe4", yellow: "#ffc799", red: "#ff8080", blue: "#8eb8e5"
+		},
+		{
+			id: "github-dimmed",
+			name: "GitHub Dimmed",
+			dark: true,
+			bg: "#22272e", bgAlt: "#2d333b", border: "#444c56",
+			fg: "#adbac7", fgDim: "#768390", accent: "#539bf5",
+			green: "#57ab5a", yellow: "#c69026", red: "#e5534b", blue: "#6cb6ff"
+		},
+		{
+			id: "github-light",
+			name: "GitHub Light",
+			dark: false,
+			bg: "#ffffff", bgAlt: "#f6f8fa", border: "#d0d7de",
+			fg: "#24292f", fgDim: "#6e7781", accent: "#0969da",
+			green: "#1a7f37", yellow: "#9a6700", red: "#cf222e", blue: "#0550ae"
+		},
+		{
+			id: "ayu-light",
+			name: "Ayu Light",
+			dark: false,
+			bg: "#fafafa", bgAlt: "#f0f0f0", border: "#d9d8d7",
+			fg: "#5c6166", fgDim: "#8a9199", accent: "#ff9940",
+			green: "#86b300", yellow: "#f2ae49", red: "#f07171", blue: "#399ee6"
+		},
+		{
+			id: "kanagawa-dragon",
+			name: "Kanagawa Dragon",
+			dark: true,
+			bg: "#181616", bgAlt: "#282727", border: "#393836",
+			fg: "#c5c9c5", fgDim: "#737c73", accent: "#8ba4b0",
+			green: "#8a9a7b", yellow: "#c4b28a", red: "#c4746e", blue: "#8ba4b0"
+		},
+		{
+			id: "kanagawa-lotus",
+			name: "Kanagawa Lotus",
+			dark: false,
+			bg: "#f2ecbc", bgAlt: "#e7dba0", border: "#d5cea3",
+			fg: "#545464", fgDim: "#8a8980", accent: "#4d699b",
+			green: "#6f894e", yellow: "#77713f", red: "#c84053", blue: "#597b75"
+		},
+		{
+			id: "dayfox",
+			name: "Dayfox",
+			dark: false,
+			bg: "#f6f2ee", bgAlt: "#e4dcd4", border: "#cdcecf",
+			fg: "#3d2b5a", fgDim: "#837a72", accent: "#287980",
+			green: "#618774", yellow: "#ac5402", red: "#a5222f", blue: "#2848a9"
+		},
+		{
+			id: "dawnfox",
+			name: "Dawnfox",
+			dark: false,
+			bg: "#faf4ed", bgAlt: "#ebe5df", border: "#d0d8d8",
+			fg: "#575279", fgDim: "#9893a5", accent: "#907aa9",
+			green: "#618774", yellow: "#ea9d34", red: "#b4637a", blue: "#286983"
+		},
+		{
+			id: "duskfox",
+			name: "Duskfox",
+			dark: true,
+			bg: "#232136", bgAlt: "#2d2a45", border: "#433c59",
+			fg: "#e0def4", fgDim: "#6e6a86", accent: "#c4a7e7",
+			green: "#a3be8c", yellow: "#f6c177", red: "#eb6f92", blue: "#569fba"
+		},
+		{
+			id: "carbonfox",
+			name: "Carbonfox",
+			dark: true,
+			bg: "#161616", bgAlt: "#252525", border: "#3a3a3a",
+			fg: "#f2f4f8", fgDim: "#7b7c7e", accent: "#78a9ff",
+			green: "#25be6a", yellow: "#f1c21b", red: "#ee5396", blue: "#33b1ff"
+		},
+		{
+			id: "terafox",
+			name: "Terafox",
+			dark: true,
+			bg: "#152528", bgAlt: "#1d3337", border: "#2f4f54",
+			fg: "#e6eaea", fgDim: "#6d7f8b", accent: "#5a93aa",
+			green: "#7aa4a1", yellow: "#fda47f", red: "#e85c51", blue: "#5a93aa"
+		},
+		{
+			id: "sonokai",
+			name: "Sonokai",
+			dark: true,
+			bg: "#2c2e34", bgAlt: "#363944", border: "#414550",
+			fg: "#e2e2e3", fgDim: "#7f8490", accent: "#76cce0",
+			green: "#9ed072", yellow: "#e7c664", red: "#fc5d7c", blue: "#76cce0"
+		},
+		{
+			id: "edge-light",
+			name: "Edge Light",
+			dark: false,
+			bg: "#fafafa", bgAlt: "#eef1f4", border: "#dde2e7",
+			fg: "#4b505b", fgDim: "#8790a0", accent: "#5079be",
+			green: "#608e32", yellow: "#be7e05", red: "#d05858", blue: "#5079be"
+		},
+		{
+			id: "iceberg",
+			name: "Iceberg",
+			dark: true,
+			bg: "#161821", bgAlt: "#1e2132", border: "#2a3158",
+			fg: "#c6c8d1", fgDim: "#6b7089", accent: "#84a0c6",
+			green: "#b5bf82", yellow: "#e2a478", red: "#e27878", blue: "#84a0c6"
+		},
+		{
+			id: "jellybeans",
+			name: "Jellybeans",
+			dark: true,
+			bg: "#151515", bgAlt: "#1c1c1c", border: "#302028",
+			fg: "#e8e8d3", fgDim: "#888888", accent: "#8fbfdc",
+			green: "#99ad6a", yellow: "#fad07a", red: "#cf6a4c", blue: "#8197bf"
+		},
+		{
+			id: "srcery",
+			name: "Srcery",
+			dark: true,
+			bg: "#1c1b19", bgAlt: "#2d2c29", border: "#4e4e4e",
+			fg: "#fce8c3", fgDim: "#918175", accent: "#fbb829",
+			green: "#519f50", yellow: "#fbb829", red: "#ef2f27", blue: "#2c78bf"
+		},
+		{
+			id: "tomorrow-night",
+			name: "Tomorrow Night",
+			dark: true,
+			bg: "#1d1f21", bgAlt: "#282a2e", border: "#373b41",
+			fg: "#c5c8c6", fgDim: "#969896", accent: "#81a2be",
+			green: "#b5bd68", yellow: "#f0c674", red: "#cc6666", blue: "#8abeb7"
+		},
+		{
+			id: "tomorrow-light",
+			name: "Tomorrow Light",
+			dark: false,
+			bg: "#ffffff", bgAlt: "#efefef", border: "#d6d6d6",
+			fg: "#4d4d4c", fgDim: "#8e908c", accent: "#4271ae",
+			green: "#718c00", yellow: "#eab700", red: "#c82829", blue: "#3e999f"
+		},
+		{
+			id: "base16-ocean",
+			name: "Base16 Ocean",
+			dark: true,
+			bg: "#2b303b", bgAlt: "#343d46", border: "#4f5b66",
+			fg: "#c0c5ce", fgDim: "#65737e", accent: "#8fa1b3",
+			green: "#a3be8c", yellow: "#ebcb8b", red: "#bf616a", blue: "#96b5b4"
+		},
+		{
+			id: "challenger-deep",
+			name: "Challenger Deep",
+			dark: true,
+			bg: "#1e1c31", bgAlt: "#2a2740", border: "#565575",
+			fg: "#cbe3e7", fgDim: "#8a889d", accent: "#91ddff",
+			green: "#95ffa4", yellow: "#ffe9aa", red: "#ff8080", blue: "#65b2ff"
+		},
+		{
+			id: "moonfly",
+			name: "Moonfly",
+			dark: true,
+			bg: "#080808", bgAlt: "#1c1c1c", border: "#323437",
+			fg: "#bdbdbd", fgDim: "#808080", accent: "#80a0ff",
+			green: "#8cc85f", yellow: "#e3c78a", red: "#ff5454", blue: "#79dac8"
+		},
+		{
+			id: "tokyo-night-moon",
+			name: "Tokyo Night Moon",
+			dark: true,
+			bg: "#222436", bgAlt: "#2f334d", border: "#444a73",
+			fg: "#c8d3f5", fgDim: "#636da6", accent: "#82aaff",
+			green: "#c3e88d", yellow: "#ffc777", red: "#ff757f", blue: "#86e1fc"
+		},
+		{
+			id: "oceanic-next",
+			name: "Oceanic Next",
+			dark: true,
+			bg: "#1b2b34", bgAlt: "#343d46", border: "#4f5b66",
+			fg: "#cdd3de", fgDim: "#65737e", accent: "#6699cc",
+			green: "#99c794", yellow: "#fac863", red: "#ec5f67", blue: "#5fb3b3"
+		},
+		{
+			id: "papercolor-dark",
+			name: "PaperColor Dark",
+			dark: true,
+			bg: "#1c1c1c", bgAlt: "#303030", border: "#444444",
+			fg: "#d0d0d0", fgDim: "#808080", accent: "#5fafd7",
+			green: "#5faf5f", yellow: "#d7af5f", red: "#af005f", blue: "#5fafd7"
+		},
+		{
+			id: "papercolor-light",
+			name: "PaperColor Light",
+			dark: false,
+			bg: "#eeeeee", bgAlt: "#e4e4e4", border: "#d0d0d0",
+			fg: "#444444", fgDim: "#878787", accent: "#005f87",
+			green: "#008700", yellow: "#d75f00", red: "#af0000", blue: "#0087af"
+		},
+		{
+			id: "modus-vivendi",
+			name: "Modus Vivendi",
+			dark: true,
+			bg: "#000000", bgAlt: "#1e1e1e", border: "#535353",
+			fg: "#ffffff", fgDim: "#989898", accent: "#2fafff",
+			green: "#44bc44", yellow: "#d0bc00", red: "#ff5f59", blue: "#00d3d0"
+		},
+		{
+			id: "modus-operandi",
+			name: "Modus Operandi",
+			dark: false,
+			bg: "#ffffff", bgAlt: "#f2f2f2", border: "#c4c4c4",
+			fg: "#000000", fgDim: "#595959", accent: "#0031a9",
+			green: "#006800", yellow: "#6f5500", red: "#a60000", blue: "#005e8b"
+		},
+		{
+			id: "zenbones-dark",
+			name: "Zenbones Dark",
+			dark: true,
+			bg: "#1c1917", bgAlt: "#292524", border: "#3b3835",
+			fg: "#b4bdc3", fgDim: "#77706a", accent: "#6099c0",
+			green: "#819b69", yellow: "#b77e64", red: "#de6e7c", blue: "#6099c0"
+		},
+		{
+			id: "zenbones-light",
+			name: "Zenbones Light",
+			dark: false,
+			bg: "#f0edec", bgAlt: "#e2dedb", border: "#cbc6c1",
+			fg: "#2c363c", fgDim: "#7a7673", accent: "#286486",
+			green: "#4f6c31", yellow: "#944927", red: "#a8334c", blue: "#286486"
+		},
+		{
+			id: "tender",
+			name: "Tender",
+			dark: true,
+			bg: "#282828", bgAlt: "#323232", border: "#4c4c4c",
+			fg: "#eeeeee", fgDim: "#6a6a6a", accent: "#b3deef",
+			green: "#c9d05c", yellow: "#ffc24b", red: "#f43753", blue: "#73cef4"
+		},
+		{
+			id: "darcula",
+			name: "Darcula",
+			dark: true,
+			bg: "#2b2b2b", bgAlt: "#3c3f41", border: "#4e5254",
+			fg: "#a9b7c6", fgDim: "#808080", accent: "#6897bb",
+			green: "#6a8759", yellow: "#ffc66d", red: "#cc7832", blue: "#6897bb"
+		},
+		{
+			id: "vscode-dark",
+			name: "VS Code Dark+",
+			dark: true,
+			bg: "#1e1e1e", bgAlt: "#252526", border: "#3c3c3c",
+			fg: "#d4d4d4", fgDim: "#808080", accent: "#569cd6",
+			green: "#b5cea8", yellow: "#dcdcaa", red: "#f44747", blue: "#4fc1ff"
+		},
+		{
+			id: "vscode-light",
+			name: "VS Code Light",
+			dark: false,
+			bg: "#ffffff", bgAlt: "#f3f3f3", border: "#d4d4d4",
+			fg: "#333333", fgDim: "#6a737d", accent: "#0066b8",
+			green: "#008000", yellow: "#795e26", red: "#cd3131", blue: "#0451a5"
+		},
+		{
+			id: "apprentice",
+			name: "Apprentice",
+			dark: true,
+			bg: "#262626", bgAlt: "#303030", border: "#444444",
+			fg: "#bcbcbc", fgDim: "#6c6c6c", accent: "#5f87af",
+			green: "#87af87", yellow: "#ffffaf", red: "#af5f5f", blue: "#5f87af"
+		},
+		{
+			id: "lackluster",
+			name: "Lackluster",
+			dark: true,
+			bg: "#080808", bgAlt: "#101010", border: "#2a2a2a",
+			fg: "#deeeed", fgDim: "#7a7a7a", accent: "#7788aa",
+			green: "#789978", yellow: "#cfb572", red: "#d70000", blue: "#7788aa"
+		},
+		{
+			id: "city-lights",
+			name: "City Lights",
+			dark: true,
+			bg: "#1d252c", bgAlt: "#28323a", border: "#41505e",
+			fg: "#b7c5d3", fgDim: "#4d5660", accent: "#539afc",
+			green: "#8bd49c", yellow: "#ebbf83", red: "#d95468", blue: "#70e1e8"
+		},
+		{
+			id: "andromeda",
+			name: "Andromeda",
+			dark: true,
+			bg: "#23262e", bgAlt: "#2d313b", border: "#3d4350",
+			fg: "#d5ced9", fgDim: "#5c6370", accent: "#00e8c6",
+			green: "#96e072", yellow: "#ffe66d", red: "#ee5d43", blue: "#7cb7ff"
+		},
+		{
+			id: "shades-of-purple",
+			name: "Shades of Purple",
+			dark: true,
+			bg: "#2d2b55", bgAlt: "#1e1e3f", border: "#5d57a8",
+			fg: "#ffffff", fgDim: "#a599e9", accent: "#fad000",
+			green: "#3ad900", yellow: "#fad000", red: "#ff628c", blue: "#9effff"
+		},
+		{
+			id: "flexoki-dark",
+			name: "Flexoki Dark",
+			dark: true,
+			bg: "#100f0f", bgAlt: "#1c1b1a", border: "#343331",
+			fg: "#cecdc3", fgDim: "#878580", accent: "#da702c",
+			green: "#879a39", yellow: "#d0a215", red: "#d14d41", blue: "#4385be"
+		},
+		{
+			id: "flexoki-light",
+			name: "Flexoki Light",
+			dark: false,
+			bg: "#fffcf0", bgAlt: "#f2f0e5", border: "#dad8ce",
+			fg: "#100f0f", fgDim: "#6f6e69", accent: "#bc5215",
+			green: "#66800b", yellow: "#ad8301", red: "#af3029", blue: "#205ea6"
 		}
 	]
 

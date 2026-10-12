@@ -87,12 +87,8 @@ Item {
 		return out;
 	}
 
-	Rectangle {
+	Panel {
 		anchors.fill: parent
-		radius: Config.radius
-		color: Config.bg
-		border.width: 1
-		border.color: Config.border
 	}
 
 	ColumnLayout {

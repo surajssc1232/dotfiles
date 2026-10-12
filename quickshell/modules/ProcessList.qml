@@ -78,13 +78,9 @@ Item {
 		onTriggered: root.refresh()
 	}
 
-	Rectangle {
+	Panel {
 		anchors.fill: parent
 		visible: root.framed
-		radius: Config.radius
-		color: Config.bg
-		border.width: 1
-		border.color: Config.border
 	}
 
 	ColumnLayout {

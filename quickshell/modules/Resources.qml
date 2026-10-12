@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import qs
+import qs.services
 import qs.widgets
 
 // CPU load and memory usage, sampled straight from /proc every 3 seconds.
@@ -9,8 +10,12 @@ import qs.widgets
 Pill {
 	id: root
 
+	interactive: true
+	onClicked: Storage.toggle()
+
 	property int cpu: 0
 	property int mem: 0
+	property int disk: 0
 
 	// Previous /proc/stat counters, used to turn totals into a percentage.
 	property real lastIdle: 0
@@ -26,7 +31,7 @@ Pill {
 
 	Process {
 		id: sampler
-		command: ["sh", "-c", "head -n1 /proc/stat; head -n3 /proc/meminfo"]
+		command: ["sh", "-c", "head -n1 /proc/stat; head -n3 /proc/meminfo; df -P / | tail -n1"]
 
 		stdout: StdioCollector {
 			onStreamFinished: root.parseSample(this.text)
@@ -36,6 +41,7 @@ Pill {
 	function parseSample(out: string) {
 		const lines = out.trim().split("\n");
 		if (lines.length < 4) return;
+		if (lines.length >= 5) disk = parseInt(lines[4].trim().split(/\s+/)[4]) || 0;
 
 		const cols = lines[0].split(/\s+/).slice(1).map(Number);
 		const idle = cols[3] + (cols[4] ?? 0);
@@ -68,5 +74,12 @@ Pill {
 	}
 	Label {
 		text: root.mem + "%"
+	}
+	Label {
+		text: Config.icons.disk
+		color: Config.accent
+	}
+	Label {
+		text: root.disk + "%"
 	}
 }

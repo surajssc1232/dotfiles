@@ -32,7 +32,7 @@ MouseArea {
 	property bool danger: false
 
 	// Filled when lit, so an enabled feature reads at a glance.
-	readonly property color surface: on ? Config.accent : Config.bgAlt
+	readonly property color surface: on ? Config.accent : (Config.glass ? "transparent" : Config.bgAlt)
 	readonly property color ink: root.danger
 		? Config.red
 		: on ? Config.bg : Config.fg
@@ -52,10 +52,12 @@ MouseArea {
 		anchors.fill: parent
 
 		radius: Config.radius
-		color: root.containsMouse ? Qt.lighter(root.surface, 1.25) : root.surface
+		color: root.containsMouse
+			? (root.on || !Config.glass ? Qt.lighter(root.surface, 1.25) : Qt.rgba(1, 1, 1, 0.1))
+			: root.surface
 
 		// The open pane is tied back to the tile that owns it.
-		border.width: root.expanded ? 2 : 1
+		border.width: root.expanded ? 2 : (Config.glass ? 0 : 1)
 		border.color: root.expanded ? Config.accent : Config.border
 
 		Behavior on color {

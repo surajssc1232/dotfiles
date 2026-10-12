@@ -64,8 +64,10 @@ PanelWindow {
 	exclusionMode: ExclusionMode.Ignore
 	color: "transparent"
 	focusable: true
-	WlrLayershell.layer: WlrLayer.Overlay
-	WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+	// Stays open behind the launcher, which takes the keyboard while it is up.
+	readonly property bool covered: Launcher.open
+	WlrLayershell.layer: covered ? WlrLayer.Top : WlrLayer.Overlay
+	WlrLayershell.keyboardFocus: covered ? WlrKeyboardFocus.None : WlrKeyboardFocus.Exclusive
 	WlrLayershell.namespace: "quickshell-clipboard"
 
 	onVisibleChanged: if (root.visible) field.forceActiveFocus()
@@ -76,7 +78,7 @@ PanelWindow {
 		onPressed: Clipboard.hide()
 	}
 
-	Rectangle {
+	Panel {
 		id: card
 
 		anchors.horizontalCenter: parent.horizontalCenter
@@ -87,10 +89,6 @@ PanelWindow {
 		height: root.headerHeight + root.searchHeight + root.bodyHeight
 			+ root.footerHeight + Config.padding
 
-		radius: Config.radius
-		color: Config.bg
-		border.width: 1
-		border.color: Config.border
 
 		MouseArea {
 			anchors.fill: parent

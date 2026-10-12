@@ -42,6 +42,13 @@ ShellRoot {
 		DesktopMedia {}
 	}
 
+	// System monitor that slides in from the right edge on hover.
+	Variants {
+		model: Quickshell.screens
+
+		ProcessSidebar {}
+	}
+
 	// One bar per connected monitor, created and destroyed as they come and go.
 	Variants {
 		model: Quickshell.screens
@@ -75,6 +82,13 @@ ShellRoot {
 		model: Quickshell.screens
 
 		ClipboardPanel {}
+	}
+
+	// Storage review, opened from the resources pill; mapped only while open.
+	Variants {
+		model: Quickshell.screens
+
+		StoragePanel {}
 	}
 
 	// Alt-Tab overlay, mapped only while switching.

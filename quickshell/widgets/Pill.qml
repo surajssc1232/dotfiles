@@ -20,9 +20,11 @@ MouseArea {
 	Rectangle {
 		anchors.fill: parent
 		radius: Config.radius
-		color: root.containsMouse && root.interactive
-			? Qt.lighter(root.background, 1.4)
-			: root.background
+		color: Config.glass
+			? (root.containsMouse && root.interactive ? Qt.rgba(1, 1, 1, 0.12) : "transparent")
+			: (root.containsMouse && root.interactive
+				? Qt.lighter(root.background, 1.4)
+				: root.background)
 
 		Behavior on color {
 			ColorAnimation { duration: 120 }

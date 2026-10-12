@@ -16,7 +16,46 @@ Singleton {
 		if (root.themeId === id) return;
 		root.themeId = id;
 		stateFile.setText(id);
+		root.applyExternal();
 	}
+
+	// ---- glass ----
+	// Translucent bar and panels, and the same in ghostty, foot and neovim.
+	// niri 25.11 has no background blur, so the bar frosts itself: it paints
+	// a blurred copy of the wallpaper behind its tint (see Bar.qml).
+	property bool glass: false
+	readonly property real glassAlpha: 0.55
+	readonly property color surface: glass
+		? Qt.rgba(theme.bg.r, theme.bg.g, theme.bg.b, glassAlpha) : theme.bg
+	// Dropdown panels sit over windows, which cannot be blurred from here, so
+	// they stay mostly opaque to remain readable.
+	readonly property color panelSurface: glass
+		? Qt.rgba(theme.bg.r, theme.bg.g, theme.bg.b, 0.85) : theme.bg
+
+	function setGlass(on: bool) {
+		if (root.glass === on) return;
+		root.glass = on;
+		glassFile.setText(on ? "1" : "0");
+		root.applyExternal();
+	}
+
+	FileView {
+		id: glassFile
+
+		path: Quickshell.statePath("glass")
+		blockLoading: true
+		printErrors: false
+	}
+
+	// Renders the palette into foot, ghostty and neovim and reloads them.
+	function applyExternal() {
+		const t = root.theme;
+		applyProc.command = [Quickshell.shellPath("scripts/apply-theme.sh"),
+			t.bg, t.bgAlt, t.border, t.fg, t.fgDim, t.accent, t.green, t.yellow, t.red, t.blue, root.glass ? "1" : "0"];
+		applyProc.running = true;
+	}
+
+	Process { id: applyProc }
 
 	// Remembers the choice across restarts. Read synchronously at startup so
 	// the bar's first frame is already drawn in the saved theme.
@@ -44,8 +83,10 @@ Singleton {
 	}
 
 	Component.onCompleted: {
+		root.glass = glassFile.text().trim() === "1";
 		const saved = stateFile.text().trim();
 		if (saved) root.themeId = saved;
+		root.applyExternal();
 
 		// Values may be quoted, and ID_LIKE gives a usable fallback for the
 		// many derivatives that have no logo of their own.
@@ -154,6 +195,7 @@ Singleton {
 		calendar: "\uf073",
 		cpu: "\uf2db",         // microchip
 		ram: "\uf1c0",         // database
+		disk: "\uf0a0",        // hdd
 		volHigh: "\uf028",
 		volLow: "\uf027",
 		volMute: "\uf026",
