@@ -19,44 +19,11 @@ Singleton {
 		root.applyExternal();
 	}
 
-	// ---- glass ----
-	// Translucent bar and panels, and the same in ghostty, foot and neovim.
-	// niri 25.11 has no background blur, so the bar frosts itself: it paints
-	// a blurred copy of the wallpaper behind its tint (see Bar.qml).
-	property bool glass: false
-	// Light themes put dark text on the tint, and the wallpaper behind is
-	// usually darker than the tint, so they need much more of it to stay
-	// readable.
-	readonly property bool lightTheme: (0.2126 * theme.bg.r + 0.7152 * theme.bg.g
-		+ 0.0722 * theme.bg.b) > 0.5
-	readonly property real glassAlpha: lightTheme ? 0.78 : 0.55
-	readonly property color surface: glass
-		? Qt.rgba(theme.bg.r, theme.bg.g, theme.bg.b, glassAlpha) : theme.bg
-	// Dropdown panels sit over windows, which cannot be blurred from here, so
-	// they stay mostly opaque to remain readable.
-	readonly property color panelSurface: glass
-		? Qt.rgba(theme.bg.r, theme.bg.g, theme.bg.b, 0.85) : theme.bg
-
-	function setGlass(on: bool) {
-		if (root.glass === on) return;
-		root.glass = on;
-		glassFile.setText(on ? "1" : "0");
-		root.applyExternal();
-	}
-
-	FileView {
-		id: glassFile
-
-		path: Quickshell.statePath("glass")
-		blockLoading: true
-		printErrors: false
-	}
-
-	// Renders the palette into foot, ghostty and neovim and reloads them.
+	// Renders the palette into foot and neovim and reloads them.
 	function applyExternal() {
 		const t = root.theme;
 		applyProc.command = [Quickshell.shellPath("scripts/apply-theme.sh"),
-			t.bg, t.bgAlt, t.border, t.fg, t.fgDim, t.accent, t.green, t.yellow, t.red, t.blue, root.glass ? "1" : "0"];
+			t.bg, t.bgAlt, t.border, t.fg, t.fgDim, t.accent, t.green, t.yellow, t.red, t.blue];
 		applyProc.running = true;
 	}
 
@@ -88,7 +55,6 @@ Singleton {
 	}
 
 	Component.onCompleted: {
-		root.glass = glassFile.text().trim() === "1";
 		const saved = stateFile.text().trim();
 		if (saved) root.themeId = saved;
 		root.applyExternal();

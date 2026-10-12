@@ -4,9 +4,6 @@ font=$(fc-list --format="%{family}\n" | tr ',' '\n' | sed 's/^ *//' | sort -u | 
 
 [[ -z "$font" ]] && exit 0
 
-# Ghostty
-sed -i "s/^font-family = .*/font-family = $font/" ~/.config/ghostty/config
-
 # Alacritty
 sed -i "s/^normal\.family=.*/normal.family=\"$font\"/" ~/.config/alacritty/alacritty.toml
 

@@ -443,7 +443,7 @@ binds {
 
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
-    Mod+Q repeat=true hotkey-overlay-title="Open a Terminal foot" { spawn "ghostty"; }
+    Mod+Q repeat=true hotkey-overlay-title="Open a Terminal foot" { spawn "foot"; }
     Mod+R hotkey-overlay-title="Run an Application" { spawn "sh" "-c" "~/.config/quickshell/scripts/launcher.sh"; }
 
     // Notification history, the same panel the bell in the bar opens.

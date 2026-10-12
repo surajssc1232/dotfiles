@@ -599,8 +599,15 @@
   programs.niri.enable = true;
 
 
+  # Terminal=true desktop entries and anything using xdg-terminal-exec open foot.
+  xdg.terminal-exec = {
+    enable = true;
+    settings.default = [ "foot.desktop" ];
+  };
+
   environment.systemPackages = with pkgs; [
     acpi
+    foot
     nushell
     google-chrome
     prismlauncher

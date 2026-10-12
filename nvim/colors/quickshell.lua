@@ -37,17 +37,7 @@ local groups = {
 	["@string"] = { link = "String" }, ["@type"] = { link = "Type" }, ["@comment"] = { link = "Comment" },
 }
 for name, v in pairs(groups) do hl(name, v) end
--- Glass: let the terminal's translucent background show through.
-if p.glass then
-	for _, g in ipairs({ "Normal", "NormalNC", "SignColumn", "EndOfBuffer", "LineNr", "CursorLineNr", "FoldColumn" }) do
-		local cur = vim.api.nvim_get_hl(0, { name = g, link = false })
-		cur.bg = nil
-		cur.ctermbg = nil
-		vim.api.nvim_set_hl(0, g, cur)
-	end
-end
 vim.g.quickshell_bg = p.bg
 vim.g.quickshell_border = p.border
 vim.g.quickshell_accent = p.accent
-vim.g.quickshell_glass = p.glass and true or false
 vim.o.background = (tonumber(p.bg:sub(2, 3), 16) > 127) and "light" or "dark"

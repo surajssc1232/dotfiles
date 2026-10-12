@@ -52,8 +52,8 @@ Item {
 	Rectangle {
 		anchors.fill: parent
 		radius: Config.radius
-		color: Config.glass ? "transparent" : Config.bgAlt
-		border.width: Config.glass ? 0 : 1
+		color: Config.bgAlt
+		border.width: 1
 		border.color: Config.border
 	}
 

@@ -32,17 +32,9 @@ PanelWindow {
 	exclusiveZone: Math.max(0, Config.barHeight + Config.barMargin * 2
 		- Config.compositorGap)
 
-	Frost {
-		anchors.fill: parent
-		screen: bar.screen
-		screenX: Config.barMargin
-		screenY: Config.barMargin
-		radius: Config.barMargin > 0 ? Config.radius : 0
-	}
-
 	Rectangle {
 		anchors.fill: parent
-		color: Config.surface
+		color: Config.bg
 		radius: Config.barMargin > 0 ? Config.radius : 0
 
 		border.width: 1

@@ -1,19 +1,13 @@
 #!/usr/bin/env bash
-# Pushes one palette out to foot, ghostty, helium and neovim, then reloads the ones
+# Pushes one palette out to foot, helium and neovim, then reloads the ones
 # that are running. Called by Config.setTheme with the palette as arguments.
-#   apply-theme.sh bg bgAlt border fg fgDim accent green yellow red blue glass(0|1)
+#   apply-theme.sh bg bgAlt border fg fgDim accent green yellow red blue
 set -u
 bg=${1#\#} bgAlt=${2#\#} border=${3#\#} fg=${4#\#} dim=${5#\#}
 accent=${6#\#} green=${7#\#} yellow=${8#\#} red=${9#\#} blue=${10#\#}
-glass=${11:-0}
-# Light themes have dark text, which needs more of the pale background
-# behind it to stay readable over a wallpaper.
-lum=$(( (2126 * 0x${bg:0:2} + 7152 * 0x${bg:2:2} + 722 * 0x${bg:4:2}) / 10000 ))
-if [ "$lum" -gt 127 ]; then opacity=0.85; else opacity=0.65; fi
 
 # ---- foot: both sections identical so the USR1 switch always lands on it ----
 foot_colors() {
-	[ "$glass" = 1 ] && echo "alpha=$opacity"
 	cat <<EOT
 background=$bg
 foreground=$fg
@@ -40,7 +34,8 @@ EOT
 { echo "[colors-dark]"; foot_colors; echo; echo "[colors-light]"; foot_colors; } > ~/.config/foot/theme.ini
 # foot never reloads its config, so recolor open windows by writing OSC
 # sequences to each one's pty (foot's children hold the slave end on stdin).
-printf -v osc '\033]10;#%s\033\\\033]11;#%s\033\\\033]12;#%s\033\\' "$fg" "$bg" "$accent"
+# The [100] on the background resets any leftover transparency to opaque.
+printf -v osc '\033]10;#%s\033\\\033]11;[100]#%s\033\\\033]12;#%s\033\\' "$fg" "$bg" "$accent"
 i=0
 for c in $border $red $green $yellow $blue $accent $blue $fg $dim $red $green $yellow $blue $accent $blue $fg; do
 	printf -v seq '\033]4;%d;#%s\033\\' "$i" "$c"; osc+=$seq; i=$((i + 1))
@@ -51,26 +46,6 @@ for fpid in $(pgrep -x foot); do
 		case $tty in /dev/pts/*) printf '%s' "$osc" > "$tty" 2>/dev/null ;; esac
 	done
 done
-
-# ---- ghostty ----
-{
-	echo "background = #$bg"
-	echo "foreground = #$fg"
-	echo "cursor-color = #$accent"
-	echo "selection-background = #$border"
-	echo "selection-foreground = #$fg"
-	if [ "$glass" = 1 ]; then
-		echo "background-opacity = $opacity"
-		echo "background-blur = true"
-	else
-		echo "background-opacity = 1"
-	fi
-	i=0
-	for c in $border $red $green $yellow $blue $accent $blue $fg $dim $red $green $yellow $blue $accent $blue $fg; do
-		echo "palette = $i=#$c"; i=$((i + 1))
-	done
-} > ~/.config/ghostty/themes/quickshell
-pkill -USR2 -x '\.?ghostty.*' 2>/dev/null
 
 # ---- helium (Chromium): theme extension rewritten on every change. Load
 # ~/.local/share/helium-theme once via chrome://extensions -> Load unpacked,
@@ -130,7 +105,7 @@ EOT
 # ---- neovim: palette for colors/quickshell.lua, then reload live instances ----
 mkdir -p ~/.local/state/quickshell
 cat > ~/.local/state/quickshell/palette.json <<EOT
-{"bg":"#$bg","bgAlt":"#$bgAlt","border":"#$border","fg":"#$fg","dim":"#$dim","accent":"#$accent","green":"#$green","yellow":"#$yellow","red":"#$red","blue":"#$blue","glass":$([ "$glass" = 1 ] && echo true || echo false)}
+{"bg":"#$bg","bgAlt":"#$bgAlt","border":"#$border","fg":"#$fg","dim":"#$dim","accent":"#$accent","green":"#$green","yellow":"#$yellow","red":"#$red","blue":"#$blue"}
 EOT
 for sock in "${XDG_RUNTIME_DIR:-/run/user/$UID}"/nvim.*.0; do
 	[ -S "$sock" ] && nvim --server "$sock" --remote-send '<Cmd>colorscheme quickshell<CR>' >/dev/null 2>&1

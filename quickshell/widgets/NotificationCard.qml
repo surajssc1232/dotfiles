@@ -33,7 +33,7 @@ Rectangle {
 	implicitHeight: layout.implicitHeight + Config.padding * 2
 
 	radius: Config.radius
-	color: Config.panelSurface
+	color: Config.bg
 	border.width: 1
 	border.color: notif.urgency === NotificationUrgency.Critical ? Config.red : Config.border
 
