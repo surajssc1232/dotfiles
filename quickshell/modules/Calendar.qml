@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
 import qs
 import qs.services
 import qs.widgets
@@ -57,9 +58,19 @@ Item {
 	readonly property int firstDay: locale.firstDayOfWeek
 
 	// Wider while the reminder form can be shown, for its row of repeat
-	// choices; the lock screen's copy keeps the narrow width.
-	implicitWidth: editable ? 290 : 252
+	// choices; the lock screen's copy keeps the narrower width.
+	implicitWidth: editable ? 336 : 288
 	implicitHeight: column.implicitHeight + Config.padding * 2
+
+	// Seconds for the clock in the header; only ticking while it is shown.
+	SystemClock {
+		id: tick
+
+		enabled: root.showToday && root.visible
+		precision: SystemClock.Seconds
+	}
+
+	readonly property date now: tick.enabled ? tick.date : root.today
 
 	function isSameDay(a: date, b: date): bool {
 		return a.getFullYear() === b.getFullYear()
@@ -67,7 +78,28 @@ Item {
 			&& a.getDate() === b.getDate();
 	}
 
-	// 42 cells: six weeks, enough for any month in any first-day-of-week.
+	// ISO 8601 week number: weeks start on Monday, and week 1 is the one
+	// holding the year's first Thursday.
+	function isoWeek(d: date): int {
+		const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+		const dow = t.getUTCDay() || 7;
+		t.setUTCDate(t.getUTCDate() + 4 - dow);
+		const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+		return Math.ceil(((t - yearStart) / 86400000 + 1) / 7);
+	}
+
+	function dayOfYear(d: date): int {
+		return Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate())
+			- new Date(d.getFullYear(), 0, 1)) / 86400000) + 1;
+	}
+
+	readonly property int daysThisYear: {
+		const y = root.today.getFullYear();
+		return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0 ? 366 : 365;
+	}
+
+	// Six weeks, enough for any month in any first-day-of-week. Each row is a
+	// week-number cell followed by its seven days.
 	readonly property var cells: {
 		const first = shownMonth;
 		// How far back the grid must start to land on the locale's first weekday.
@@ -77,12 +109,36 @@ Item {
 		const out = [];
 		for (let i = 0; i < 42; i++) {
 			const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
+			if (i % 7 === 0) {
+				// Numbered from the row's Thursday-most day, as ISO counts it.
+				const mid = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 3);
+				out.push({ week: root.isoWeek(mid) });
+			}
 			out.push({
 				key: Events.key(d),
 				day: d.getDate(),
 				inMonth: d.getMonth() === first.getMonth(),
-				isToday: isSameDay(d, today)
+				isToday: isSameDay(d, today),
+				weekend: d.getDay() === 0 || d.getDay() === 6
 			});
+		}
+		return out;
+	}
+
+	// What is coming up over the next fortnight, today included, soonest
+	// first: [{ key, when, title, time, kind }]
+	readonly property var upcoming: {
+		const out = [];
+		void Events.events;
+		for (let i = 0; i < 14 && out.length < 4; i++) {
+			const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() + i);
+			const key = Events.key(d);
+			const list = Events.on(key).slice()
+				.sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+			for (const e of list) {
+				if (out.length >= 4) break;
+				out.push({ key: key, when: d, offset: i, title: e.title, time: e.time, kind: e.kind });
+			}
 		}
 		return out;
 	}
@@ -96,7 +152,7 @@ Item {
 
 		anchors.fill: parent
 		anchors.margins: Config.padding
-		spacing: 6
+		spacing: 8
 
 		focus: true
 		Keys.onEscapePressed: event => {
@@ -107,20 +163,119 @@ Item {
 			root.deselect();
 		}
 
-		// ---- today, spelled out ----
-		Label {
+		// ---- today, in full ----
+		RowLayout {
 			Layout.fillWidth: true
 			visible: root.showToday
-			text: Qt.formatDateTime(root.today, "dddd, d MMMM yyyy")
-			color: Config.accent
-			elide: Text.ElideRight
+			spacing: 14
+
+			// The time, large, with the seconds trailing small.
+			RowLayout {
+				Layout.alignment: Qt.AlignVCenter
+				spacing: 2
+
+				Label {
+					Layout.alignment: Qt.AlignBaseline
+					text: Qt.formatTime(root.now, "hh:mm")
+					color: Config.fg
+					font.pixelSize: Config.fontSize + 22
+					font.weight: Font.DemiBold
+				}
+
+				Label {
+					Layout.alignment: Qt.AlignBaseline
+					text: Qt.formatTime(root.now, "ss")
+					color: Config.accent
+					font.pixelSize: Config.fontSize + 2
+				}
+			}
+
+			Rectangle {
+				Layout.preferredWidth: 1
+				Layout.fillHeight: true
+				Layout.topMargin: 6
+				Layout.bottomMargin: 6
+				color: Config.border
+			}
+
+			ColumnLayout {
+				Layout.fillWidth: true
+				Layout.alignment: Qt.AlignVCenter
+				spacing: 1
+
+				Label {
+					Layout.fillWidth: true
+					text: Qt.formatDate(root.today, "dddd")
+					color: Config.accent
+					font.pixelSize: Config.fontSize + 1
+					font.weight: Font.DemiBold
+					elide: Text.ElideRight
+				}
+
+				Label {
+					Layout.fillWidth: true
+					text: Qt.formatDate(root.today, "d MMMM yyyy")
+					elide: Text.ElideRight
+				}
+
+				Label {
+					Layout.fillWidth: true
+					text: "Week " + root.isoWeek(root.today)
+						+ " · Day " + root.dayOfYear(root.today)
+					color: Config.fgDim
+					font.pixelSize: Config.fontSize - 3
+					elide: Text.ElideRight
+				}
+			}
+		}
+
+		// How far through the year we are.
+		ColumnLayout {
+			Layout.fillWidth: true
+			visible: root.showToday
+			spacing: 4
+
+			readonly property real done: root.dayOfYear(root.today) / root.daysThisYear
+
+			RowLayout {
+				Layout.fillWidth: true
+
+				Label {
+					text: root.today.getFullYear()
+					color: Config.fgDim
+					font.pixelSize: Config.fontSize - 4
+					font.letterSpacing: 1
+				}
+
+				Item { Layout.fillWidth: true }
+
+				Label {
+					text: Math.round(parent.parent.done * 100) + "% · "
+						+ (root.daysThisYear - root.dayOfYear(root.today)) + " days left"
+					color: Config.fgDim
+					font.pixelSize: Config.fontSize - 4
+				}
+			}
+
+			Rectangle {
+				Layout.fillWidth: true
+				Layout.preferredHeight: 4
+				radius: 2
+				color: Config.bgAlt
+
+				Rectangle {
+					width: parent.width * parent.parent.done
+					height: parent.height
+					radius: 2
+					color: Config.accent
+				}
+			}
 		}
 
 		Rectangle {
 			Layout.fillWidth: true
 			Layout.preferredHeight: 1
 			Layout.topMargin: 2
-			Layout.bottomMargin: 4
 			visible: root.showToday
 			color: Config.border
 		}
@@ -128,17 +283,27 @@ Item {
 		// ---- month navigation ----
 		RowLayout {
 			Layout.fillWidth: true
-			spacing: 0
+			spacing: 2
 
-			NavButton {
-				icon: Config.icons.chevronLeft
-				onTriggered: root.monthOffset--
-			}
-
-			Label {
+			RowLayout {
 				Layout.fillWidth: true
-				text: Qt.formatDateTime(root.shownMonth, "MMMM yyyy")
-				horizontalAlignment: Text.AlignHCenter
+				Layout.leftMargin: 4
+				spacing: 6
+
+				Label {
+					Layout.alignment: Qt.AlignBaseline
+					text: Qt.formatDate(root.shownMonth, "MMMM")
+					font.pixelSize: Config.fontSize + 2
+					font.weight: Font.DemiBold
+				}
+
+				Label {
+					Layout.alignment: Qt.AlignBaseline
+					text: root.shownMonth.getFullYear()
+					color: Config.fgDim
+				}
+
+				Item { Layout.fillWidth: true }
 			}
 
 			NavButton {
@@ -149,17 +314,31 @@ Item {
 			}
 
 			NavButton {
+				icon: Config.icons.chevronLeft
+				onTriggered: root.monthOffset--
+			}
+
+			NavButton {
 				icon: Config.icons.chevronRight
 				onTriggered: root.monthOffset++
 			}
 		}
 
-		// ---- weekday initials ----
+		// ---- weekday initials, after a blank over the week numbers ----
 		GridLayout {
 			Layout.fillWidth: true
-			columns: 7
-			columnSpacing: 0
+			columns: 8
+			columnSpacing: 2
 			rowSpacing: 0
+
+			Label {
+				Layout.preferredWidth: 22
+				text: "wk"
+				color: Config.fgDim
+				opacity: 0.6
+				font.pixelSize: Config.fontSize - 5
+				horizontalAlignment: Text.AlignHCenter
+			}
 
 			Repeater {
 				model: 7
@@ -167,13 +346,16 @@ Item {
 				Label {
 					required property int index
 
+					readonly property int dow: (root.firstDay + index) % 7
+
 					Layout.fillWidth: true
 					Layout.preferredHeight: 20
 
-					text: root.locale.dayName((root.firstDay + index) % 7, Locale.ShortFormat)
-						.substring(0, 2)
-					color: Config.fgDim
-					font.pixelSize: Config.fontSize - 2
+					text: root.locale.dayName(dow, Locale.ShortFormat).substring(0, 2)
+					color: dow === 0 || dow === 6 ? Config.red : Config.fgDim
+					opacity: dow === 0 || dow === 6 ? 0.8 : 1
+					font.pixelSize: Config.fontSize - 3
+					font.weight: Font.DemiBold
 					horizontalAlignment: Text.AlignHCenter
 				}
 			}
@@ -181,77 +363,71 @@ Item {
 
 		// ---- days ----
 		GridLayout {
+			id: days
+
 			Layout.fillWidth: true
-			columns: 7
-			columnSpacing: 0
-			rowSpacing: 0
+			columns: 8
+			columnSpacing: 2
+			rowSpacing: 2
+
+			// Slides in from the side the month was paged towards.
+			property int direction: 1
+			transform: Translate { id: slide }
+
+			ParallelAnimation {
+				id: paged
+
+				NumberAnimation {
+					target: slide; property: "x"
+					from: 18 * days.direction; to: 0
+					duration: 240; easing.type: Easing.OutCubic
+				}
+				NumberAnimation {
+					target: days; property: "opacity"
+					from: 0; to: 1; duration: 200
+				}
+			}
+
+			Connections {
+				target: root
+				property int last: 0
+
+				function onMonthOffsetChanged() {
+					days.direction = root.monthOffset >= last ? 1 : -1;
+					last = root.monthOffset;
+					paged.restart();
+				}
+			}
 
 			Repeater {
 				model: root.cells
 
 				Item {
-					id: cell
+					id: slot
 
 					required property var modelData
 
-					readonly property bool marked: Events.hasOn(modelData.key)
-					readonly property bool picked: root.selected === modelData.key
+					readonly property bool isWeek: modelData.week !== undefined
 
-					Layout.fillWidth: true
-					Layout.preferredHeight: 26
-
-					Rectangle {
-						anchors.centerIn: parent
-						width: 24
-						height: 24
-						radius: 12
-						color: cell.modelData.isToday ? Config.accent
-							: hover.containsMouse && root.editable ? Config.bgAlt
-							: "transparent"
-						border.width: cell.picked ? 1.5 : 0
-						border.color: cell.modelData.isToday ? Config.fg : Config.accent
-					}
+					Layout.fillWidth: !isWeek
+					Layout.preferredWidth: isWeek ? 22 : 0
+					Layout.preferredHeight: 30
 
 					Label {
-						anchors.centerIn: parent
-						anchors.verticalCenterOffset: cell.marked ? -2 : 0
-						text: cell.modelData.day
-						font.pixelSize: Config.fontSize - 1
-						color: cell.modelData.isToday ? Config.bg
-							: cell.modelData.inMonth ? Config.fg
-							: Config.fgDim
-					}
-
-					// Something is on this day. The theme's accent, or the
-					// background colour on today's already-accent circle.
-					Rectangle {
-						anchors.horizontalCenter: parent.horizontalCenter
-						anchors.verticalCenter: parent.verticalCenter
-						anchors.verticalCenterOffset: 7
-						width: 4
-						height: 4
-						radius: 2
-						visible: cell.marked
-						color: cell.modelData.isToday ? Config.bg : Config.accent
-						opacity: cell.modelData.inMonth ? 1 : 0.5
-					}
-
-					MouseArea {
-						id: hover
-
 						anchors.fill: parent
-						enabled: root.editable
-						hoverEnabled: true
-						acceptedButtons: Qt.LeftButton | Qt.RightButton
-						cursorShape: Qt.PointingHandCursor
+						visible: slot.isWeek
+						text: slot.modelData.week ?? ""
+						color: Config.fgDim
+						opacity: 0.6
+						font.pixelSize: Config.fontSize - 5
+						horizontalAlignment: Text.AlignHCenter
+						verticalAlignment: Text.AlignVCenter
+					}
 
-						onClicked: mouse => {
-							const key = cell.modelData.key;
-							if (mouse.button === Qt.RightButton) root.select(key, true);
-							else if (cell.picked && !root.adding) root.deselect();
-							else if (cell.marked) root.select(key, false);
-							else root.deselect();
-						}
+					DayCell {
+						anchors.fill: parent
+						visible: !slot.isWeek
+						modelData: slot.modelData
 					}
 				}
 			}
@@ -264,13 +440,205 @@ Item {
 			visible: root.editable && root.selected !== ""
 		}
 
-		Label {
+		// ---- coming up, while no day is picked ----
+		ColumnLayout {
 			Layout.fillWidth: true
+			Layout.topMargin: 2
 			visible: root.editable && root.selected === ""
-			text: "Right-click a day to add a reminder"
-			color: Config.fgDim
-			font.pixelSize: Config.fontSize - 4
-			horizontalAlignment: Text.AlignHCenter
+			spacing: 6
+
+			Rectangle {
+				Layout.fillWidth: true
+				Layout.preferredHeight: 1
+				color: Config.border
+			}
+
+			Label {
+				text: "UPCOMING"
+				color: Config.fgDim
+				font.pixelSize: Config.fontSize - 4
+				font.letterSpacing: 1
+			}
+
+			Repeater {
+				model: root.upcoming
+
+				MouseArea {
+					id: soon
+
+					required property var modelData
+
+					Layout.fillWidth: true
+					implicitHeight: 34
+					hoverEnabled: true
+					cursorShape: Qt.PointingHandCursor
+					onClicked: {
+						// Page to that month, then list the day.
+						const d = soon.modelData.when;
+						root.monthOffset = (d.getFullYear() - root.today.getFullYear()) * 12
+							+ d.getMonth() - root.today.getMonth();
+						root.select(soon.modelData.key, false);
+					}
+
+					Rectangle {
+						anchors.fill: parent
+						radius: Config.radius - 4
+						color: soon.containsMouse ? Config.bgAlt : "transparent"
+					}
+
+					RowLayout {
+						anchors.fill: parent
+						anchors.leftMargin: 4
+						anchors.rightMargin: 8
+						spacing: 10
+
+						// A small tear-off date: weekday over day number.
+						Rectangle {
+							Layout.preferredWidth: 30
+							Layout.preferredHeight: 30
+							radius: Config.radius - 4
+							color: soon.modelData.offset === 0 ? Config.accent : Config.bgAlt
+
+							Column {
+								anchors.centerIn: parent
+								spacing: -2
+
+								Label {
+									anchors.horizontalCenter: parent.horizontalCenter
+									text: Qt.formatDate(soon.modelData.when, "ddd").toUpperCase()
+									color: soon.modelData.offset === 0 ? Config.bg : Config.fgDim
+									font.pixelSize: Config.fontSize - 6
+								}
+
+								Label {
+									anchors.horizontalCenter: parent.horizontalCenter
+									text: soon.modelData.when.getDate()
+									color: soon.modelData.offset === 0 ? Config.bg : Config.fg
+									font.pixelSize: Config.fontSize - 1
+									font.weight: Font.DemiBold
+								}
+							}
+						}
+
+						ColumnLayout {
+							Layout.fillWidth: true
+							Layout.minimumWidth: 0
+							spacing: 0
+
+							Label {
+								Layout.fillWidth: true
+								text: soon.modelData.title
+								font.pixelSize: Config.fontSize - 2
+								elide: Text.ElideRight
+							}
+
+							Label {
+								Layout.fillWidth: true
+								text: (soon.modelData.offset === 0 ? "Today"
+									: soon.modelData.offset === 1 ? "Tomorrow"
+									: "In " + soon.modelData.offset + " days")
+									+ " · " + (soon.modelData.time || "All day")
+								color: Config.fgDim
+								font.pixelSize: Config.fontSize - 4
+								elide: Text.ElideRight
+							}
+						}
+
+						Label {
+							text: soon.modelData.kind === "meeting"
+								? Config.icons.meeting : Config.icons.bell
+							color: Config.accent
+							font.pixelSize: Config.fontSize - 3
+						}
+					}
+				}
+			}
+
+			Label {
+				Layout.fillWidth: true
+				visible: root.upcoming.length === 0
+				text: "Nothing in the next two weeks"
+				color: Config.fgDim
+				font.pixelSize: Config.fontSize - 3
+			}
+
+			Label {
+				Layout.fillWidth: true
+				text: "Right-click a day to add a reminder"
+				color: Config.fgDim
+				opacity: 0.7
+				font.pixelSize: Config.fontSize - 5
+				horizontalAlignment: Text.AlignHCenter
+			}
+		}
+	}
+
+	// One day in the grid: today filled with the accent, weekends tinted,
+	// days outside the month faded, and a dot under any day with something on.
+	component DayCell: Item {
+		id: cell
+
+		property var modelData
+
+		readonly property bool marked: modelData.key ? Events.hasOn(modelData.key) : false
+		readonly property bool picked: !!modelData.key && root.selected === modelData.key
+
+		Rectangle {
+			anchors.fill: parent
+			anchors.margins: 1
+			radius: Config.radius - 4
+			color: cell.modelData.isToday ? Config.accent
+				: hover.containsMouse && root.editable ? Config.bgAlt
+				: "transparent"
+			border.width: cell.picked ? 1.5 : 0
+			border.color: cell.modelData.isToday ? Config.fg : Config.accent
+
+			Behavior on color { ColorAnimation { duration: 90 } }
+		}
+
+		Label {
+			anchors.centerIn: parent
+			anchors.verticalCenterOffset: cell.marked ? -3 : 0
+			text: cell.modelData.day ?? ""
+			font.pixelSize: Config.fontSize - 1
+			font.weight: cell.modelData.isToday ? Font.Bold : Font.Normal
+			color: cell.modelData.isToday ? Config.bg
+				: !cell.modelData.inMonth ? Config.fgDim
+				: cell.modelData.weekend ? Config.red
+				: Config.fg
+			opacity: cell.modelData.inMonth || cell.modelData.isToday ? 1 : 0.45
+		}
+
+		// Something is on this day. The theme's accent, or the background
+		// colour on today's already-accent square.
+		Rectangle {
+			anchors.horizontalCenter: parent.horizontalCenter
+			anchors.verticalCenter: parent.verticalCenter
+			anchors.verticalCenterOffset: 8
+			width: 4
+			height: 4
+			radius: 2
+			visible: cell.marked
+			color: cell.modelData.isToday ? Config.bg : Config.accent
+			opacity: cell.modelData.inMonth ? 1 : 0.5
+		}
+
+		MouseArea {
+			id: hover
+
+			anchors.fill: parent
+			enabled: root.editable
+			hoverEnabled: true
+			acceptedButtons: Qt.LeftButton | Qt.RightButton
+			cursorShape: Qt.PointingHandCursor
+
+			onClicked: mouse => {
+				const key = cell.modelData.key;
+				if (mouse.button === Qt.RightButton) root.select(key, true);
+				else if (cell.picked && !root.adding) root.deselect();
+				else if (cell.marked) root.select(key, false);
+				else root.deselect();
+			}
 		}
 	}
 

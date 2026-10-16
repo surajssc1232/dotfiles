@@ -26,7 +26,8 @@ PanelWindow {
 
 	default property alias content: container.data
 
-	visible: open
+	// Kept mapped until the closing animation has played out.
+	visible: open || container.opacity > 0
 	screen: anchorItem?.QsWindow?.window?.screen ?? null
 
 	anchors {
@@ -56,6 +57,7 @@ PanelWindow {
 	// Sits below the content, so anything not on a menu closes it.
 	MouseArea {
 		anchors.fill: parent
+		enabled: root.open
 		acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
 		onPressed: root.open = false
 	}
@@ -88,6 +90,24 @@ PanelWindow {
 		}
 
 		x: anchoredX
+
+		// Pops out of the bar: grows from its top edge with a slight
+		// overshoot, and shrinks back into it, quicker, on the way out.
+		transformOrigin: Item.Top
+		opacity: root.open ? 1 : 0
+		scale: root.open ? 1 : 0.88
+		enabled: root.open
+
+		Behavior on opacity {
+			NumberAnimation { duration: root.open ? 160 : 120; easing.type: Easing.OutCubic }
+		}
+		Behavior on scale {
+			NumberAnimation {
+				duration: root.open ? 280 : 120
+				easing.type: root.open ? Easing.OutBack : Easing.InCubic
+				easing.overshoot: 1.3
+			}
+		}
 	}
 	// The layer is not sized yet at the moment it opens, so place again once it is.
 	onOpenChanged: if (open) container.place()

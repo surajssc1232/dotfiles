@@ -70,7 +70,10 @@ PanelWindow {
 	WlrLayershell.keyboardFocus: covered ? WlrKeyboardFocus.None : WlrKeyboardFocus.Exclusive
 	WlrLayershell.namespace: "quickshell-clipboard"
 
-	onVisibleChanged: if (root.visible) field.forceActiveFocus()
+	onVisibleChanged: if (root.visible) {
+		field.forceActiveFocus();
+		intro.restart();
+	}
 
 	MouseArea {
 		anchors.fill: parent
@@ -89,6 +92,22 @@ PanelWindow {
 		height: root.headerHeight + root.searchHeight + root.bodyHeight
 			+ root.footerHeight + Config.padding
 
+		// Pops in on open, the same way the bar's menus do.
+		transformOrigin: Item.Top
+
+		ParallelAnimation {
+			id: intro
+
+			NumberAnimation {
+				target: card; property: "opacity"
+				from: 0; to: 1; duration: 160; easing.type: Easing.OutCubic
+			}
+			NumberAnimation {
+				target: card; property: "scale"
+				from: 0.88; to: 1; duration: 280
+				easing.type: Easing.OutBack; easing.overshoot: 1.3
+			}
+		}
 
 		MouseArea {
 			anchors.fill: parent

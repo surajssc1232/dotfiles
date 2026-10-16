@@ -52,6 +52,34 @@ Singleton {
 
 	readonly property int count: root.entries.length
 
+	// When each notification arrived, by identity, for "5m ago" on the cards.
+	// Kept to the session; records read back from disk carry their own `at`.
+	property var times: ({})
+
+	function timeOf(n): real {
+		return n.at ?? root.times[root.identity(n)] ?? 0;
+	}
+
+	// Wall-clock minutes, so the "ago" labels move on by themselves.
+	SystemClock {
+		id: clock
+		precision: SystemClock.Minutes
+	}
+
+	readonly property real now: clock.date.getTime()
+
+	function ago(n): string {
+		const at = root.timeOf(n);
+		if (!at) return "";
+		const mins = Math.floor((root.now - at) / 60000);
+		if (mins < 1) return "now";
+		if (mins < 60) return mins + "m ago";
+		const hours = Math.floor(mins / 60);
+		if (hours < 24) return hours + "h ago";
+		const days = Math.floor(hours / 24);
+		return days === 1 ? "yesterday" : days + "d ago";
+	}
+
 	NotificationServer {
 		id: server
 
@@ -76,6 +104,10 @@ Singleton {
 			// Tracked notifications survive past the callback so they can be
 			// held in the history list and acted on later.
 			notification.tracked = true;
+
+			const stamped = Object.assign({}, root.times);
+			stamped[root.identity(notification)] = Date.now();
+			root.times = stamped;
 
 			// A notification can also be closed by the sender, or torn down on
 			// shutdown. Drop our references when that happens, or the lists
@@ -116,6 +148,7 @@ Singleton {
 			summary: n.summary ?? "",
 			appName: n.appName ?? "",
 			body: n.body ?? "",
+			at: root.timeOf(n),
 			actions: []
 		});
 	}

@@ -24,6 +24,7 @@ PanelWindow {
 	readonly property int maxWidth: 620
 	readonly property int headerHeight: 30
 	readonly property int footerHeight: 18
+	readonly property int infoHeight: Launcher.webInfo ? Launcher.webInfo.height : 0
 	// Separator, with its margins above and below.
 	readonly property int ruleHeight: 13
 
@@ -122,7 +123,7 @@ PanelWindow {
 		// the children are sized by a layout that fills this card, so asking
 		// them how tall they are is a loop.
 		implicitHeight: Config.padding * 2 + root.headerHeight + root.ruleHeight
-			+ root.listHeight + 4 + root.footerHeight
+			+ root.listHeight + 4 + root.infoHeight + root.footerHeight
 
 		transformOrigin: Item.Center
 
@@ -676,6 +677,64 @@ PanelWindow {
 							}
 						}
 					}
+				}
+			}
+
+			// ---- web preview ----
+			RowLayout {
+				Layout.fillWidth: true
+				Layout.preferredHeight: root.infoHeight
+				Layout.topMargin: 8
+				visible: Launcher.webInfo !== null
+				spacing: 12
+				clip: true
+
+				Image {
+					Layout.preferredWidth: 100
+					Layout.preferredHeight: 100
+					Layout.alignment: Qt.AlignTop
+					Layout.leftMargin: 8
+					visible: status === Image.Ready
+					source: Launcher.webInfo?.image ?? ""
+					fillMode: Image.PreserveAspectFit
+					asynchronous: true
+				}
+
+				ColumnLayout {
+					Layout.fillWidth: true
+					Layout.fillHeight: true
+					Layout.leftMargin: 8
+					spacing: 4
+
+					Label {
+						Layout.fillWidth: true
+						visible: (Launcher.webInfo?.heading ?? "") !== ""
+						text: Launcher.webInfo?.heading ?? ""
+						color: Config.fg
+						font.pixelSize: Config.fontSize + 8
+						elide: Text.ElideRight
+					}
+
+					Repeater {
+						model: Launcher.webInfo?.rows ?? []
+
+						Label {
+							required property var modelData
+
+							Layout.fillWidth: true
+							Layout.leftMargin: modelData.kind === "def" || modelData.kind === "ex" ? 10 : 0
+							text: modelData.text
+							color: modelData.kind === "def" || modelData.kind === "body" ? Config.fg : Config.fgDim
+							font.italic: modelData.kind === "pos"
+							font.pixelSize: modelData.kind === "ex" || modelData.kind === "source"
+								? Config.fontSize - 3 : Config.fontSize - 1
+							wrapMode: Text.WordWrap
+							maximumLineCount: modelData.lines ?? 2
+							elide: Text.ElideRight
+						}
+					}
+
+					Item { Layout.fillHeight: true }
 				}
 			}
 

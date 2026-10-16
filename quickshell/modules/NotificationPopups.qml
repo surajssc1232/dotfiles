@@ -64,8 +64,15 @@ PanelWindow {
 					acceptedButtons: Qt.NoButton
 					hoverEnabled: true
 					z: -1
-					onEntered: life.stop()
-					onExited: if (life.interval > 0) life.restart()
+					onEntered: {
+						life.stop();
+						countdown.stop();
+						card.progress = life.interval > 0 ? 1 : -1;
+					}
+					onExited: if (life.interval > 0) {
+						life.restart();
+						countdown.restart();
+					}
 				}
 
 				Timer {
@@ -74,6 +81,21 @@ PanelWindow {
 					interval: Notifs.timeoutFor(card.modelData)
 					running: interval > 0
 					onTriggered: Notifs.hidePopup(card.modelData)
+				}
+
+				// The bar along the bottom, running out with the timer. A
+				// toast that waits to be dismissed has none.
+				progress: life.interval > 0 ? 1 : -1
+
+				NumberAnimation {
+					id: countdown
+
+					target: card
+					property: "progress"
+					from: 1
+					to: 0
+					duration: life.interval
+					running: life.interval > 0
 				}
 
 				// Fades in where it belongs rather than flying in from the

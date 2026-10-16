@@ -7,8 +7,8 @@ import qs
 import qs.widgets
 
 // A system monitor that slides in from the right edge of the screen while the
-// cursor is on it: CPU and memory history as graphs, and the busiest
-// processes under them.
+// cursor is on it: CPU and memory history as graphs, the busiest processes
+// under them, and what is playing in a card of its own below.
 //
 // The window runs to the very edge of the screen, with the panel inset from
 // it, so a cursor pushed all the way right is always over the hover strip.
@@ -277,7 +277,7 @@ PanelWindow {
 		id: panel
 
 		width: root.panelWidth
-		height: parent.height
+		height: mediaPanel.visible ? parent.height - mediaPanel.height - Config.barMargin : parent.height
 		y: 0
 		// Off the edge when closed.
 		x: root.open ? parent.width - root.panelWidth - Config.barMargin : parent.width + 8
@@ -302,24 +302,9 @@ PanelWindow {
 				color: Config.border
 			}
 
-			// ---- CPU ----
-			GraphBlock {
+			// ---- CPU and memory, on one graph ----
+			UsageGraph {
 				Layout.fillWidth: true
-				title: "CPU"
-				value: root.cpu + "%"
-				detail: root.cores + " cores"
-				values: root.cpuHistory
-				tone: Config.accent
-			}
-
-			// ---- memory ----
-			GraphBlock {
-				Layout.fillWidth: true
-				title: "MEMORY"
-				value: root.mem + "%"
-				detail: root.memText
-				values: root.memHistory
-				tone: Config.blue
 			}
 
 			Label {
@@ -525,7 +510,30 @@ PanelWindow {
 								}
 				}
 			}
+		}
+	}
 
+	// ---- what is playing, its own card under the panel ----
+
+	Panel {
+		id: mediaPanel
+
+		width: root.panelWidth
+		height: media.implicitHeight + Config.padding * 2
+		y: parent.height - height
+		x: panel.x
+		// Not media.visible: that is false whenever this card is, so it would
+		// never come back once hidden.
+		visible: media.player !== null
+		clip: true
+
+		MediaCard {
+			id: media
+
+			x: Config.padding
+			y: Config.padding
+			width: parent.width - Config.padding * 2
+			active: root.open
 		}
 	}
 
@@ -591,41 +599,37 @@ PanelWindow {
 		}
 	}
 
-	// A title, the current figure, and a history graph under them.
-	component GraphBlock: ColumnLayout {
-		id: block
-
-		property string title
-		property string value
-		property string detail
-		property var values: []
-		property color tone
-
+	// CPU and memory history as two lines on one graph, with each figure and
+	// its detail over it in the line's colour.
+	component UsageGraph: ColumnLayout {
 		spacing: 6
+
+		RowLayout {
+			Layout.fillWidth: true
+			spacing: 6
+
+			Figure { title: "CPU"; value: root.cpu + "%"; tone: Config.accent }
+
+			Item { Layout.fillWidth: true }
+
+			Figure { title: "MEM"; value: root.mem + "%"; tone: Config.blue }
+		}
 
 		RowLayout {
 			Layout.fillWidth: true
 
 			Label {
-				text: block.title
+				text: root.cores + " cores"
 				color: Config.fgDim
 				font.pixelSize: Config.fontSize - 3
-				font.letterSpacing: 1
 			}
 
 			Item { Layout.fillWidth: true }
 
 			Label {
-				text: block.detail
+				text: root.memText
 				color: Config.fgDim
 				font.pixelSize: Config.fontSize - 3
-			}
-
-			Label {
-				text: block.value
-				color: block.tone
-				font.pixelSize: Config.fontSize + 6
-				font.weight: Font.DemiBold
 			}
 		}
 
@@ -633,14 +637,18 @@ PanelWindow {
 			id: graph
 
 			Layout.fillWidth: true
-			Layout.preferredHeight: 84
+			Layout.preferredHeight: 120
 
-			property var values: block.values
-			property color tone: block.tone
+			property var cpu: root.cpuHistory
+			property var mem: root.memHistory
+			property color cpuTone: Config.accent
+			property color memTone: Config.blue
 			property color grid: Config.border
 
-			onValuesChanged: requestPaint()
-			onToneChanged: requestPaint()
+			onCpuChanged: requestPaint()
+			onMemChanged: requestPaint()
+			onCpuToneChanged: requestPaint()
+			onMemToneChanged: requestPaint()
 			onGridChanged: requestPaint()
 			onWidthChanged: requestPaint()
 
@@ -664,35 +672,72 @@ PanelWindow {
 				}
 				ctx.globalAlpha = 1;
 
-				const v = graph.values;
-				if (v.length < 2) return;
+				// Newest sample at the right edge, history running left. Memory
+				// first, so the busier CPU line is drawn over it.
+				const series = (v, tone) => {
+					if (v.length < 2) return;
 
-				// Newest sample at the right edge, history running left.
-				const step = w / (root.points - 1);
-				const x0 = w - (v.length - 1) * step;
-				const at = i => ({ x: x0 + i * step, y: h - 2 - (h - 4) * Math.min(100, v[i]) / 100 });
+					const step = w / (root.points - 1);
+					const x0 = w - (v.length - 1) * step;
+					const at = i => ({ x: x0 + i * step, y: h - 2 - (h - 4) * Math.min(100, v[i]) / 100 });
 
-				ctx.beginPath();
-				ctx.moveTo(at(0).x, h);
-				for (let i = 0; i < v.length; i++) ctx.lineTo(at(i).x, at(i).y);
-				ctx.lineTo(at(v.length - 1).x, h);
-				ctx.closePath();
-				const fill = ctx.createLinearGradient(0, 0, 0, h);
-				fill.addColorStop(0, Qt.rgba(graph.tone.r, graph.tone.g, graph.tone.b, 0.45));
-				fill.addColorStop(1, Qt.rgba(graph.tone.r, graph.tone.g, graph.tone.b, 0.02));
-				ctx.fillStyle = fill;
-				ctx.fill();
+					ctx.beginPath();
+					ctx.moveTo(at(0).x, h);
+					for (let i = 0; i < v.length; i++) ctx.lineTo(at(i).x, at(i).y);
+					ctx.lineTo(at(v.length - 1).x, h);
+					ctx.closePath();
+					const fill = ctx.createLinearGradient(0, 0, 0, h);
+					fill.addColorStop(0, Qt.rgba(tone.r, tone.g, tone.b, 0.3));
+					fill.addColorStop(1, Qt.rgba(tone.r, tone.g, tone.b, 0.02));
+					ctx.fillStyle = fill;
+					ctx.fill();
 
-				ctx.beginPath();
-				for (let i = 0; i < v.length; i++) {
-					if (i === 0) ctx.moveTo(at(i).x, at(i).y);
-					else ctx.lineTo(at(i).x, at(i).y);
-				}
-				ctx.strokeStyle = graph.tone;
-				ctx.lineWidth = 1.8;
-				ctx.lineJoin = "round";
-				ctx.stroke();
+					ctx.beginPath();
+					for (let i = 0; i < v.length; i++) {
+						if (i === 0) ctx.moveTo(at(i).x, at(i).y);
+						else ctx.lineTo(at(i).x, at(i).y);
+					}
+					ctx.strokeStyle = tone;
+					ctx.lineWidth = 1.8;
+					ctx.lineJoin = "round";
+					ctx.stroke();
+				};
+
+				series(graph.mem, graph.memTone);
+				series(graph.cpu, graph.cpuTone);
 			}
+		}
+	}
+
+	// A coloured key, a label and the current figure.
+	component Figure: RowLayout {
+		id: figure
+
+		property string title
+		property string value
+		property color tone
+
+		spacing: 6
+
+		Rectangle {
+			Layout.preferredWidth: 10
+			Layout.preferredHeight: 3
+			radius: 1.5
+			color: figure.tone
+		}
+
+		Label {
+			text: figure.title
+			color: Config.fgDim
+			font.pixelSize: Config.fontSize - 3
+			font.letterSpacing: 1
+		}
+
+		Label {
+			text: figure.value
+			color: figure.tone
+			font.pixelSize: Config.fontSize + 6
+			font.weight: Font.DemiBold
 		}
 	}
 }

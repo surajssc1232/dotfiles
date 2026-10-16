@@ -52,7 +52,10 @@ PanelWindow {
 	onVisibleChanged: {
 		root.armedPath = "";
 		root.armedAll = false;
-		if (root.visible) keys.forceActiveFocus();
+		if (root.visible) {
+			keys.forceActiveFocus();
+			intro.restart();
+		}
 	}
 
 	MouseArea {
@@ -69,6 +72,23 @@ PanelWindow {
 		anchors.topMargin: Math.round(parent.height * 0.1)
 		width: root.cardWidth
 		height: col.implicitHeight + Config.padding
+
+		// Pops in on open, the same way the bar's menus do.
+		transformOrigin: Item.Top
+
+		ParallelAnimation {
+			id: intro
+
+			NumberAnimation {
+				target: card; property: "opacity"
+				from: 0; to: 1; duration: 160; easing.type: Easing.OutCubic
+			}
+			NumberAnimation {
+				target: card; property: "scale"
+				from: 0.88; to: 1; duration: 280
+				easing.type: Easing.OutBack; easing.overshoot: 1.3
+			}
+		}
 
 		MouseArea {
 			anchors.fill: parent

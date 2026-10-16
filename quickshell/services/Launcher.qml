@@ -583,9 +583,239 @@ Singleton {
 		rows.push({
 			kind: "url", key: "web", name: term,
 			detail: "Search the web", iconName: "", glyph: Config.icons.search,
-			url: "https://duckduckgo.com/?q=" + encodeURIComponent(term)
+			url: "https://www.google.com/search?q=" + encodeURIComponent(term)
 		});
 		return rows;
+	}
+
+	// ---- web preview ----
+	//
+	// A short summary (and picture, when there is one) for the web row, so the
+	// answer is on screen without opening a browser. DuckDuckGo's HTML
+	// results, because Google has no keyless API. Debounced, and
+	// stamped so a slow reply for an older query cannot overwrite a newer one.
+	property var webInfo: null
+	property int webSeq: 0
+
+	onTermChanged: {
+		root.webSeq++;
+		root.webInfo = null;
+		qaProc.running = false;
+		if (root.mode === "app" && root.term.length >= 3) webTimer.restart();
+		else webTimer.stop();
+	}
+
+	Timer {
+		id: webTimer
+		interval: 250
+		onTriggered: root.fetchWeb(root.term, root.webSeq)
+	}
+
+	function stripTags(t: string): string {
+		return t.replace(/<[^>]+>/g, "")
+			.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#x27;|&#39;/g, "'")
+			.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/\s+/g, " ").trim();
+	}
+
+	// The word a "meaning of X" style query is asking about, or "".
+	function definitionWord(term: string): string {
+		const t = term.trim().replace(/\?$/, "");
+		const m = t.match(/^(?:what(?:'s|\s+is|\s+does)\s+(?:the\s+)?(?:meaning|definition)\s+of|(?:meaning|definition)\s+of|define|what\s+does)\s+(.+?)(?:\s+mean)?$/i)
+			?? t.match(/^(\S+)\s+(?:meaning|definition|means?)$/i);
+		const word = m ? m[1].trim().toLowerCase() : "";
+		return /^[a-z][a-z' -]{0,30}$/.test(word) ? word : "";
+	}
+
+	// A dictionary card, the way a search engine answers "define x": the word,
+	// then each part of speech with its first meanings and one example.
+	function fetchDefinition(word: string, seq: int, fallback) {
+		const xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = () => {
+			if (xhr.readyState !== XMLHttpRequest.DONE || seq !== root.webSeq) return;
+			let entries = null;
+			try { entries = xhr.status === 200 ? JSON.parse(xhr.responseText).en : null; }
+			catch (e) { entries = null; }
+			if (!entries || entries.length === 0) { fallback(); return; }
+
+			const rows = [];
+			let height = 34;
+			for (const e of entries.slice(0, 2)) {
+				rows.push({ kind: "pos", text: e.partOfSpeech.toLowerCase() });
+				height += 22;
+				let n = 0;
+				for (const d of e.definitions) {
+					const text = root.stripTags(d.definition ?? "");
+					if (text === "") continue;
+					rows.push({ kind: "def", text: text });
+					height += 38;
+					const ex = root.stripTags(d.examples?.[0] ?? "");
+					if (n === 0 && ex !== "") { rows.push({ kind: "ex", text: ex }); height += 22; }
+					if (++n >= 2) break;
+				}
+			}
+			root.webInfo = { heading: word, rows: rows, height: height };
+		};
+		xhr.open("GET", "https://en.wiktionary.org/api/rest_v1/page/definition/" + encodeURIComponent(word));
+		xhr.send();
+	}
+
+	function getJson(url: string, done) {
+		const xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = () => {
+			if (xhr.readyState !== XMLHttpRequest.DONE) return;
+			try { done(xhr.status === 200 ? JSON.parse(xhr.responseText) : null); }
+			catch (e) { done(null); }
+		};
+		xhr.open("GET", url);
+		xhr.send();
+	}
+
+	// Always a card, in this order: a dictionary entry for "meaning of x", an
+	// encyclopedia summary when an article really covers the whole question,
+	// and otherwise the top web result written up as a card.
+	function fetchWeb(term: string, seq: int) {
+		if (root.selected?.key !== "web") return;
+		const next = () => root.fetchEntity(term, seq, () => root.fetchTopResult(term, seq));
+		const word = root.definitionWord(term);
+		if (word !== "") root.fetchDefinition(word, seq, next);
+		else next();
+	}
+
+	function fetchEntity(term: string, seq: int, fallback) {
+		// "How many", "total", "distance" ... want a figure, not an article.
+		if (/\b(how|total|number|many|much|distance|price|cost|population|height|age|when|which|best|vs|versus|near)\b/i.test(term)) {
+			fallback();
+			return;
+		}
+		const topic = term.toLowerCase().replace(/\?$/, "")
+			.replace(/^(?:(?:who|what|where|when)(?:'s|\s+(?:is|was|are|were))?\s+(?:the\s+|a\s+|an\s+)?|tell\s+me\s+about\s+|about\s+)/, "").trim();
+		const stop = ["the", "a", "an", "of", "in", "on", "to", "from", "and", "is", "for"];
+		const tokens = topic.split(/[^a-z0-9]+/).filter(t => t !== "" && stop.indexOf(t) === -1);
+		if (tokens.length === 0) { fallback(); return; }
+
+		const api = "https://en.wikipedia.org/";
+		root.getJson(api + "w/rest.php/v1/search/page?limit=1&q=" + encodeURIComponent(topic), r => {
+			if (seq !== root.webSeq) return;
+			const page = r?.pages?.[0];
+			const haystack = ((page?.title ?? "") + " " + (page?.description ?? "")).toLowerCase();
+			if (!page || !tokens.every(t => haystack.indexOf(t) !== -1)) { fallback(); return; }
+
+			root.getJson(api + "api/rest_v1/page/summary/" + encodeURIComponent(page.key), d => {
+				if (seq !== root.webSeq) return;
+				if (!d?.extract) { fallback(); return; }
+				root.webInfo = {
+					heading: d.title, image: d.thumbnail?.source ?? "", height: 150,
+					rows: [
+						{ kind: "body", text: d.extract, lines: 5 },
+						{ kind: "source", text: "Wikipedia" }
+					]
+				};
+			});
+		});
+	}
+
+	// The last tier: the claude CLI on Haiku, handed the top search snippets so
+	// the answer comes from the web results rather than from memory. Uses the
+	// existing login, so there is no key to manage.
+	function fetchTopResult(term: string, seq: int) {
+		// Same heading the answer will have, so the card fills in rather
+		// than being swapped for a different one.
+		const q = term.replace(/\?$/, "");
+		root.webInfo = {
+			heading: q.charAt(0).toUpperCase() + q.slice(1), image: "", height: 74,
+			rows: [{ kind: "source", text: "Finding an answer\u2026" }]
+		};
+		if (root.answers[term.toLowerCase()]) { root.askModel(term, [], seq); return; }
+
+		const xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = () => {
+			if (xhr.readyState !== XMLHttpRequest.DONE || seq !== root.webSeq) return;
+			const re = /class="result__a"[^>]*>([\s\S]*?)<\/a>[\s\S]*?class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g;
+			const hits = [];
+			let m;
+			if (xhr.status === 200)
+				while ((m = re.exec(xhr.responseText)) !== null && hits.length < 5)
+					hits.push({ title: root.stripTags(m[1]), text: root.stripTags(m[2]) });
+			root.askModel(term, hits, seq);
+		};
+		xhr.open("GET", "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(term));
+		xhr.setRequestHeader("User-Agent", "Mozilla/5.0");
+		xhr.send();
+	}
+
+	property int askSeq: -1
+	property string askTerm: ""
+
+	function askModel(term: string, hits, seq: int) {
+		qaProc.running = false;
+		root.askSeq = seq;
+		root.askTerm = term;
+		root.askText = "";
+		const cached = root.answers[term.toLowerCase()];
+		if (cached) { root.showAnswer(term, cached); return; }
+
+		const context = hits.map(h => "- " + h.title + ": " + h.text).join("\n");
+		qaProc.command = [
+			Quickshell.env("HOME") + "/.local/bin/claude", "-p",
+			"--model", "haiku", "--strict-mcp-config", "--disable-slash-commands",
+			"--tools", "", "--no-session-persistence", "--setting-sources", "",
+			"--output-format", "stream-json", "--verbose", "--include-partial-messages",
+			"--system-prompt",
+			"Answer the question in one or two short plain sentences, key fact first, using the web results. Say so briefly if they disagree or do not say. No markdown, no preamble.",
+			"Question: " + term + "\n\nWeb results:\n" + context
+		];
+		qaProc.running = true;
+	}
+
+	property string askText: ""
+	property var answers: ({})
+
+	function showAnswer(term: string, answer: string) {
+		const q = term.replace(/\?$/, "");
+		root.webInfo = {
+			heading: q.charAt(0).toUpperCase() + q.slice(1), image: "",
+			height: 40 + Math.ceil(answer.length / 62) * 19 + 22,
+			rows: [
+				{ kind: "body", lines: 6, text: answer },
+				{ kind: "source", text: "Claude  \u00b7  from web results" }
+			]
+		};
+	}
+
+	// The reply is streamed, so words appear as they are written instead of
+	// the card sitting empty until the whole answer is done.
+	Process {
+		id: qaProc
+		workingDirectory: "/tmp"
+
+		stdout: SplitParser {
+			onRead: line => {
+				if (root.askSeq !== root.webSeq) return;
+				let ev = null;
+				try { ev = JSON.parse(line); } catch (e) { return; }
+				const d = ev?.event?.delta;
+				if (ev?.type !== "stream_event" || d?.type !== "text_delta") return;
+				root.askText += d.text;
+				root.showAnswer(root.askTerm, root.askText.trim());
+			}
+		}
+
+		onExited: {
+			if (root.askSeq !== root.webSeq) return;
+			if (root.askText.trim() === "") {
+				// Nothing came back: quota, no network or a missing key.
+				const q = root.askTerm.replace(/\?$/, "");
+				root.webInfo = {
+					heading: q.charAt(0).toUpperCase() + q.slice(1), image: "", height: 74,
+					rows: [{ kind: "source", text: "No answer (is claude logged in?)" }]
+				};
+				return;
+			}
+			const next = ({});
+			for (const k in root.answers) next[k] = root.answers[k];
+			next[root.askTerm.toLowerCase()] = root.askText.trim();
+			root.answers = next;
+		}
 	}
 
 	// What you typed, then the two ways to run it, then everything you have
@@ -1004,7 +1234,7 @@ Singleton {
 		else if (kind === "term") root.spawnInTerminal(command);
 		else if (kind === "command" && act) act.run();
 		else if (kind === "file") FileSearch.open(path);
-		else if (kind === "url") Quickshell.execDetached({ command: ["xdg-open", url] });
+		else if (kind === "url") Quickshell.execDetached({ command: ["helium", url] });
 	}
 
 	// Delete removes the selected row from whichever history it came out of.

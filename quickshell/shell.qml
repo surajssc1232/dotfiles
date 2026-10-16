@@ -35,14 +35,7 @@ ShellRoot {
 		WallpaperLayer {}
 	}
 
-	// What is playing, on the desktop; mapped only while something is.
-	Variants {
-		model: Quickshell.screens
-
-		DesktopMedia {}
-	}
-
-	// System monitor that slides in from the right edge on hover.
+	// System monitor and media controls, sliding in from the right edge on hover.
 	Variants {
 		model: Quickshell.screens
 
