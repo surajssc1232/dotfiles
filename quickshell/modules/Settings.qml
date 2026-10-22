@@ -43,6 +43,46 @@ Pill {
 	// Which tile's pane is open, if any: "wifi", "bt", "proc", "theme".
 	property string pane: ""
 
+	// ---- keyboard navigation ----
+	// The tile the keyboard cursor is on, or null before the first keypress.
+	property Item cur: null
+
+	function navItems(): var {
+		return [wifiTile, btTile, dndTile, powerTile, outSlider, inSlider,
+			brightSlider, nightTile, wallTile, recTile, procTile, themeTile]
+			.filter(item => item.visible);
+	}
+
+	function move(dir: int) {
+		const list = root.navItems();
+		if (list.length === 0) return;
+		let i = list.indexOf(root.cur);
+		i = i < 0 ? (dir > 0 ? 0 : list.length - 1) : (i + dir + list.length) % list.length;
+		root.cur = list[i];
+	}
+
+	// Left and right steer a slider; on a tile they just move along.
+	function adjust(dir: int) {
+		if (root.cur && root.cur.scrollBy) root.cur.scrollBy(dir);
+		else root.move(dir);
+	}
+
+	// Enter flips a switch where there is one and otherwise opens the tile;
+	// Shift+Enter always opens its pane. On a slider, Space mutes and Enter
+	// reveals its device list.
+	function activate(open: bool) {
+		const item = root.cur;
+		if (!item) return;
+		if (item.scrollBy) {
+			if (open || !item.expandable) item.iconClicked();
+			else item.toggled();
+		} else if (open || !item.toggleable) {
+			item.triggered();
+		} else {
+			item.toggled();
+		}
+	}
+
 	function toggle(id: string) {
 		root.pane = root.pane === id ? "" : id;
 	}
@@ -124,6 +164,14 @@ Pill {
 	interactive: true
 	onClicked: layer.open = !layer.open
 
+	IpcHandler {
+		target: "settings"
+
+		function toggle(): void {
+			layer.open = !layer.open;
+		}
+	}
+
 	// Keeps the default sink's volume and mute properties bound and live.
 	PwObjectTracker {
 		objects: root.sink ? [root.sink] : []
@@ -151,9 +199,11 @@ Pill {
 		keyboardFocus: layer.open
 
 		onOpenChanged: {
-			if (!open) {
+			if (open) keyNav.forceActiveFocus();
+			else {
 				root.pane = "";
 				root.devices = "";
+				root.cur = null;
 			}
 			Brightness.active = open;
 		}
@@ -167,6 +217,25 @@ Pill {
 			target: Shot
 			function onFrameReadyChanged() {
 				if (Shot.frameReady && Shot.mode === "region") layer.open = false;
+			}
+		}
+
+		Item {
+			id: keyNav
+
+			focus: true
+			Keys.onPressed: event => {
+				const k = event.key;
+				const shift = (event.modifiers & Qt.ShiftModifier) !== 0;
+				event.accepted = true;
+				if (k === Qt.Key_Down || k === Qt.Key_J || (k === Qt.Key_Tab && !shift)) root.move(1);
+				else if (k === Qt.Key_Up || k === Qt.Key_K || k === Qt.Key_Backtab
+					|| (k === Qt.Key_Tab && shift)) root.move(-1);
+				else if (k === Qt.Key_Right || k === Qt.Key_L) root.adjust(1);
+				else if (k === Qt.Key_Left || k === Qt.Key_H) root.adjust(-1);
+				else if (k === Qt.Key_Return || k === Qt.Key_Enter) root.activate(shift);
+				else if (k === Qt.Key_Space) root.activate(root.cur?.scrollBy !== undefined);
+				else event.accepted = false;
 			}
 		}
 
@@ -222,6 +291,8 @@ Pill {
 						variant: "tall"
 						icon: Network.wifiEnabled ? Config.icons.wifi : Config.icons.wifiOff
 						label: "Wi-Fi"
+		id: wifiTile
+						focused: root.cur === wifiTile
 						detail: !Network.wifiEnabled ? "Off"
 							: Network.connected
 								? Network.activeSsid + " · " + Network.activeSignal + "%"
@@ -244,6 +315,8 @@ Pill {
 
 							icon: Config.icons.bluetooth
 							label: "Bluetooth"
+		id: btTile
+						focused: root.cur === btTile
 							detail: !Bt.enabled ? "Off"
 								: Bt.connectedDevices.length === 0 ? "No devices"
 								: Bt.connectedDevices.length === 1 ? Bt.label(Bt.connectedDevices[0])
@@ -269,6 +342,8 @@ Pill {
 								variant: "mini"
 								icon: Notifs.dnd ? Config.icons.bellOff : Config.icons.bell
 								label: "DND"
+		id: dndTile
+						focused: root.cur === dndTile
 								detail: "DND"
 								on: Notifs.dnd
 								onTriggered: Notifs.toggleDnd()
@@ -282,6 +357,8 @@ Pill {
 								variant: "mini"
 								icon: Config.icons.power
 								label: "Power"
+		id: powerTile
+						focused: root.cur === powerTile
 								detail: "Power"
 								expanded: root.pane === "power"
 								onTriggered: root.toggle("power")
@@ -446,6 +523,8 @@ Pill {
 						: root.volume > 0.5 ? Config.icons.volHigh
 						: Config.icons.volLow
 					label: "Output · " + Audio.label(Audio.sink)
+		id: outSlider
+						focused: root.cur === outSlider
 					readout: root.muted ? "muted" : Math.round(root.volume * 100) + "%"
 					value: root.volume
 					dimmed: root.muted
@@ -477,6 +556,8 @@ Pill {
 
 					icon: root.micMuted ? Config.icons.micOff : Config.icons.mic
 					label: "Input · " + Audio.label(Audio.source)
+		id: inSlider
+						focused: root.cur === inSlider
 					readout: root.micMuted ? "muted" : Math.round(root.micVolume * 100) + "%"
 					value: root.micVolume
 					dimmed: root.micMuted
@@ -550,6 +631,8 @@ Pill {
 
 					icon: Config.icons.brightness
 					label: "Brightness"
+		id: brightSlider
+						focused: root.cur === brightSlider
 					readout: Brightness.percent + "%"
 					value: Brightness.percent / 100
 					fill: Config.yellow
@@ -571,6 +654,8 @@ Pill {
 
 						icon: Config.icons.nightLight
 						label: "Night light"
+		id: nightTile
+						focused: root.cur === nightTile
 						detail: NightLight.enabled
 							? NightLight.temperature + "K" : "Off"
 						on: NightLight.enabled
@@ -586,6 +671,8 @@ Pill {
 
 						icon: Config.icons.image
 						label: "Wallpaper"
+		id: wallTile
+						focused: root.cur === wallTile
 						detail: Wallpaper.current
 							? Wallpaper.current.split("/").pop()
 							: "None"
@@ -617,6 +704,8 @@ Pill {
 
 						icon: Config.icons.video
 						label: Recorder.recording ? "Recording" : "Record"
+		id: recTile
+						focused: root.cur === recTile
 						detail: Recorder.recording ? Recorder.clock() : Recorder.audioLabel
 						on: Recorder.recording
 						expanded: root.pane === "rec"
@@ -633,6 +722,8 @@ Pill {
 
 						icon: Config.icons.cpu
 						label: "Processes"
+		id: procTile
+						focused: root.cur === procTile
 						// Deliberately not a live figure: the pane only samples
 						// while it is open, so anything numeric here would sit
 						// frozen at its last value pretending to be current.
@@ -675,6 +766,8 @@ Pill {
 
 					icon: Config.icons.palette
 					label: "Colorscheme"
+		id: themeTile
+						focused: root.cur === themeTile
 					detail: Config.theme.name
 					expanded: root.pane === "theme"
 					onTriggered: root.toggle("theme")

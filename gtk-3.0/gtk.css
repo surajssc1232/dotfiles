@@ -1,0 +1,63 @@
+@import 'dank-colors.css';
+
+/* Pure black backgrounds, independent of the colorscheme */
+@define-color window_bg_color #000000;
+@define-color view_bg_color #000000;
+@define-color headerbar_bg_color #000000;
+@define-color sidebar_bg_color #000000;
+@define-color secondary_sidebar_bg_color #000000;
+@define-color dialog_bg_color #000000;
+@define-color overview_bg_color #000000;
+@define-color popover_bg_color #0a0a0a;
+@define-color card_bg_color #111111;
+
+/* GTK3 Adwaita reads theme_* names; map them from the DMS/matugen palette */
+@define-color theme_bg_color @window_bg_color;
+@define-color theme_fg_color @window_fg_color;
+@define-color theme_base_color @view_bg_color;
+@define-color theme_text_color @view_fg_color;
+@define-color theme_selected_bg_color @accent_bg_color;
+@define-color theme_selected_fg_color @accent_fg_color;
+@define-color insensitive_bg_color @window_bg_color;
+@define-color insensitive_base_color @view_bg_color;
+@define-color borders alpha(@window_fg_color, 0.15);
+
+.nemo-window .sidebar,
+.nemo-window .sidebar .view,
+.nemo-window .sidebar row {
+    background-color: @sidebar_bg_color;
+    color: @sidebar_fg_color;
+}
+
+/* Explicit rules in case the theme doesn't resolve the named colors */
+window, .background, .nemo-window, .nemo-window .view, .nemo-window iconview,
+.nemo-window treeview.view, .nemo-window scrolledwindow, .nemo-window paned,
+.nemo-window notebook, .nemo-window stack {
+    background-color: @window_bg_color;
+    color: @window_fg_color;
+}
+.nemo-window .view:selected, .nemo-window iconview:selected,
+.nemo-window row:selected, .nemo-window treeview.view:selected {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+}
+headerbar, .titlebar, toolbar, .primary-toolbar, .nemo-window .toolbar,
+.nemo-window menubar, .nemo-window statusbar {
+    background-image: none;
+    background-color: @headerbar_bg_color;
+    color: @headerbar_fg_color;
+}
+.nemo-window .sidebar, .nemo-window .sidebar .view, .nemo-window .sidebar row {
+    background-color: @sidebar_bg_color;
+    color: @sidebar_fg_color;
+}
+menu, .menu, .popup, popover, popover.background, tooltip {
+    background-color: @popover_bg_color;
+    color: @popover_fg_color;
+}
+button, entry {
+    background-image: none;
+    background-color: @card_bg_color;
+    color: @card_fg_color;
+}
+button:hover, button:checked, button:active { background-color: alpha(@accent_bg_color, 0.35); }

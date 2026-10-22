@@ -30,11 +30,13 @@ input {
         tap
         dwt
         dwtp
-        // drag false
-        // drag-lock
+        drag true
+        drag-lock
         natural-scroll
         accel-speed 0.5
-        // accel-profile "flat"
+        accel-profile "adaptive"
+        click-method "clickfinger"
+        tap-button-map "left-right-middle"
         scroll-method "two-finger"
         // disabled-on-external-mouse
     }
@@ -422,7 +424,7 @@ binds {
     Mod+Alt+Down         { spawn "cheating-daddy" "--action=scrollDown"; }
     Mod+Alt+E            { spawn "cheating-daddy" "--action=emergencyErase"; }
     Mod+S {spawn "~/websearch.sh";}
-    Mod+E {spawn "~/remind.sh";}
+    Mod+E hotkey-overlay-title="Control Centre" { spawn "qs" "ipc" "call" "settings" "toggle"; }
     Mod+Z {spawn-sh "/etc/nixos/scripts/fontpicker.sh";}
     Mod+Shift+W {spawn "quickshell" "--path" "~/launcher.qml";}
 	// Mod+Shift+L {spawn "~/.config/sway/swaylock.sh";}

@@ -18,6 +18,9 @@ MouseArea {
 	property bool expanded: false
 	property bool busy: false
 
+	// Keyboard cursor, set by the panel that owns the tiles.
+	property bool focused: false
+
 	// "row"  — icon, text and control on one line (the default width unit)
 	// "tall" — a double-height tile, text sitting under a large icon
 	// "mini" — a single square cell: centred icon over a short label
@@ -55,11 +58,18 @@ MouseArea {
 		color: root.containsMouse ? Qt.lighter(root.surface, 1.25) : root.surface
 
 		// The open pane is tied back to the tile that owns it.
-		border.width: root.expanded ? 2 : 1
-		border.color: root.expanded ? Config.accent : Config.border
+		border.width: root.expanded || root.focused ? 2 : 1
+		border.color: root.focused ? Config.fg
+			: root.expanded ? Config.accent : Config.border
 
 		Behavior on color {
-			ColorAnimation { duration: Config.themeFade }
+			ColorAnimation { duration: Config.themeFade; easing.type: Easing.OutCubic }
+		}
+		Behavior on border.color {
+			ColorAnimation { duration: Config.animFast; easing.type: Easing.OutCubic }
+		}
+		Behavior on border.width {
+			NumberAnimation { duration: Config.animFast; easing.type: Easing.OutCubic }
 		}
 	}
 

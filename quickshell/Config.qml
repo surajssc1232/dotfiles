@@ -105,6 +105,8 @@ Singleton {
 	readonly property string clockFormat: "hh:mm"
 	readonly property string dateFormat: "ddd d MMM"
 	readonly property int themeFade: 220      // ms, theme cross-fade duration
+	readonly property int animFast: 140       // ms, hover and press feedback
+	readonly property int animMed: 240        // ms, panels resizing and panes opening
 
 	// Terminal used for the launcher's "run in terminal" entry, as an argv
 	// prefix: whatever follows is appended as further arguments.

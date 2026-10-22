@@ -95,17 +95,23 @@ PanelWindow {
 		// overshoot, and shrinks back into it, quicker, on the way out.
 		transformOrigin: Item.Top
 		opacity: root.open ? 1 : 0
-		scale: root.open ? 1 : 0.88
+		scale: root.open ? 1 : 0.94
 		enabled: root.open
 
-		Behavior on opacity {
-			NumberAnimation { duration: root.open ? 160 : 120; easing.type: Easing.OutCubic }
+		// Panes opening inside the menu change its height; follow that
+		// instead of snapping, so the panel grows with what it now holds.
+		Behavior on height {
+			NumberAnimation { duration: Config.animMed; easing.type: Easing.OutQuint }
 		}
+		Behavior on opacity {
+			NumberAnimation { duration: root.open ? 200 : 140; easing.type: Easing.OutCubic }
+		}
+		// No overshoot: a bounce on a large surface re-rasterises its text
+		// every frame and reads as judder rather than spring.
 		Behavior on scale {
 			NumberAnimation {
-				duration: root.open ? 280 : 120
-				easing.type: root.open ? Easing.OutBack : Easing.InCubic
-				easing.overshoot: 1.3
+				duration: root.open ? 260 : 160
+				easing.type: root.open ? Easing.OutQuint : Easing.InOutCubic
 			}
 		}
 	}

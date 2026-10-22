@@ -607,6 +607,8 @@
 
   environment.systemPackages = with pkgs; [
     acpi
+    ghidra
+    yt-dlp
     foot
     nushell
     google-chrome
@@ -674,6 +676,7 @@
 
   fonts.packages = with pkgs; [
     nerd-fonts.jetbrains-mono
+    nerd-fonts.fira-code
     nerd-fonts.iosevka-term
     nerd-fonts.shure-tech-mono
     gohufont

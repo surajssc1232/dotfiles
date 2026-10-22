@@ -14,6 +14,9 @@ Item {
 	property bool dimmed: false     // muted, or otherwise inactive
 	property color fill: Config.accent
 
+	// Keyboard cursor, set by the panel that owns the tiles.
+	property bool focused: false
+
 	// One wheel notch.
 	property real step: 0.05
 
@@ -53,8 +56,8 @@ Item {
 		anchors.fill: parent
 		radius: Config.radius
 		color: Config.bgAlt
-		border.width: 1
-		border.color: Config.border
+		border.width: root.focused ? 2 : 1
+		border.color: root.focused ? Config.fg : Config.border
 	}
 
 	// Scrolls anywhere on the tile, not just over the bar. Declared before the

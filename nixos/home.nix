@@ -39,7 +39,7 @@
     };
     iconTheme = {
       package = pkgs.tela-icon-theme;
-      name = "Tela-pink-dark";
+      name = "Tela-grey-dark";
     };
     # Silences the 26.05 GTK4 theme warning completely
     gtk4.theme = null; 

@@ -25,7 +25,7 @@ MouseArea {
 			: root.background
 
 		Behavior on color {
-			ColorAnimation { duration: 120 }
+			ColorAnimation { duration: Config.animFast; easing.type: Easing.OutCubic }
 		}
 	}
 
