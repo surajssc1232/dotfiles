@@ -574,7 +574,21 @@ Singleton {
 		if (!term) return [];
 
 		const rows = [];
-		if (/^([a-z][a-z0-9+.-]*:\/\/|[\w-]+(\.[\w-]+)+(\/|$))/i.test(term)) {
+
+		// A local file, as a file:// URL or a plain absolute path, opens in
+		// whatever the system uses for that type, not in a browser.
+		const local = term.match(/^file:\/\/(\/.*)$/i) ?? term.match(/^(~?\/.*)$/);
+		if (local) {
+			const path = decodeURIComponent(local[1]).replace(/^~/, Quickshell.env("HOME"));
+			rows.push({ kind: "file", key: "localfile", name: path.slice(path.lastIndexOf("/") + 1) || path,
+				detail: "Open with the default app", iconName: "", glyph: Config.icons.arrowRight, path: path });
+			return rows;
+		}
+
+		// "movie.mp4" is shaped like a domain but is a file; a bare name
+		// ending in a file extension is not offered as a web address.
+		const fileLike = /^[^\s/:]+\.(mp4|mkv|webm|avi|mov|mp3|flac|wav|ogg|m4a|png|jpe?g|gif|webp|svg|pdf|txt|md|zip|tar|gz|xz|7z|iso|docx?|xlsx?|pptx?|odt|csv|json|sh|py|js|ts|rs|go|c|h|cpp|qml|nix|toml|ya?ml|log|exe|deb|rpm|appimage)$/i.test(term);
+		if (!fileLike && /^([a-z][a-z0-9+.-]*:\/\/|[\w-]+(\.[\w-]+)+(\/|$))/i.test(term)) {
 			const url = term.indexOf("://") === -1 ? "https://" + term : term;
 			rows.push({ kind: "url", key: "url", name: term, detail: "Open in the browser",
 				iconName: "", glyph: Config.icons.arrowRight, url: url });

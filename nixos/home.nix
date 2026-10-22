@@ -71,6 +71,17 @@
         "video/quicktime"           = [ "mpv.desktop" ];
         "video/x-msvideo"           = [ "mpv.desktop" ];
         "video/x-flv"               = [ "mpv.desktop" ];
+        # Newer shared-mime-info names: .mkv is reported as video/matroska
+        # and .avi as video/avi, and without these xdg-open falls back to
+        # whatever else claims them (Chrome, Stremio).
+        "video/matroska"            = [ "mpv.desktop" ];
+        "video/avi"                 = [ "mpv.desktop" ];
+        "video/x-m4v"               = [ "mpv.desktop" ];
+        "video/mpeg"                = [ "mpv.desktop" ];
+        "video/x-ms-wmv"            = [ "mpv.desktop" ];
+        "video/3gpp"                = [ "mpv.desktop" ];
+        "video/mp2t"                = [ "mpv.desktop" ];
+        "video/x-ogm+ogg"           = [ "mpv.desktop" ];
       };
     };
     
