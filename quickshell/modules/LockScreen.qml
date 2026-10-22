@@ -142,15 +142,37 @@ WlSessionLock {
 			}
 
 			Calendar {
+				id: calendar
+
 				Layout.alignment: Qt.AlignTop
 				today: clock.date
 				// The date is already spelled out under the clock.
 				showToday: false
 			}
 
-			LockWeather {
+			// Weather with what is playing underneath it, one column wide and
+			// no taller than the calendar: the player takes what the weather
+			// leaves.
+			ColumnLayout {
 				Layout.alignment: Qt.AlignTop
-				visible: Config.weather && (Weather.valid || Weather.error !== "")
+				Layout.preferredHeight: calendar.height
+				spacing: 14
+				visible: weatherCard.visible || media.hasPlayer
+
+				LockWeather {
+					id: weatherCard
+
+					compact: media.hasPlayer
+					visible: Config.weather && (Weather.valid || Weather.error !== "")
+				}
+
+				LockMedia {
+					id: media
+
+					Layout.fillWidth: true
+					Layout.fillHeight: true
+					visible: media.hasPlayer
+				}
 			}
 
 			LockNotifications {
@@ -458,139 +480,6 @@ WlSessionLock {
 		// there swallowing keystrokes with nowhere to put them.
 		onVisibleChanged: if (visible) field.forceActiveFocus()
 		Component.onCompleted: field.forceActiveFocus()
-	}
-
-	// Current conditions and the next few hours, beside the calendar. Asks
-	// for a fresh reading as it appears: a lock is often the first thing seen
-	// after a suspend, and the last reading may be hours old by then.
-	component LockWeather: Rectangle {
-		implicitWidth: 260
-		implicitHeight: body.implicitHeight + Config.padding * 2
-
-		radius: Config.radius
-		color: Config.bg
-		border.width: 1
-		border.color: Config.border
-
-		Component.onCompleted: Weather.refresh()
-
-		ColumnLayout {
-			id: body
-
-			anchors.fill: parent
-			anchors.margins: Config.padding
-			spacing: 8
-
-			RowLayout {
-				Layout.fillWidth: true
-				spacing: 6
-
-				Label {
-					text: Weather.icon
-					color: Config.accent
-					font.pixelSize: Config.fontSize - 2
-				}
-
-				Label {
-					text: "Weather"
-					color: Config.accent
-				}
-
-				Label {
-					Layout.fillWidth: true
-					Layout.minimumWidth: 0
-					horizontalAlignment: Text.AlignRight
-					text: Weather.place
-					color: Config.fgDim
-					font.pixelSize: Config.fontSize - 2
-					elide: Text.ElideRight
-				}
-			}
-
-			RowLayout {
-				Layout.fillWidth: true
-				spacing: 12
-
-				Label {
-					text: Weather.error !== "" ? Config.icons.warning : Weather.icon
-					color: Weather.error !== "" ? Config.red : Config.accent
-					font.pixelSize: 34
-				}
-
-				ColumnLayout {
-					spacing: 0
-
-					Label {
-						text: Weather.valid ? Math.round(Weather.temperature) + "°" : "—"
-						font.pixelSize: Config.fontSize + 14
-					}
-
-					Label {
-						text: Weather.valid ? Weather.summary : Weather.error
-						color: Config.fgDim
-						font.pixelSize: Config.fontSize - 1
-					}
-				}
-			}
-
-			Label {
-				readonly property var today: Weather.forecast[0] ?? null
-
-				visible: Weather.valid && today !== null
-				text: today === null ? ""
-					: "H " + Math.round(today.max) + "°  ·  L " + Math.round(today.min) + "°"
-						+ "  ·  Feels " + Math.round(Weather.feelsLike) + "°"
-				color: Config.fgDim
-				font.pixelSize: Config.fontSize - 3
-			}
-
-			Rectangle {
-				Layout.fillWidth: true
-				Layout.preferredHeight: 1
-				visible: hours.visible
-				color: Config.border
-			}
-
-			RowLayout {
-				id: hours
-
-				Layout.fillWidth: true
-				visible: Weather.valid && Weather.hourly.length > 0
-				spacing: 0
-
-				Repeater {
-					model: Weather.hourly.slice(0, 5)
-
-					ColumnLayout {
-						required property var modelData
-
-						Layout.fillWidth: true
-						Layout.preferredWidth: 1
-						spacing: 2
-
-						Label {
-							Layout.alignment: Qt.AlignHCenter
-							text: modelData.hour
-							color: Config.fgDim
-							font.pixelSize: Config.fontSize - 4
-						}
-
-						Label {
-							Layout.alignment: Qt.AlignHCenter
-							text: Weather.iconFor(modelData.code, true)
-							color: Config.accent
-							font.pixelSize: Config.fontSize
-						}
-
-						Label {
-							Layout.alignment: Qt.AlignHCenter
-							text: Math.round(modelData.temp) + "°"
-							font.pixelSize: Config.fontSize - 2
-						}
-					}
-				}
-			}
-		}
 	}
 
 	// Notifications received while locked, shown beside the calendar.
