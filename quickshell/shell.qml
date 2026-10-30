@@ -98,6 +98,13 @@ ShellRoot {
 		Osd {}
 	}
 
+	// Held keyd layer, shown above fullscreen windows too.
+	Variants {
+		model: Quickshell.screens
+
+		LayerNotch {}
+	}
+
 	// Asked once a recording finishes.
 	Variants {
 		model: Quickshell.screens
