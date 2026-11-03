@@ -8,6 +8,7 @@
   imports = [
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
+    ./plymouth-title.nix
   ];
 
   # 8GB RAM with no swap means any memory spike (Unreal Engine games under
@@ -340,9 +341,9 @@
   # splash start early rather than halfway through the boot.
   boot.plymouth = {
     enable = true;
-    # Plain and dark, to sit closer to the greeter that follows it than the
-    # vendor-logo default does.
-    theme = "spinner";
+    # The theme is a plain, dark spinner with a title, to sit closer to the
+    # greeter that follows it than the vendor-logo default does. See
+    # plymouth-title.nix.
   };
 
   # Plymouth quits at 7.12s and greetd starts at 7.12s, but the greeter's
