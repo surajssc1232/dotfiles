@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 let
   title = "Medallian's Humming!";
@@ -15,7 +15,7 @@ let
       -e '/^Name\[/d' \
       -e 's/^TitleFont=.*/TitleFont=JetBrainsMono Nerd Font 22/' \
       -e 's/^TitleVerticalAlignment=.*/TitleVerticalAlignment=.62/' \
-      -e '/^\[boot-up\]/a Title=${title}' \
+      -e ${lib.escapeShellArg "/^\\[boot-up\\]/a Title=${title}"} \
       ${pkgs.plymouth}/share/plymouth/themes/spinner/spinner.plymouth > $dir/${themeName}.plymouth
   '';
 in
