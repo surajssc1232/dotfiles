@@ -1,6 +1,7 @@
 -- Entry point. Load order matters: options first, then plugins, then
 -- everything that depends on a plugin being present.
 require("config.options")
+require("config.diagnostics")
 require("config.keymaps")
 require("config.plugins")
 

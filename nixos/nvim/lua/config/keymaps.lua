@@ -14,3 +14,6 @@ map("n", "<leader>e", ":NvimTreeToggle<CR>", { silent = true, desc = "Toggle fil
 map("n", "<leader>ff", ":Telescope find_files<CR>", { silent = true, desc = "Find files" })
 map("n", "<leader>fg", ":Telescope live_grep<CR>", { silent = true, desc = "Live grep" })
 map("v", "<leader>d", ":Rover<CR>", { silent = true, desc = "Ask Rover" })
+map("n", "<leader>k", vim.diagnostic.open_float, { silent = true, desc = "Show diagnostic" })
+map("n", "]d", function() vim.diagnostic.jump({ count = 1, float = true }) end, { desc = "Next diagnostic" })
+map("n", "[d", function() vim.diagnostic.jump({ count = -1, float = true }) end, { desc = "Prev diagnostic" })

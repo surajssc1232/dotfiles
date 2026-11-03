@@ -145,6 +145,23 @@ require("lazy").setup({
 				{ "lua", "python", "javascript", "c", "elixir", "eex", "heex", "java", "rust", "zig" }
 			require("nvim-treesitter").install(langs)
 
+			-- Treesitter returns 0 for a brand-new blank line, which sent the
+			-- cursor to column 1 after <CR>. Fall back to the previous line's
+			-- indent, plus one level after an opening bracket.
+			function _G.TsIndent()
+				local ok, ind = pcall(require("nvim-treesitter").indentexpr)
+				ind = ok and ind or -1
+				local lnum = vim.v.lnum
+				if ind > 0 or vim.fn.getline(lnum):match("%S") then return ind end
+				local prev = vim.fn.prevnonblank(lnum - 1)
+				if prev == 0 then return 0 end
+				local base = vim.fn.indent(prev)
+				if vim.fn.getline(prev):match("[{(%[:]%s*$") then
+					base = base + vim.fn.shiftwidth()
+				end
+				return base
+			end
+
 			vim.api.nvim_create_autocmd("FileType", {
 				pattern = langs,
 				callback = function(args)
@@ -153,8 +170,7 @@ require("lazy").setup({
 					-- so claim it back once they are done.
 					vim.schedule(function()
 						if vim.api.nvim_buf_is_valid(args.buf) then
-							vim.bo[args.buf].indentexpr =
-								"v:lua.require'nvim-treesitter'.indentexpr()"
+							vim.bo[args.buf].indentexpr = "v:lua.TsIndent()"
 						end
 					end)
 				end,

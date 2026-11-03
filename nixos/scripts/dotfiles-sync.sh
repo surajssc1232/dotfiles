@@ -1,8 +1,8 @@
 # Copies the live configs into ~/dotfiles, then commits and pushes whatever
 # changed. Runs from the dotfiles-sync timer in dotfiles-sync.nix.
 #
-# nvim/ and nixos/ are not copied: ~/.config/nvim is generated from the repo,
-# so copying it back would overwrite the source with its own older output.
+# nvim is not copied: ~/.config/nvim is generated from nixos/nvim, so edits
+# belong there and copying the output back would add nothing.
 
 repo="$HOME/dotfiles"
 live="$HOME/.config"

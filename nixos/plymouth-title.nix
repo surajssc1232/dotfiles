@@ -1,7 +1,7 @@
 { pkgs, ... }:
 
 let
-  title = "NixOS";
+  title = "Medallian's Humming!";
   themeName = "spinner-title";
 
   # The stock spinner with a line of text above it. Only the .plymouth file is
