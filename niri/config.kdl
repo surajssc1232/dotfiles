@@ -475,7 +475,7 @@ binds {
     // Example volume keys mappings for PipeWire & WirePlumber.
     // The allow-when-locked=true property makes them work even when the session is locked.
     // Using spawn-sh allows to pass multiple arguments together with the command.
-    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"; }
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 0.1+"; }
     XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"; }
     // Media: the same three keys the desktop media card lists.
     Mod+Alt+Space allow-when-locked=true hotkey-overlay-title="Play / Pause" { spawn "playerctl" "play-pause"; }
@@ -738,6 +738,10 @@ binds {
     // Powers off the monitors. To turn them back on, do any input like
     // moving the mouse or pressing any other key.
     Mod+Shift+P { power-off-monitors; }
+
+    // Toggles the monitor between the laptop and the PS5. Works while locked, so
+    // a lock that kicks in during a game can't strand the screen on the PS5.
+    Mod+Shift+G allow-when-locked=true hotkey-overlay-title="Switch Monitor: Laptop/PS5" { spawn "monitor-switch"; }
 
     Alt+h {set-column-width "-5%";}
     Alt+l {set-column-width "+5%";}

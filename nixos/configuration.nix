@@ -228,10 +228,14 @@
   # lock screen as soon as it starts. greetd runs initial_session once per boot
   # only, so logging out still lands on the greeter below. This gives up the
   # guarantee above: if the shell fails to start, the desktop is left unlocked.
+  #
+  # systemd-cat sends niri-session's output to the journal instead of tty1,
+  # where systemctl's "Calling import-environment without a list of variable
+  # names is deprecated" warning would otherwise show until niri draws.
   services.greetd = {
     enable = true;
     settings.initial_session = {
-      command = "env QS_LOCK_ON_START=1 niri-session";
+      command = "env QS_LOCK_ON_START=1 systemd-cat -t niri-session niri-session";
       user = "suraj";
     };
     settings.default_session = {
@@ -295,7 +299,9 @@
     Login = {
       HandlePowerKey = lib.mkForce "suspend";
       HandleLidSwitch = lib.mkForce "suspend";
-      HandleLidSwitchExternalPower = lib.mkForce "suspend";
+      # Switching the monitor input briefly drops HDMI, which logind reads as
+      # undocked. Without this, a closed lid suspends the laptop on every switch.
+      HandleLidSwitchExternalPower = lib.mkForce "ignore";
       HandleLidSwitchDocked = lib.mkForce "ignore";
       LidSwitchIgnoreInhibited = lib.mkForce "yes";
     };
@@ -419,6 +425,7 @@
     # Set here rather than in home.nix: fish never sources home-manager's
     # hm-session-vars.sh, so EDITOR from there never reached the shell.
     EDITOR = "hx";
+    BROWSER = "helium";
   };
 
   environment.variables = {
@@ -453,8 +460,12 @@
       "audio"
       "input"
       "docker"
+      "i2c"
     ];
   };
+
+  # ddcutil talks to the monitor over i2c; this loads i2c-dev and creates the group.
+  hardware.i2c.enable = true;
 
   # keyd knows which layers are held down; nothing else does. `keyd listen` is
   # the daemon's own event stream: one line per change, "+layer", "-layer", or
@@ -481,7 +492,14 @@
         out="''${KEYD_LAYER_FILE:-/run/keyd-layers}"
         umask 022
         : > "$out"
-        active=""
+
+        # keyd counts activations per layer: a toggle and a held overload
+        # of the same layer stack, and it reports "+layer" on every step up
+        # and "-layer" on every step down. So "-vim" from releasing the vim
+        # overload does not mean vim is off while the toggle still holds it.
+        # Count the same way, and drop a layer only when it reaches zero.
+        declare -A count=()
+        order=""
 
         ${pkgs.keyd}/bin/keyd listen | while IFS= read -r line; do
           case "$line" in
@@ -497,17 +515,24 @@
             *" $layer "*) continue ;;
           esac
 
+          n=''${count[$layer]:-0}
           case "$line" in
-            +*) case " $active " in
-                  *" $layer "*) ;;
-                  *) active="''${active:+$active }$layer" ;;
-                esac ;;
-            -*) new=""
-                for l in $active; do
-                  [ "$l" = "$layer" ] || new="''${new:+$new }$l"
-                done
-                active="$new" ;;
+            +*) n=$((n + 1)) ;;
+            -*) n=$((n > 0 ? n - 1 : 0)) ;;
           esac
+          count[$layer]=$n
+
+          # Entry order, for the label.
+          case " $order " in
+            *" $layer "*) ;;
+            *) order="''${order:+$order }$layer" ;;
+          esac
+
+          active=""
+          for l in $order; do
+            [ "''${count[$l]}" -gt 0 ] && active="''${active:+$active }$l"
+          done
+          order="$active"
 
           printf '%s\n' "$active" > "$out.tmp" && mv -f "$out.tmp" "$out"
         done
@@ -607,14 +632,36 @@
 
   environment.systemPackages = with pkgs; [
     acpi
-    ghidra
     yt-dlp
     foot
     nushell
+    steam
     google-chrome
     prismlauncher
     uv
     chiaki-ng
+    # Toggles the Dell between the laptop (HDMI 2) and the PS5 (HDMI 1).
+    # If the current input can't be read, it goes to the laptop.
+    (writeShellApplication {
+      name = "monitor-switch";
+      runtimeInputs = [ ddcutil libnotify ];
+      text = ''
+        laptop=0x12
+        ps5=0x11
+
+        current=$(ddcutil getvcp 60 --brief 2>/dev/null || true)
+        if [[ $current == *x12* ]]; then
+          target=$ps5
+        else
+          target=$laptop
+        fi
+
+        if ! ddcutil setvcp 60 "$target" --noverify; then
+          notify-send "Monitor switch failed" "ddcutil could not set input $target"
+          exit 1
+        fi
+      '';
+    })
     streamlink
     claude-code
     efibootmgr
@@ -751,9 +798,11 @@
   nix.gc = {
     automatic = true;
     dates = "weekly";
-    options = "--delete-older-than 14d";
+    options = "--delete-older-than 3d";
   };
+
   nix.optimise.automatic = true;
   nix.optimise.dates = [ "weekly" ];
+  nix.settings.auto-optimise-store = true;
 
 }
