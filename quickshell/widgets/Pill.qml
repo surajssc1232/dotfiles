@@ -21,7 +21,7 @@ MouseArea {
 		anchors.fill: parent
 		radius: Config.radius
 		color: root.containsMouse && root.interactive
-			? Qt.lighter(root.background, 1.4)
+			? Config.hover(root.background)
 			: root.background
 
 		Behavior on color {

@@ -13,7 +13,7 @@ Item {
 
 	signal picked(var device)
 
-	readonly property int rowHeight: 28
+	readonly property int rowHeight: 34
 
 	implicitHeight: column.implicitHeight
 
@@ -54,7 +54,8 @@ Item {
 					anchors.fill: parent
 					anchors.margins: 1
 					radius: Config.radius - 4
-					color: entry.containsMouse ? Config.bgAlt : "transparent"
+					color: entry.active ? Qt.alpha(Config.accent, 0.16)
+						: entry.containsMouse ? Config.bgAlt : "transparent"
 				}
 
 				RowLayout {
@@ -74,7 +75,7 @@ Item {
 						Layout.minimumWidth: 0
 						text: Audio.label(entry.modelData)
 						color: entry.active ? Config.accent : Config.fg
-						font.pixelSize: Config.fontSize - 3
+						font.pixelSize: Config.fontSize - 2
 						elide: Text.ElideRight
 					}
 

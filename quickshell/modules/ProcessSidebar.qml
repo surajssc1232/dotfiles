@@ -288,226 +288,222 @@ PanelWindow {
 
 		ColumnLayout {
 			anchors.fill: parent
-			anchors.margins: Config.padding
-			spacing: 12
+			anchors.margins: Config.inset
+			spacing: 10
 
 			Label {
+				Layout.leftMargin: 8
 				text: "System"
 				color: Config.accent
 			}
 
-			Rectangle {
-				Layout.fillWidth: true
-				Layout.preferredHeight: 1
-				color: Config.border
-			}
+			Group {
 
-			// ---- CPU and memory, on one graph ----
-			UsageGraph {
-				Layout.fillWidth: true
-			}
-
-			Label {
-				Layout.fillWidth: true
-				text: root.memDetail
-				color: Config.fgDim
-				font.pixelSize: Config.fontSize - 3
-				elide: Text.ElideRight
-			}
-
-			Rectangle {
-				Layout.fillWidth: true
-				Layout.preferredHeight: 1
-				color: Config.border
-			}
-
-			// ---- processes ----
-			RowLayout {
-				Layout.fillWidth: true
-				spacing: 6
+				// ---- CPU and memory, on one graph ----
+				UsageGraph {
+					Layout.fillWidth: true
+				}
 
 				Label {
 					Layout.fillWidth: true
-					text: "Processes"
+					text: root.memDetail
 					color: Config.fgDim
-					font.pixelSize: Config.fontSize - 2
+					font.pixelSize: Config.fontSize - 3
+					elide: Text.ElideRight
 				}
-
-				SortTab { label: "CPU"; key: "CPU" }
-				SortTab { label: "MEM"; key: "MEM" }
 			}
 
-			Flickable {
-				id: flick
-
-				Layout.fillWidth: true
+			Group {
 				Layout.fillHeight: true
-				clip: true
-				contentWidth: width
-				contentHeight: list.implicitHeight
-				boundsBehavior: Flickable.StopAtBounds
-				flickableDirection: Flickable.VerticalFlick
 
-				// Thin scroll indicator, only when there is more than fits.
-				Rectangle {
-					x: parent.width - width
-					y: flick.visibleArea.yPosition * flick.height
-					width: 3
-					height: flick.visibleArea.heightRatio * flick.height
-					radius: 1.5
-					color: Config.fgDim
-					opacity: flick.visibleArea.heightRatio < 1 ? 0.6 : 0
-					z: 2
+				// ---- processes ----
+				RowLayout {
+					Layout.fillWidth: true
+					spacing: 6
+
+					Label {
+						Layout.fillWidth: true
+						text: "Processes"
+						color: Config.fgDim
+						font.pixelSize: Config.fontSize - 2
+					}
+
+					SortTab { label: "CPU"; key: "CPU" }
+					SortTab { label: "MEM"; key: "MEM" }
 				}
 
-				ColumnLayout {
-					id: list
+				Flickable {
+					id: flick
 
-					width: flick.width - 8
-					spacing: 4
+					Layout.fillWidth: true
+					Layout.fillHeight: true
+					clip: true
+					contentWidth: width
+					contentHeight: list.implicitHeight
+					boundsBehavior: Flickable.StopAtBounds
+					flickableDirection: Flickable.VerticalFlick
 
-								Repeater {
-									model: root.processes
+					// Thin scroll indicator, only when there is more than fits.
+					Rectangle {
+						x: parent.width - width
+						y: flick.visibleArea.yPosition * flick.height
+						width: 3
+						height: flick.visibleArea.heightRatio * flick.height
+						radius: 1.5
+						color: Config.fgDim
+						opacity: flick.visibleArea.heightRatio < 1 ? 0.6 : 0
+						z: 2
+					}
 
-									MouseArea {
-										id: row
+					ColumnLayout {
+						id: list
 
-										required property var modelData
+						width: flick.width - 8
+						spacing: 4
 
-										// Asked once before anything is killed.
-										property bool armed: false
+									Repeater {
+										model: root.processes
 
-										readonly property real share: root.sortKey === "CPU"
-											? Math.min(100, modelData.cpu / root.cores)
-											: Math.min(100, modelData.mem)
+										MouseArea {
+											id: row
 
-										Layout.fillWidth: true
-										Layout.preferredHeight: 40
-										hoverEnabled: true
-										onContainsMouseChanged: {
-											if (!containsMouse) armed = false;
-											root.hoveredRows += containsMouse ? 1 : -1;
-										}
+											required property var modelData
 
-										Component.onDestruction: if (containsMouse) root.hoveredRows -= 1
+											// Asked once before anything is killed.
+											property bool armed: false
 
-										Timer {
-											interval: 4000
-											running: row.armed
-											onTriggered: row.armed = false
-										}
+											readonly property real share: root.sortKey === "CPU"
+												? Math.min(100, modelData.cpu / root.cores)
+												: Math.min(100, modelData.mem)
 
-										Rectangle {
-											anchors.fill: parent
-											radius: Config.radius - 4
-											color: row.containsMouse ? Config.bgAlt : "transparent"
-										}
-
-										ColumnLayout {
-											anchors.fill: parent
-											anchors.leftMargin: 6
-											anchors.rightMargin: 6
-											spacing: 2
-
-											RowLayout {
-												Layout.fillWidth: true
-												Layout.topMargin: 3
-												spacing: 8
-
-												Label {
-													Layout.fillWidth: true
-													Layout.minimumWidth: 0
-													text: row.modelData.name
-													elide: Text.ElideRight
-													font.pixelSize: Config.fontSize - 1
-												}
-
-												Label {
-													Layout.preferredWidth: 44
-													horizontalAlignment: Text.AlignRight
-													text: (row.modelData.cpu / root.cores).toFixed(1) + "%"
-													color: root.sortKey === "CPU" ? Config.accent : Config.fgDim
-													font.pixelSize: Config.fontSize - 2
-												}
-
-												Label {
-													Layout.preferredWidth: 62
-													horizontalAlignment: Text.AlignRight
-													text: root.size(row.modelData.res)
-													color: root.sortKey === "MEM" ? Config.blue : Config.fgDim
-													font.pixelSize: Config.fontSize - 2
-												}
+											Layout.fillWidth: true
+											Layout.preferredHeight: 40
+											hoverEnabled: true
+											onContainsMouseChanged: {
+												if (!containsMouse) armed = false;
+												root.hoveredRows += containsMouse ? 1 : -1;
 											}
 
-											RowLayout {
-												Layout.fillWidth: true
-												spacing: 6
+											Component.onDestruction: if (containsMouse) root.hoveredRows -= 1
 
-												Label {
-													Layout.fillWidth: true
-													Layout.minimumWidth: 0
-													text: "pid " + row.modelData.pid + " · " + row.modelData.user
-														+ " · " + row.modelData.time
-													color: Config.fgDim
-													font.pixelSize: Config.fontSize - 4
-													elide: Text.ElideRight
-												}
-
-												// Hover shows the kill button; one click arms it, a second
-												// picks how hard to end the process. The slot is always
-												// the same width, so the text beside it never moves.
-												Item {
-													Layout.preferredWidth: 96
-													Layout.preferredHeight: 16
-
-													KillButton {
-														anchors.right: parent.right
-														opacity: row.containsMouse && !row.armed ? 1 : 0
-														enabled: opacity > 0
-														text: "kill"
-														tone: Config.red
-														onClicked: row.armed = true
-													}
-
-													Row {
-														anchors.right: parent.right
-														spacing: 6
-														opacity: row.armed ? 1 : 0
-														enabled: row.armed
-
-														KillButton {
-															text: "quit"
-															tone: Config.yellow
-															onClicked: { root.signal(row.modelData.pid, "TERM"); row.armed = false; }
-														}
-
-														KillButton {
-															text: "force"
-															tone: Config.red
-															onClicked: { root.signal(row.modelData.pid, "KILL"); row.armed = false; }
-														}
-													}
-												}
+											Timer {
+												interval: 4000
+												running: row.armed
+												onTriggered: row.armed = false
 											}
 
 											Rectangle {
-												Layout.fillWidth: true
-												Layout.preferredHeight: 3
-												radius: 1.5
-												color: Config.bg
+												anchors.fill: parent
+												radius: Config.radius - 4
+												color: row.containsMouse ? Config.bgAlt : "transparent"
+											}
+
+											ColumnLayout {
+												anchors.fill: parent
+												anchors.leftMargin: 6
+												anchors.rightMargin: 6
+												spacing: 2
+
+												RowLayout {
+													Layout.fillWidth: true
+													Layout.topMargin: 3
+													spacing: 8
+
+													Label {
+														Layout.fillWidth: true
+														Layout.minimumWidth: 0
+														text: row.modelData.name
+														elide: Text.ElideRight
+														font.pixelSize: Config.fontSize - 1
+													}
+
+													Label {
+														Layout.preferredWidth: 44
+														horizontalAlignment: Text.AlignRight
+														text: (row.modelData.cpu / root.cores).toFixed(1) + "%"
+														color: root.sortKey === "CPU" ? Config.accent : Config.fgDim
+														font.pixelSize: Config.fontSize - 2
+													}
+
+													Label {
+														Layout.preferredWidth: 62
+														horizontalAlignment: Text.AlignRight
+														text: root.size(row.modelData.res)
+														color: root.sortKey === "MEM" ? Config.blue : Config.fgDim
+														font.pixelSize: Config.fontSize - 2
+													}
+												}
+
+												RowLayout {
+													Layout.fillWidth: true
+													spacing: 6
+
+													Label {
+														Layout.fillWidth: true
+														Layout.minimumWidth: 0
+														text: "pid " + row.modelData.pid + " · " + row.modelData.user
+															+ " · " + row.modelData.time
+														color: Config.fgDim
+														font.pixelSize: Config.fontSize - 4
+														elide: Text.ElideRight
+													}
+
+													// Hover shows the kill button; one click arms it, a second
+													// picks how hard to end the process. The slot is always
+													// the same width, so the text beside it never moves.
+													Item {
+														Layout.preferredWidth: 96
+														Layout.preferredHeight: 16
+
+														KillButton {
+															anchors.right: parent.right
+															opacity: row.containsMouse && !row.armed ? 1 : 0
+															enabled: opacity > 0
+															text: "kill"
+															tone: Config.red
+															onClicked: row.armed = true
+														}
+
+														Row {
+															anchors.right: parent.right
+															spacing: 6
+															opacity: row.armed ? 1 : 0
+															enabled: row.armed
+
+															KillButton {
+																text: "quit"
+																tone: Config.yellow
+																onClicked: { root.signal(row.modelData.pid, "TERM"); row.armed = false; }
+															}
+
+															KillButton {
+																text: "force"
+																tone: Config.red
+																onClicked: { root.signal(row.modelData.pid, "KILL"); row.armed = false; }
+															}
+														}
+													}
+												}
 
 												Rectangle {
-													width: parent.width * row.share / 100
-													height: parent.height
+													Layout.fillWidth: true
+													Layout.preferredHeight: 3
 													radius: 1.5
-													color: root.sortKey === "CPU" ? Config.accent : Config.blue
+													color: Config.bg
 
-													Behavior on width { NumberAnimation { duration: 300 } }
+													Rectangle {
+														width: parent.width * row.share / 100
+														height: parent.height
+														radius: 1.5
+														color: root.sortKey === "CPU" ? Config.accent : Config.blue
+
+														Behavior on width { NumberAnimation { duration: 300 } }
+													}
 												}
 											}
 										}
 									}
-								}
+					}
 				}
 			}
 		}
@@ -519,7 +515,7 @@ PanelWindow {
 		id: mediaPanel
 
 		width: root.panelWidth
-		height: media.implicitHeight + Config.padding * 2
+		height: media.implicitHeight + Config.inset * 2
 		y: parent.height - height
 		x: panel.x
 		// Not media.visible: that is false whenever this card is, so it would
@@ -530,9 +526,9 @@ PanelWindow {
 		MediaCard {
 			id: media
 
-			x: Config.padding
-			y: Config.padding
-			width: parent.width - Config.padding * 2
+			x: Config.inset
+			y: Config.inset
+			width: parent.width - Config.inset * 2
 			active: root.open
 		}
 	}

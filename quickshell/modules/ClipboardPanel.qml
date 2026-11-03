@@ -274,7 +274,7 @@ PanelWindow {
 
 					radius: Config.radius - 2
 					color: tile.current || hover.containsMouse ? Config.bgAlt
-						: Qt.darker(Config.bgAlt, 1.25)
+						: Config.surfaceGroup
 					border.width: tile.current ? 1 : 0
 					border.color: Config.accent
 

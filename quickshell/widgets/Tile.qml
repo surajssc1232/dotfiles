@@ -45,7 +45,14 @@ MouseArea {
 			? Qt.rgba(Config.bg.r, Config.bg.g, Config.bg.b, 0.7)
 			: Config.fgDim
 
-	implicitHeight: 54
+	// The icon's round backing. Accent-tinted while off so the icon, rather
+	// than the whole tile, carries the colour until the tile is lit.
+	readonly property color badge: root.danger ? Qt.alpha(Config.red, 0.16)
+		: on ? Qt.alpha(Config.bg, 0.16) : Qt.alpha(Config.accent, 0.18)
+	readonly property color badgeInk: root.danger ? Config.red
+		: on ? Config.bg : Config.accent
+
+	implicitHeight: 58
 
 	hoverEnabled: true
 	cursorShape: Qt.PointingHandCursor
@@ -54,14 +61,20 @@ MouseArea {
 	Rectangle {
 		anchors.fill: parent
 
+		// Scaled here rather than on the tile, so a press does not re-rasterise
+		// the text sitting on top.
 		radius: Config.radius
-		color: root.containsMouse ? Qt.lighter(root.surface, 1.25) : root.surface
+		scale: root.pressed ? 0.97 : 1
+		color: root.containsMouse ? Config.hover(root.surface) : root.surface
 
-		// The open pane is tied back to the tile that owns it.
-		border.width: root.expanded || root.focused ? 2 : 1
-		border.color: root.focused ? Config.fg
-			: root.expanded ? Config.accent : Config.border
+		// The open pane is tied back to the tile that owns it. A lit tile is
+		// already accent, so its ring has to be something else to show at all.
+		border.width: root.expanded || root.focused ? 2 : 0
+		border.color: root.focused || root.on ? Config.fg : Config.accent
 
+		Behavior on scale {
+			NumberAnimation { duration: Config.animFast; easing.type: Easing.OutCubic }
+		}
 		Behavior on color {
 			ColorAnimation { duration: Config.themeFade; easing.type: Easing.OutCubic }
 		}
@@ -76,22 +89,30 @@ MouseArea {
 	// ---- row ----
 	RowLayout {
 		anchors.fill: parent
-		anchors.leftMargin: 10
-		anchors.rightMargin: 8
-		spacing: 8
+		anchors.leftMargin: 11
+		anchors.rightMargin: 14
+		spacing: 10
 
 		visible: root.variant === "row"
 
-		Label {
-			text: root.icon
-			color: root.ink
-			font.pixelSize: Config.fontSize + 2
+		Rectangle {
+			Layout.preferredWidth: 36
+			Layout.preferredHeight: 36
+			radius: Config.radius - 4
+			color: root.badge
+
+			Label {
+				anchors.centerIn: parent
+				text: root.icon
+				color: root.badgeInk
+				font.pixelSize: Config.fontSize + 2
+			}
 		}
 
 		ColumnLayout {
 			Layout.fillWidth: true
 			Layout.minimumWidth: 0
-			spacing: 0
+			spacing: 1
 
 			Label {
 				Layout.fillWidth: true
@@ -109,39 +130,15 @@ MouseArea {
 				Layout.minimumWidth: 0
 				text: root.detail
 				color: root.inkDim
-				font.pixelSize: Config.fontSize - 4
+				font.pixelSize: Config.fontSize - 3
 				elide: Text.ElideRight
 				visible: text !== ""
 			}
 		}
 
-		MouseArea {
-			id: toggle
-
-			Layout.preferredWidth: 22
-			Layout.preferredHeight: 22
+		Switch {
 			Layout.alignment: Qt.AlignVCenter
-
 			visible: root.toggleable
-			hoverEnabled: true
-			cursorShape: Qt.PointingHandCursor
-			onClicked: root.toggled()
-
-			Label {
-				anchors.centerIn: parent
-				text: root.busy ? Config.icons.spinner
-					: root.on ? Config.icons.toggleOn : Config.icons.toggleOff
-				color: toggle.containsMouse ? Config.blue : root.ink
-				font.pixelSize: Config.fontSize + 1
-
-				RotationAnimation on rotation {
-					running: root.busy
-					loops: Animation.Infinite
-					from: 0
-					to: 360
-					duration: 900
-				}
-			}
 		}
 
 		Label {
@@ -156,44 +153,29 @@ MouseArea {
 	// ---- tall ----
 	Item {
 		anchors.fill: parent
-		anchors.margins: 10
+		anchors.margins: 14
 		visible: root.variant === "tall"
 
-		Label {
-			id: tallIcon
+		Rectangle {
 			anchors.top: parent.top
 			anchors.left: parent.left
-			text: root.icon
-			color: root.ink
-			font.pixelSize: Config.fontSize + 10
-		}
-
-		MouseArea {
-			anchors.top: parent.top
-			anchors.right: parent.right
-			width: 24
-			height: 24
-
-			visible: root.toggleable
-			hoverEnabled: true
-			cursorShape: Qt.PointingHandCursor
-			onClicked: root.toggled()
+			width: 44
+			height: 44
+			radius: Config.radius - 4
+			color: root.badge
 
 			Label {
 				anchors.centerIn: parent
-				text: root.busy ? Config.icons.spinner
-					: root.on ? Config.icons.toggleOn : Config.icons.toggleOff
-				color: parent.containsMouse ? Config.blue : root.ink
-				font.pixelSize: Config.fontSize + 1
-
-				RotationAnimation on rotation {
-					running: root.busy
-					loops: Animation.Infinite
-					from: 0
-					to: 360
-					duration: 900
-				}
+				text: root.icon
+				color: root.badgeInk
+				font.pixelSize: Config.fontSize + 7
 			}
+		}
+
+		Switch {
+			anchors.top: parent.top
+			anchors.right: parent.right
+			visible: root.toggleable
 		}
 
 		// Anchored to the bottom so the label sits still while the status
@@ -208,7 +190,7 @@ MouseArea {
 				width: parent.width
 				text: root.label
 				color: root.ink
-				font.pixelSize: Config.fontSize
+				font.pixelSize: Config.fontSize + 1
 				elide: Text.ElideRight
 			}
 
@@ -233,7 +215,7 @@ MouseArea {
 		Label {
 			anchors.horizontalCenter: parent.horizontalCenter
 			text: root.busy ? Config.icons.spinner : root.icon
-			color: root.ink
+			color: root.on ? root.ink : root.badgeInk
 			font.pixelSize: Config.fontSize + 5
 
 			RotationAnimation on rotation {
@@ -249,9 +231,67 @@ MouseArea {
 			width: parent.width
 			text: root.detail || root.label
 			color: root.inkDim
-			font.pixelSize: Config.fontSize - 4
+			font.pixelSize: Config.fontSize - 3
 			horizontalAlignment: Text.AlignHCenter
 			elide: Text.ElideRight
+		}
+	}
+
+	// A drawn switch rather than a glyph, so the knob can travel.
+	component Switch: MouseArea {
+		id: sw
+
+		implicitWidth: 38
+		implicitHeight: 22
+
+		hoverEnabled: true
+		cursorShape: Qt.PointingHandCursor
+		onClicked: root.toggled()
+
+		Rectangle {
+			anchors.fill: parent
+			radius: Config.radius
+			color: root.on ? Config.bg : "transparent"
+			border.width: root.on ? 0 : 2
+			border.color: sw.containsMouse ? Config.accent : Config.fgDim
+
+			Behavior on color {
+				ColorAnimation { duration: Config.animFast; easing.type: Easing.OutCubic }
+			}
+		}
+
+		Rectangle {
+			anchors.verticalCenter: parent.verticalCenter
+			visible: !root.busy
+			width: root.on ? 16 : 10
+			height: width
+			radius: Config.radius
+			x: root.on ? parent.width - width - 3 : 6
+			color: root.on ? Config.accent
+				: sw.containsMouse ? Config.accent : Config.fgDim
+
+			Behavior on x {
+				NumberAnimation { duration: Config.animMed; easing.type: Easing.OutBack }
+			}
+			Behavior on width {
+				NumberAnimation { duration: Config.animMed; easing.type: Easing.OutCubic }
+			}
+		}
+
+		Label {
+			anchors.centerIn: parent
+			visible: root.busy
+			text: Config.icons.spinner
+			color: root.on ? Config.accent : root.ink
+			font.pixelSize: Config.fontSize - 2
+
+			RotationAnimation on rotation {
+				running: root.busy
+				loops: Animation.Infinite
+				from: 0
+				to: 360
+				duration: 900
+			}
 		}
 	}
 }

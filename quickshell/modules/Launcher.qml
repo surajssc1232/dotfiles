@@ -40,6 +40,54 @@ PanelWindow {
 	// True while Alt is held, which is what puts the row numbers on screen.
 	property bool numbering: false
 
+	// ---- right-click menu ----
+	// ctxRow is the file row the menu is for; ctxMode is "menu", or the name of
+	// the text prompt replacing it ("copy", "move", "rename"), or "delete"
+	// while permanent deletion waits for a second click.
+	property var ctxRow: null
+	property string ctxMode: "menu"
+	property point ctxAt: Qt.point(0, 0)
+
+	function openMenu(row, at) {
+		if (!row || row.kind !== "file" || !row.path) return;
+		root.ctxRow = row;
+		root.ctxMode = "menu";
+		root.ctxAt = at;
+	}
+
+	function closeMenu() {
+		root.ctxRow = null;
+		field.forceActiveFocus();
+	}
+
+	// Menu entries. `prompt` ones swap the card for a text field.
+	function ctxItems(): var {
+		const path = root.ctxRow?.path ?? "";
+		const folder = FileSearch.folder(path);
+		return [
+			{ label: "Open", glyph: Config.icons.arrowRight, run: () => FileSearch.open(path) },
+			{ label: "Show in folder", glyph: Config.icons.inbox, run: () => FileSearch.reveal(path) },
+			{ label: "Terminal here", glyph: Config.icons.terminal ?? Config.icons.arrowRight,
+				run: () => Launcher.detach(Config.terminal.slice(), folder) },
+			{ label: "Copy path", glyph: Config.icons.clipboard, run: () => Clipboard.copy(path) },
+			{ label: "Copy to\u2026", glyph: Config.icons.clipboard, prompt: "copy", seed: FileSearch.shorten(folder) + "/" },
+			{ label: "Move to\u2026", glyph: Config.icons.arrowRight, prompt: "move", seed: FileSearch.shorten(folder) + "/" },
+			{ label: "Rename\u2026", glyph: Config.icons.swatch, prompt: "rename", seed: FileSearch.name(path) },
+			{ label: "Move to trash", glyph: Config.icons.trash, run: () => FileSearch.trash(path), keep: true },
+			{ label: "Delete permanently", glyph: Config.icons.trash, prompt: "delete", danger: true }
+		];
+	}
+
+	// Enter opens; with Ctrl it shows a file in its folder, with Shift it
+	// copies the path. Both fall back to a plain open on non-file rows.
+	function enter(event) {
+		const isFile = Launcher.selected?.kind === "file";
+		if (isFile && (event.modifiers & Qt.ControlModifier)) Launcher.fileAction("reveal");
+		else if (isFile && (event.modifiers & Qt.ShiftModifier)) Launcher.fileAction("copy");
+		else Launcher.commit();
+		event.accepted = true;
+	}
+
 	// Where the pointer was when a row last claimed the selection, in screen
 	// coordinates. Rebuilding the list under a stationary pointer creates new
 	// rows beneath it, and each one reports a position change on the way in —
@@ -215,6 +263,21 @@ PanelWindow {
 							const alt = (event.modifiers & Qt.AltModifier) !== 0;
 							root.numbering = alt;
 
+							if (root.ctxRow) {
+								if (event.key === Qt.Key_Escape) root.closeMenu();
+								event.accepted = true;
+								return;
+							}
+
+							if (event.key === Qt.Key_Menu
+								|| (event.key === Qt.Key_F10 && (event.modifiers & Qt.ShiftModifier))) {
+								const r = list.currentItem;
+								root.openMenu(Launcher.selected, r
+									? r.mapToItem(null, 120, r.height) : Qt.point(card.x + 80, card.y + 120));
+								event.accepted = true;
+								return;
+							}
+
 							// Alt and a digit takes the nth row directly. The
 							// rows are numbered in the list while Alt is held,
 							// so the mapping is never something to remember.
@@ -232,6 +295,10 @@ PanelWindow {
 								? Launcher.selected.control : "";
 
 							switch (event.key) {
+							case Qt.Key_T:
+								if (!ctrl || Launcher.selected?.kind !== "file") return;
+								Launcher.fileAction("terminal");
+								break;
 							case Qt.Key_Left:
 							case Qt.Key_Right:
 								if (!slider) return;
@@ -291,8 +358,8 @@ PanelWindow {
 							if (event.key === Qt.Key_Alt) root.numbering = false;
 						}
 
-						Keys.onReturnPressed: Launcher.commit()
-						Keys.onEnterPressed: Launcher.commit()
+						Keys.onReturnPressed: event => root.enter(event)
+						Keys.onEnterPressed: event => root.enter(event)
 					}
 				}
 
@@ -450,6 +517,7 @@ PanelWindow {
 						height: root.rowHeight
 
 						hoverEnabled: true
+						acceptedButtons: Qt.LeftButton | Qt.RightButton
 						cursorShape: Qt.PointingHandCursor
 
 						// Movement, not mere presence.
@@ -464,8 +532,12 @@ PanelWindow {
 							Launcher.index = entry.index;
 						}
 
-						onClicked: {
+						onClicked: mouse => {
 							Launcher.index = entry.index;
+							if (mouse.button === Qt.RightButton) {
+								root.openMenu(entry.modelData, entry.mapToItem(null, mouse.x, mouse.y));
+								return;
+							}
 							Launcher.commit();
 						}
 
@@ -754,6 +826,8 @@ PanelWindow {
 								+ (Launcher.selected.control !== "brightness"
 									? Config.icons.dot + "   Enter mute   " : "")
 							: Config.icons.dot + "   Enter open   ")
+						+ (Launcher.selected?.kind === "file"
+							? Config.icons.dot + "   ^Enter show in folder   \u21e7Enter copy path   ^T terminal   " : "")
 						+ Config.icons.dot + "   Alt+n jump   "
 						+ (Launcher.mode === "clip" || Launcher.mode === "run"
 							? Config.icons.dot + "   Del forget   " : "")
@@ -763,6 +837,162 @@ PanelWindow {
 					font.pixelSize: Config.fontSize - 3
 					elide: Text.ElideRight
 				}
+			}
+		}
+	}
+
+	// ---- right-click card ----
+	// Sits where the click landed, nudged back inside the screen. The backdrop
+	// swallows the click that dismisses it so it never reaches the list below.
+	MouseArea {
+		anchors.fill: parent
+		visible: root.ctxRow !== null
+		acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+		onPressed: root.closeMenu()
+
+		Panel {
+			id: ctxCard
+
+			readonly property bool prompting: root.ctxMode !== "menu"
+			readonly property var items: root.ctxRow ? root.ctxItems() : []
+
+			implicitWidth: prompting ? 360 : 220
+			implicitHeight: prompting ? 92 : items.length * 30 + Config.padding * 2
+
+			x: Math.max(8, Math.min(root.width - implicitWidth - 8, root.ctxAt.x))
+			y: Math.max(8, Math.min(root.height - implicitHeight - 8, root.ctxAt.y))
+
+			// Stops a press inside the card reaching the dismissing backdrop.
+			MouseArea { anchors.fill: parent }
+
+			Column {
+				anchors.fill: parent
+				anchors.margins: Config.padding
+				visible: !ctxCard.prompting
+
+				Repeater {
+					model: ctxCard.items
+
+					delegate: MouseArea {
+						id: item
+
+						required property var modelData
+
+						width: parent.width
+						height: 30
+						hoverEnabled: true
+						cursorShape: Qt.PointingHandCursor
+
+						onClicked: {
+							const m = item.modelData;
+							if (m.prompt) {
+								root.ctxMode = m.prompt;
+								prompt.text = m.seed ?? "";
+								if (m.prompt === "delete") confirmKeys.forceActiveFocus();
+								else {
+									prompt.forceActiveFocus();
+									prompt.selectAll();
+								}
+								return;
+							}
+							const run = m.run;
+							root.closeMenu();
+							if (!m.keep) Launcher.close();
+							run();
+						}
+
+						Rectangle {
+							anchors.fill: parent
+							radius: Config.radius - 4
+							color: item.containsMouse ? Config.bgAlt : "transparent"
+						}
+
+						Row {
+							anchors.verticalCenter: parent.verticalCenter
+							anchors.left: parent.left
+							anchors.leftMargin: 8
+							spacing: 10
+
+							Label {
+								text: item.modelData.glyph ?? ""
+								color: item.modelData.danger ? "#e5484d" : Config.fgDim
+								font.pixelSize: Config.fontSize
+							}
+							Label {
+								text: item.modelData.label
+								color: item.modelData.danger ? "#e5484d" : Config.fg
+								font.pixelSize: Config.fontSize - 1
+							}
+						}
+					}
+				}
+			}
+
+			// Prompt: destination, new name, or the delete confirmation.
+			Column {
+				anchors.fill: parent
+				anchors.margins: Config.padding
+				spacing: 8
+				visible: ctxCard.prompting
+
+				Label {
+					width: parent.width
+					text: root.ctxMode === "copy" ? "Copy to (folder or new path)"
+						: root.ctxMode === "move" ? "Move to (folder or new path)"
+						: root.ctxMode === "rename" ? "New name"
+						: "Delete " + (root.ctxRow ? FileSearch.name(root.ctxRow.path) : "") + " forever?"
+					color: root.ctxMode === "delete" ? "#e5484d" : Config.fgDim
+					font.pixelSize: Config.fontSize - 2
+					elide: Text.ElideMiddle
+				}
+
+				TextInput {
+					id: prompt
+
+					width: parent.width
+					visible: root.ctxMode !== "delete"
+					color: Config.fg
+					font.family: Config.font
+					font.pixelSize: Config.fontSize
+					selectionColor: Config.accent
+					selectedTextColor: Config.bg
+					clip: true
+
+					Keys.onEscapePressed: root.closeMenu()
+					Keys.onReturnPressed: ctxCard.confirm()
+					Keys.onEnterPressed: ctxCard.confirm()
+				}
+
+				Item {
+					id: confirmKeys
+
+					width: parent.width
+					height: 24
+					visible: root.ctxMode === "delete"
+
+					Keys.onEscapePressed: root.closeMenu()
+					Keys.onReturnPressed: ctxCard.confirm()
+
+					Label {
+						anchors.verticalCenter: parent.verticalCenter
+						text: "Enter to confirm  \u00b7  Esc to cancel"
+						color: Config.fgDim
+						font.pixelSize: Config.fontSize - 2
+					}
+				}
+			}
+
+			function confirm() {
+				const path = root.ctxRow?.path ?? "";
+				const text = prompt.text.trim();
+				const mode = root.ctxMode;
+				if (!path || (mode !== "delete" && !text)) return;
+
+				root.closeMenu();
+				if (mode === "copy") FileSearch.copyTo(path, text);
+				else if (mode === "move") FileSearch.moveTo(path, text);
+				else if (mode === "rename") FileSearch.rename(path, text);
+				else if (mode === "delete") FileSearch.remove(path);
 			}
 		}
 	}

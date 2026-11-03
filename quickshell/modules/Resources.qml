@@ -13,6 +13,19 @@ Pill {
 	interactive: true
 	onClicked: Storage.toggle()
 
+	// Measured as the panel opens rather than kept live, for the same reason
+	// PopupLayer does: bar items resize as their numbers change, and a panel
+	// that followed would slide around under the cursor.
+	Connections {
+		target: Storage
+		function onShownChanged() {
+			const screen = root.QsWindow.window?.screen;
+			if (!Storage.shown || !screen) return;
+			const p = root.mapToItem(null, 0, 0);
+			Storage.setPillCentre(screen.name, Config.barMargin + p.x + root.width / 2);
+		}
+	}
+
 	property int cpu: 0
 	property int mem: 0
 	property int disk: 0

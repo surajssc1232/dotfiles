@@ -33,7 +33,7 @@ cyan    = "#8ec07c"
 white   = "#ebdbb2"
 
 [font]
-normal.family="JetBrainsMonoNL Nerd Font"
+normal.family="FiraCode Nerd Font"
 size = 18
 
 [window]

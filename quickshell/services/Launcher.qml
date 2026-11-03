@@ -925,8 +925,14 @@ Singleton {
 		return root.sliderValue(control) > 0.5 ? Config.icons.volHigh : Config.icons.volLow;
 	}
 
+	// Only the output goes past 100%; the bar still reads full from there on,
+	// as it does on the tile in the control centre, and the readout has the rest.
+	function sliderMax(control: string): real {
+		return control === "volume" ? Config.volumeMax : 1;
+	}
+
 	function setSlider(control: string, value: real) {
-		const v = Math.max(0, Math.min(1, value));
+		const v = Math.max(0, Math.min(root.sliderMax(control), value));
 		if (control === "volume" || control === "mic") {
 			const audio = root.sliderNode(control)?.audio;
 			if (!audio) return;
@@ -938,13 +944,14 @@ Singleton {
 	}
 
 	// One step, snapped to the 5% grid so repeated presses land on round
-	// numbers — the same rule SliderTile keeps. A sink sitting above 100% is
-	// left alone when asked to go up, rather than snapped back down.
+	// numbers — the same rule SliderTile keeps. A sink sitting above the
+	// slider's top is left alone when asked to go up, rather than snapped down.
 	function nudge(control: string, dir: int) {
 		const step = 0.05;
 		const now = root.sliderValue(control);
-		if (dir > 0 && now >= 1) return;
-		const base = Math.min(1, now);
+		const max = root.sliderMax(control);
+		if (dir > 0 && now >= max) return;
+		const base = Math.min(max, now);
 		root.setSlider(control, Math.round((base + dir * step) / step) * step);
 	}
 
@@ -1154,6 +1161,21 @@ Singleton {
 		const n = root.results.length;
 		if (n === 0) return;
 		root.index = Math.max(0, Math.min(n - 1, target));
+	}
+
+	// Ctrl+Enter, Shift+Enter and Ctrl+T on a file row: show it in the file
+	// manager, copy its path, open a terminal in its folder. Other rows ignore
+	// them, so the keys are inert outside the / mode.
+	function fileAction(what: string) {
+		const row = root.selected;
+		if (!row || row.kind !== "file" || !row.path) return;
+
+		const path = row.path;
+		root.close();
+
+		if (what === "reveal") FileSearch.reveal(path);
+		else if (what === "copy") Clipboard.copy(path);
+		else if (what === "terminal") root.detach(Config.terminal.slice(), FileSearch.folder(path));
 	}
 
 	function commit() {

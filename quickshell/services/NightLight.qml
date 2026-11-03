@@ -42,7 +42,11 @@ Singleton {
 	Process {
 		id: sunset
 
-		command: ["wlsunset",
+		// setpriv ties wlsunset's life to this shell's. Without it, a shell that
+		// is killed or crashes leaves wlsunset running, still holding gamma
+		// control: the next shell shows the toggle off over a tinted screen, and
+		// its own wlsunset is refused gamma control, so it cannot change anything.
+		command: ["setpriv", "--pdeathsig", "TERM", "wlsunset",
 			"-T", Config.dayTemp.toString(),
 			"-t", root.temperature.toString(),
 			"-S", "23:59",

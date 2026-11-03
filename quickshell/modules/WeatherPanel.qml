@@ -22,7 +22,7 @@ Item {
 	// which would not distribute the extra space across the Repeater's
 	// columns and left the strip bunched into the left half of the card.
 	readonly property real hourColumnWidth:
-		Math.max(30, (root.width - 16 - 4 * (root.hoursShown - 1)) / root.hoursShown)
+		Math.max(30, (root.width - 32 - 4 * (root.hoursShown - 1)) / root.hoursShown)
 
 	implicitHeight: body.implicitHeight
 
@@ -275,212 +275,208 @@ Item {
 			}
 		}
 
-		// ---- the numbers ----
-		RowLayout {
-			Layout.fillWidth: true
-			Layout.leftMargin: 8
-			Layout.rightMargin: 8
-			Layout.topMargin: 2
-
+		Group {
 			visible: Weather.valid
-			spacing: 20
 
-		WindCompass {
-			Layout.alignment: Qt.AlignTop
+			// ---- the numbers ----
+			RowLayout {
+				Layout.fillWidth: true
+				Layout.leftMargin: 8
+				Layout.rightMargin: 8
+				Layout.topMargin: 2
+
+				visible: Weather.valid
+				spacing: 20
+
+			WindCompass {
+				Layout.alignment: Qt.AlignTop
+			}
+
+			// Sized to its contents and centred between the two dials by the
+			// spacers either side; stretched, it would push all its spare width
+			// to the right of left-aligned text and sit visibly off-centre.
+			Item { Layout.fillWidth: true }
+
+			GridLayout {
+				Layout.alignment: Qt.AlignVCenter
+
+				columns: 2
+				rowSpacing: 12
+				columnSpacing: 36
+
+				Stat {
+					label: "Feels like"
+					value: root.degrees(Weather.feelsLike)
+				}
+
+				Stat {
+					label: "Humidity"
+					value: Weather.humidity + "%"
+				}
+
+				Stat {
+					label: "Rain"
+					value: Weather.rainChance + "% · " + Weather.precipitation.toFixed(1) + " mm"
+					tint: Weather.rainChance >= 60 ? Config.blue : Config.fg
+				}
+
+				Stat {
+					label: "UV index"
+					value: Weather.uvMax.toFixed(1)
+					tint: Weather.uvMax >= 8 ? Config.red
+						: Weather.uvMax >= 6 ? Config.yellow : Config.fg
+				}
+
+				Stat {
+					label: "Sunrise"
+					value: Weather.sunrise
+				}
+
+				Stat {
+					label: "Sunset"
+					value: Weather.sunset
+				}
+
+			}
+
+			Item { Layout.fillWidth: true }
+
+			AirGauge {
+				Layout.alignment: Qt.AlignTop
+				visible: Weather.airValid
+			}
+			}
 		}
 
-		// Sized to its contents and centred between the two dials by the
-		// spacers either side; stretched, it would push all its spare width
-		// to the right of left-aligned text and sit visibly off-centre.
-		Item { Layout.fillWidth: true }
-
-		GridLayout {
-			Layout.alignment: Qt.AlignVCenter
-
-			columns: 2
-			rowSpacing: 12
-			columnSpacing: 36
-
-			Stat {
-				label: "Feels like"
-				value: root.degrees(Weather.feelsLike)
-			}
-
-			Stat {
-				label: "Humidity"
-				value: Weather.humidity + "%"
-			}
-
-			Stat {
-				label: "Rain"
-				value: Weather.rainChance + "% · " + Weather.precipitation.toFixed(1) + " mm"
-				tint: Weather.rainChance >= 60 ? Config.blue : Config.fg
-			}
-
-			Stat {
-				label: "UV index"
-				value: Weather.uvMax.toFixed(1)
-				tint: Weather.uvMax >= 8 ? Config.red
-					: Weather.uvMax >= 6 ? Config.yellow : Config.fg
-			}
-
-			Stat {
-				label: "Sunrise"
-				value: Weather.sunrise
-			}
-
-			Stat {
-				label: "Sunset"
-				value: Weather.sunset
-			}
-
-		}
-
-		Item { Layout.fillWidth: true }
-
-		AirGauge {
-			Layout.alignment: Qt.AlignTop
-			visible: Weather.airValid
-		}
-		}
-
-		Rectangle {
-			Layout.fillWidth: true
-			Layout.topMargin: 2
-			Layout.preferredHeight: 1
-			visible: Weather.hourly.length > 0
-			color: Config.border
-		}
-
-		// ---- next few hours ----
-		RowLayout {
-			Layout.fillWidth: true
-			Layout.leftMargin: 8
-			Layout.rightMargin: 8
-			spacing: 4
-
+		Group {
 			visible: Weather.hourly.length > 0
 
+			// ---- next few hours ----
+			RowLayout {
+				Layout.fillWidth: true
+				Layout.leftMargin: 8
+				Layout.rightMargin: 8
+				spacing: 4
+
+				visible: Weather.hourly.length > 0
+
+				Repeater {
+					model: Weather.hourly.slice(0, root.hoursShown)
+
+					ColumnLayout {
+						required property var modelData
+
+						Layout.preferredWidth: root.hourColumnWidth
+						Layout.maximumWidth: root.hourColumnWidth
+						spacing: 3
+
+						Label {
+							Layout.alignment: Qt.AlignHCenter
+							// "13", not "13:00" — the minutes are always zero and
+							// they were what made the row unreadable.
+							text: modelData.hour.slice(0, 2)
+							color: Config.fgDim
+							font.pixelSize: Config.fontSize - 1
+						}
+
+						Label {
+							Layout.alignment: Qt.AlignHCenter
+							text: Weather.iconFor(modelData.code)
+							color: Config.accent
+							font.pixelSize: Config.fontSize + 6
+						}
+
+						Label {
+							Layout.alignment: Qt.AlignHCenter
+							text: root.degrees(modelData.temp)
+							font.pixelSize: Config.fontSize + 1
+						}
+
+						Label {
+							Layout.alignment: Qt.AlignHCenter
+							text: modelData.rain > 0 ? modelData.rain + "%" : " "
+							color: Config.blue
+							font.pixelSize: Config.fontSize - 3
+						}
+					}
+				}
+			}
+		}
+
+		Group {
+			visible: Weather.forecast.length > 0
+
+			// ---- the days ahead ----
 			Repeater {
-				model: Weather.hourly.slice(0, root.hoursShown)
+				model: Weather.forecast
 
-				ColumnLayout {
+				RowLayout {
 					required property var modelData
+					required property int index
 
-					Layout.preferredWidth: root.hourColumnWidth
-					Layout.maximumWidth: root.hourColumnWidth
-					spacing: 3
-
-					Label {
-						Layout.alignment: Qt.AlignHCenter
-						// "13", not "13:00" — the minutes are always zero and
-						// they were what made the row unreadable.
-						text: modelData.hour.slice(0, 2)
-						color: Config.fgDim
-						font.pixelSize: Config.fontSize - 1
-					}
+					Layout.fillWidth: true
+					Layout.leftMargin: 8
+					Layout.rightMargin: 8
+					Layout.preferredHeight: 26
+					spacing: 10
 
 					Label {
-						Layout.alignment: Qt.AlignHCenter
-						text: Weather.iconFor(modelData.code)
-						color: Config.accent
-						font.pixelSize: Config.fontSize + 6
-					}
-
-					Label {
-						Layout.alignment: Qt.AlignHCenter
-						text: root.degrees(modelData.temp)
+						Layout.preferredWidth: 54
+						text: root.dayName(modelData.day, index)
+						color: index === 0 ? Config.fg : Config.fgDim
 						font.pixelSize: Config.fontSize + 1
 					}
 
 					Label {
-						Layout.alignment: Qt.AlignHCenter
-						text: modelData.rain > 0 ? modelData.rain + "%" : " "
-						color: Config.blue
-						font.pixelSize: Config.fontSize - 3
+						Layout.preferredWidth: 22
+						text: Weather.iconFor(modelData.code)
+						color: Config.fgDim
+						font.pixelSize: Config.fontSize + 4
 					}
-				}
-			}
-		}
 
-		Rectangle {
-			Layout.fillWidth: true
-			Layout.topMargin: 2
-			Layout.preferredHeight: 1
-			visible: Weather.forecast.length > 0
-			color: Config.border
-		}
+					Label {
+						Layout.fillWidth: true
+						Layout.minimumWidth: 0
+						text: Weather.describe(modelData.code)
+						color: Config.fgDim
+						font.pixelSize: Config.fontSize
+						elide: Text.ElideRight
+					}
 
-		// ---- the days ahead ----
-		Repeater {
-			model: Weather.forecast
+					// The day's worst air, from the air-quality forecast. That
+					// runs a day or two shorter than the weather, so the last
+					// rows may have none.
+					AirChip {
+						Layout.fillWidth: false
+						Layout.minimumWidth: 52
+						Layout.maximumWidth: 52
+						value: Weather.airDays.find(d => d.day === modelData.day)?.max ?? -1
+					}
 
-			RowLayout {
-				required property var modelData
-				required property int index
+					Label {
+						Layout.preferredWidth: 42
+						horizontalAlignment: Text.AlignRight
+						// 0% still printed, dimmed, so a dry day reads as dry
+						// rather than as a gap where a number failed to load.
+						text: modelData.rain + "%"
+						color: modelData.rain > 0 ? Config.blue : Config.fgDim
+						font.pixelSize: Config.fontSize - 1
+					}
 
-				Layout.fillWidth: true
-				Layout.leftMargin: 8
-				Layout.rightMargin: 8
-				Layout.preferredHeight: 26
-				spacing: 10
+					Label {
+						Layout.preferredWidth: 40
+						horizontalAlignment: Text.AlignRight
+						text: root.degrees(modelData.max)
+						font.pixelSize: Config.fontSize + 1
+					}
 
-				Label {
-					Layout.preferredWidth: 54
-					text: root.dayName(modelData.day, index)
-					color: index === 0 ? Config.fg : Config.fgDim
-					font.pixelSize: Config.fontSize + 1
-				}
-
-				Label {
-					Layout.preferredWidth: 22
-					text: Weather.iconFor(modelData.code)
-					color: Config.fgDim
-					font.pixelSize: Config.fontSize + 4
-				}
-
-				Label {
-					Layout.fillWidth: true
-					Layout.minimumWidth: 0
-					text: Weather.describe(modelData.code)
-					color: Config.fgDim
-					font.pixelSize: Config.fontSize
-					elide: Text.ElideRight
-				}
-
-				// The day's worst air, from the air-quality forecast. That
-				// runs a day or two shorter than the weather, so the last
-				// rows may have none.
-				AirChip {
-					Layout.fillWidth: false
-					Layout.minimumWidth: 52
-					Layout.maximumWidth: 52
-					value: Weather.airDays.find(d => d.day === modelData.day)?.max ?? -1
-				}
-
-				Label {
-					Layout.preferredWidth: 42
-					horizontalAlignment: Text.AlignRight
-					// 0% still printed, dimmed, so a dry day reads as dry
-					// rather than as a gap where a number failed to load.
-					text: modelData.rain + "%"
-					color: modelData.rain > 0 ? Config.blue : Config.fgDim
-					font.pixelSize: Config.fontSize - 1
-				}
-
-				Label {
-					Layout.preferredWidth: 40
-					horizontalAlignment: Text.AlignRight
-					text: root.degrees(modelData.max)
-					font.pixelSize: Config.fontSize + 1
-				}
-
-				Label {
-					Layout.preferredWidth: 36
-					horizontalAlignment: Text.AlignRight
-					text: root.degrees(modelData.min)
-					color: Config.fgDim
-					font.pixelSize: Config.fontSize + 1
+					Label {
+						Layout.preferredWidth: 36
+						horizontalAlignment: Text.AlignRight
+						text: root.degrees(modelData.min)
+						color: Config.fgDim
+						font.pixelSize: Config.fontSize + 1
+					}
 				}
 			}
 		}

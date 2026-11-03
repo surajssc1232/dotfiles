@@ -177,7 +177,13 @@ Item {
 
 						anchors.fill: parent
 
-						source: "file://" + cell.filePath
+						// Nothing is loaded until the pane is open and laid out. This
+						// grid exists whenever Settings does, and loading from there
+						// cost 850 MB for a folder of 30 wallpapers, about what they
+						// come to decoded at full size.
+						source: root.active && root.tileWidth > 0
+							? "file://" + cell.filePath
+							: ""
 						fillMode: Image.PreserveAspectCrop
 						// Decoded at roughly twice the cell so it stays sharp,
 						// but nowhere near full size — these are multi-megabyte

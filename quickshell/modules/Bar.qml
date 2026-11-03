@@ -34,7 +34,7 @@ PanelWindow {
 
 	Rectangle {
 		anchors.fill: parent
-		color: Config.bg
+		color: Config.surface
 		radius: Config.barMargin > 0 ? Config.radius : 0
 
 		border.width: 1
@@ -93,7 +93,6 @@ PanelWindow {
 			anchors.verticalCenter: parent.verticalCenter
 			spacing: Config.spacing
 
-			KeyLayer {}
 			RecordIndicator {}
 			SysTray {}
 			NotificationCenter {}

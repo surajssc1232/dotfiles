@@ -31,6 +31,9 @@ Pill {
 	onWheel: event => {
 		if (!audio) return;
 		const step = event.angleDelta.y > 0 ? 0.05 : -0.05;
+		// Settings can push the sink past 100%. Scrolling up here must not snap
+		// it back down, or asking for "louder" would make it quieter.
+		if (step > 0 && audio.volume >= 1) return;
 		audio.muted = false;
 		audio.volume = Math.max(0, Math.min(1, audio.volume + step));
 	}

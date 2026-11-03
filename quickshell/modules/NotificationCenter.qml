@@ -53,13 +53,14 @@ Pill {
 
 			ColumnLayout {
 				anchors.fill: parent
-				anchors.margins: Config.padding
+				anchors.margins: Config.inset
 				spacing: 0
 
 				// ---- header ----
 				RowLayout {
 					Layout.fillWidth: true
 					Layout.preferredHeight: 26
+					Layout.bottomMargin: 10
 					spacing: 8
 
 					Label {
@@ -106,14 +107,6 @@ Pill {
 						enabled: Notifs.count > 0
 						onTriggered: Notifs.clearAll()
 					}
-				}
-
-				Rectangle {
-					Layout.fillWidth: true
-					Layout.preferredHeight: 1
-					Layout.topMargin: 8
-					Layout.bottomMargin: 10
-					color: Config.border
 				}
 
 				// ---- empty state ----

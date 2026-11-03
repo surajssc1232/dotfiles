@@ -162,8 +162,6 @@ Item {
 			anchors.fill: parent
 			radius: Config.radius - 4
 			color: action.containsMouse ? Config.accent : Config.bgAlt
-			border.width: 1
-			border.color: Config.border
 		}
 
 		RowLayout {

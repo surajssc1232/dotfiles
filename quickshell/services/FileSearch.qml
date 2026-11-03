@@ -59,10 +59,73 @@ Singleton {
 		Quickshell.execDetached({ command: ["xdg-open", path] });
 	}
 
+	function folder(path: string): string {
+		return path.slice(0, path.lastIndexOf("/")) || "/";
+	}
+
+	// Asks whatever file manager owns org.freedesktop.FileManager1 to show the
+	// file selected in its folder, and falls back to opening the folder in the
+	// default handler for inode/directory (nemo, here) when nothing answers.
 	function reveal(path: string) {
-		Quickshell.execDetached({
-			command: ["xdg-open", path.slice(0, path.lastIndexOf("/")) || "/"]
-		});
+		const uri = "file://" + encodeURI(path);
+		Quickshell.execDetached({ command: ["sh", "-c",
+			'gdbus call --session --dest org.freedesktop.FileManager1 '
+			+ '--object-path /org/freedesktop/FileManager1 '
+			+ '--method org.freedesktop.FileManager1.ShowItems "[\'$1\']" "" '
+			+ '>/dev/null 2>&1 || xdg-open "$2"',
+			"sh", uri, root.folder(path)] });
+	}
+
+	// ---- file operations (right-click menu) ----
+	//
+	// Plain sh so a failure can say so: each one reports through notify-send
+	// instead of failing silently inside a detached process.
+
+	function expand(path: string): string {
+		return path.replace(/^~(?=\/|$)/, root.home);
+	}
+
+	function sh(script: string, ...args) {
+		Quickshell.execDetached({ command: ["sh", "-c",
+			script + ' || notify-send -a Files "Could not complete that" "$1"',
+			"sh"].concat(args) });
+		refresh.restart();
+	}
+
+	function copyTo(path: string, dest: string) {
+		root.sh('cp -rn -- "$1" "$2"', path, root.expand(dest));
+	}
+
+	function moveTo(path: string, dest: string) {
+		root.sh('mv -n -- "$1" "$2"', path, root.expand(dest));
+	}
+
+	function rename(path: string, newName: string) {
+		root.sh('mv -n -- "$1" "$2"', path, root.folder(path) + "/" + newName);
+	}
+
+	// The freedesktop trash, written by hand: no gio or trash-put here, and
+	// Nemo's own trash reads exactly this layout, so Restore keeps working.
+	function trash(path: string) {
+		root.sh('t="${XDG_DATA_HOME:-$HOME/.local/share}/Trash"; mkdir -p "$t/files" "$t/info" && '
+			+ 'n=$(basename "$1"); d="$n"; i=1; '
+			+ 'while [ -e "$t/files/$d" ] || [ -e "$t/info/$d.trashinfo" ]; do d="$n.$i"; i=$((i+1)); done; '
+			+ 'printf "[Trash Info]\nPath=%s\nDeletionDate=%s\n" "$(realpath -- "$1")" "$(date +%Y-%m-%dT%H:%M:%S)" > "$t/info/$d.trashinfo" && '
+			+ 'mv -- "$1" "$t/files/$d"', path);
+	}
+
+	function remove(path: string) {
+		root.sh('rm -rf -- "$1"', path);
+	}
+
+	Timer {
+		id: refresh
+
+		interval: 400
+		onTriggered: {
+			root.refreshRecent();
+			if (root.query) root.run();
+		}
 	}
 
 	onQueryChanged: {

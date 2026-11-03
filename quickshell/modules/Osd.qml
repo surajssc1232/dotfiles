@@ -41,7 +41,6 @@ PanelWindow {
 			return root.fraction > 0.5 ? Config.icons.volHigh : Config.icons.volLow;
 		case "mic": return root.muted ? Config.icons.micOff : Config.icons.mic;
 		case "brightness": return Config.icons.brightness;
-		case "layer": return Config.icons.keyboard;
 		default: return "";
 		}
 	}
@@ -51,7 +50,6 @@ PanelWindow {
 		case "volume": return root.muted ? "Muted" : Math.round(root.fraction * 100) + "%";
 		case "mic": return root.muted ? "Mic off" : "Mic on";
 		case "brightness": return Brightness.percent + "%";
-		case "layer": return Keyd.label;
 		default: return "";
 		}
 	}
@@ -90,50 +88,19 @@ PanelWindow {
 			NumberAnimation { duration: 140; easing.type: Easing.OutQuad }
 		}
 
-		ColumnLayout {
+		// The control centre's slider, so a volume change looks the same whether
+		// it was dragged there or pressed on a key. The surface takes no input.
+		SliderTile {
 			anchors.fill: parent
-			anchors.margins: Config.padding
-			spacing: 6
+			anchors.margins: 8
 
-			RowLayout {
-				Layout.fillWidth: true
-				spacing: 8
-
-				Label {
-					text: root.icon
-					color: root.muted ? Config.red : Config.accent
-					font.pixelSize: Config.fontSize + 1
-				}
-
-				Label {
-					Layout.fillWidth: true
-					Layout.minimumWidth: 0
-					text: root.caption
-					color: Config.fg
-					elide: Text.ElideRight
-				}
-			}
-
-			// A layer has no magnitude — a bar under it would be meaningless.
-			Rectangle {
-				Layout.fillWidth: true
-				Layout.preferredHeight: 4
-
-				visible: root.kind !== "layer"
-				radius: 2
-				color: Config.bgAlt
-
-				Rectangle {
-					width: parent.width * Math.max(0, Math.min(1, root.fraction))
-					height: parent.height
-					radius: parent.radius
-					color: root.muted ? Config.red : Config.accent
-
-					Behavior on width {
-						NumberAnimation { duration: 120; easing.type: Easing.OutQuad }
-					}
-				}
-			}
+			icon: root.icon
+			label: root.kind === "volume" ? "Volume"
+				: root.kind === "mic" ? "Microphone"
+				: root.kind === "brightness" ? "Brightness" : ""
+			readout: root.caption
+			value: root.fraction
+			dimmed: root.muted
 		}
 	}
 }

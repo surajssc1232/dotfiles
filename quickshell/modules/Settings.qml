@@ -14,14 +14,14 @@ Pill {
 	id: root
 
 	readonly property int menuWidth: 520
-	readonly property int gap: 6
+	readonly property int gap: 8
 	// One grid cell's height; the tall tile takes two of them plus the gap.
-	readonly property int unit: 54
+	readonly property int unit: 58
 
 	// Half the usable width. The top row pins both halves rather than relying
 	// on fillWidth: a nested layout does not claim stretch the way a plain
 	// tile does, which left the big tile a sliver and its neighbour the rest.
-	readonly property real half: (menuWidth - Config.padding - gap) / 2
+	readonly property real half: (menuWidth - Config.inset * 2 - gap) / 2
 
 	readonly property var battery: UPower.displayDevice
 	readonly property int batteryPercent: battery ? Math.round(battery.percentage * 100) : 0
@@ -188,7 +188,7 @@ Pill {
 
 		anchorItem: root
 		contentWidth: root.menuWidth
-		contentHeight: body.implicitHeight + Config.padding
+		contentHeight: body.implicitHeight + Config.inset * 2
 
 		// Only while a Wi-Fi password is actually being typed.
 		// Focusable for as long as the panel is open rather than only while a
@@ -246,27 +246,36 @@ Pill {
 				id: body
 
 				anchors.fill: parent
-				anchors.margins: Config.padding / 2
+				anchors.margins: Config.inset
 				spacing: root.gap
 
 				// ---- header ----
 				RowLayout {
 					Layout.fillWidth: true
-					Layout.leftMargin: 6
+					Layout.leftMargin: 4
 					Layout.rightMargin: 4
-					Layout.topMargin: 2
-					spacing: 8
+					Layout.bottomMargin: 2
+					spacing: 10
 
-					Label {
-						text: Config.distroIcon
-						color: Config.accent
-						font.pixelSize: Config.fontSize + 2
+					Rectangle {
+						Layout.preferredWidth: 32
+						Layout.preferredHeight: 32
+						radius: Config.radius - 4
+						color: Qt.alpha(Config.accent, 0.18)
+
+						Label {
+							anchors.centerIn: parent
+							text: Config.distroIcon
+							color: Config.accent
+							font.pixelSize: Config.fontSize + 3
+						}
 					}
 
 					Label {
 						Layout.fillWidth: true
 						Layout.minimumWidth: 0
 						text: Config.distroName
+						font.pixelSize: Config.fontSize + 1
 						elide: Text.ElideRight
 					}
 				}
@@ -513,274 +522,283 @@ Pill {
 					}
 				}
 
-				// ---- self-contained controls ----
-				// Full width, and no detail pane: a slider you can already
-				// reach is faster than a menu that hides one.
-				SliderTile {
-					Layout.fillWidth: true
-
-					icon: root.muted ? Config.icons.volMute
-						: root.volume > 0.5 ? Config.icons.volHigh
-						: Config.icons.volLow
-					label: "Output · " + Audio.label(Audio.sink)
-		id: outSlider
-						focused: root.cur === outSlider
-					readout: root.muted ? "muted" : Math.round(root.volume * 100) + "%"
-					value: root.volume
-					dimmed: root.muted
-					visible: root.audio !== null
-
-					expandable: true
-					expanded: root.devices === "output"
-					onToggled: root.devices = root.devices === "output" ? "" : "output"
-
-					onMoved: value => {
-						if (!root.audio) return;
-						root.audio.muted = false;
-						root.audio.volume = value;
-					}
-					onIconClicked: if (root.audio) root.audio.muted = !root.audio.muted
-				}
-
-				DeviceList {
-					Layout.fillWidth: true
-					visible: root.devices === "output"
-					devices: Audio.outputs
-					current: Audio.sink
-					emptyText: "No output devices"
-					onPicked: device => Audio.setOutput(device)
-				}
-
-				SliderTile {
-					Layout.fillWidth: true
-
-					icon: root.micMuted ? Config.icons.micOff : Config.icons.mic
-					label: "Input · " + Audio.label(Audio.source)
-		id: inSlider
-						focused: root.cur === inSlider
-					readout: root.micMuted ? "muted" : Math.round(root.micVolume * 100) + "%"
-					value: root.micVolume
-					dimmed: root.micMuted
-					fill: Config.green
-					visible: Audio.source !== null
-
-					expandable: true
-					expanded: root.devices === "input"
-					onToggled: root.devices = root.devices === "input" ? "" : "input"
-
-					onMoved: value => {
-						if (!root.micAudio) return;
-						root.micAudio.muted = false;
-						root.micAudio.volume = value;
-					}
-					onIconClicked: if (root.micAudio) root.micAudio.muted = !root.micAudio.muted
-				}
-
-				DeviceList {
-					Layout.fillWidth: true
-					visible: root.devices === "input"
-					devices: Audio.inputs
-					current: Audio.source
-					emptyText: "No input devices"
-					onPicked: device => Audio.setInput(device)
-				}
-
-				// ---- per-application volume ----
-				// Only present while something is playing: a section that is
-				// permanently empty is worse than one that appears when it
-				// has something to say.
-				Label {
-					Layout.fillWidth: true
-					Layout.leftMargin: 4
-					Layout.topMargin: 2
-					visible: Audio.streams.length > 0
-					text: "Applications"
-					color: Config.accent
-					font.pixelSize: Config.fontSize - 2
-				}
-
-				Repeater {
-					model: Audio.streams
-
+				Group {
+					// ---- self-contained controls ----
+					// Full width, and no detail pane: a slider you can already
+					// reach is faster than a menu that hides one.
 					SliderTile {
-						required property var modelData
-
 						Layout.fillWidth: true
 
-						icon: (modelData.audio?.muted ?? false)
-							? Config.icons.volMute : Config.icons.mixer
-						label: Audio.streamLabel(modelData)
-						readout: (modelData.audio?.muted ?? false) ? "muted"
-							: Math.round((modelData.audio?.volume ?? 0) * 100) + "%"
-						value: modelData.audio?.volume ?? 0
-						dimmed: modelData.audio?.muted ?? false
-						fill: Config.blue
+						icon: root.muted ? Config.icons.volMute
+							: root.volume > 0.5 ? Config.icons.volHigh
+							: Config.icons.volLow
+						label: "Output · " + Audio.label(Audio.sink)
+			id: outSlider
+							focused: root.cur === outSlider
+						readout: root.muted ? "muted" : Math.round(root.volume * 100) + "%"
+						value: root.volume
+						// Past 100% here and in the launcher; the bar pill stops there.
+						scrollMax: Config.volumeMax
+						dimmed: root.muted
+						visible: root.audio !== null
+
+						expandable: true
+						expanded: root.devices === "output"
+						onToggled: root.devices = root.devices === "output" ? "" : "output"
 
 						onMoved: value => {
-							if (!modelData.audio) return;
-							modelData.audio.muted = false;
-							modelData.audio.volume = value;
+							if (!root.audio) return;
+							root.audio.muted = false;
+							root.audio.volume = value;
 						}
-						onIconClicked: if (modelData.audio)
-							modelData.audio.muted = !modelData.audio.muted
+						onIconClicked: if (root.audio) root.audio.muted = !root.audio.muted
 					}
-				}
 
-				SliderTile {
-					Layout.fillWidth: true
-
-					icon: Config.icons.brightness
-					label: "Brightness"
-		id: brightSlider
-						focused: root.cur === brightSlider
-					readout: Brightness.percent + "%"
-					value: Brightness.percent / 100
-					fill: Config.yellow
-					visible: Brightness.available
-
-					// Never all the way to zero: a black screen with no
-					// backlight key is hard to recover from.
-					onMoved: value => Brightness.set(Math.max(1, value * 100))
-				}
-
-				RowLayout {
-					Layout.fillWidth: true
-					spacing: root.gap
-
-					Tile {
+					DeviceList {
 						Layout.fillWidth: true
-						Layout.minimumWidth: 0
-						Layout.preferredHeight: root.unit
-
-						icon: Config.icons.nightLight
-						label: "Night light"
-		id: nightTile
-						focused: root.cur === nightTile
-						detail: NightLight.enabled
-							? NightLight.temperature + "K" : "Off"
-						on: NightLight.enabled
-						toggleable: true
-						onTriggered: NightLight.toggle()
-						onToggled: NightLight.toggle()
+						visible: root.devices === "output"
+						devices: Audio.outputs
+						current: Audio.sink
+						emptyText: "No output devices"
+						onPicked: device => Audio.setOutput(device)
 					}
 
-					Tile {
+					SliderTile {
 						Layout.fillWidth: true
-						Layout.minimumWidth: 0
-						Layout.preferredHeight: root.unit
 
-						icon: Config.icons.image
-						label: "Wallpaper"
-		id: wallTile
-						focused: root.cur === wallTile
-						detail: Wallpaper.current
-							? Wallpaper.current.split("/").pop()
-							: "None"
-						expanded: root.pane === "wall"
-						onTriggered: root.toggle("wall")
+						icon: root.micMuted ? Config.icons.micOff : Config.icons.mic
+						label: "Input · " + Audio.label(Audio.source)
+			id: inSlider
+							focused: root.cur === inSlider
+						readout: root.micMuted ? "muted" : Math.round(root.micVolume * 100) + "%"
+						value: root.micVolume
+						dimmed: root.micMuted
+						fill: Config.green
+						visible: Audio.source !== null
+
+						expandable: true
+						expanded: root.devices === "input"
+						onToggled: root.devices = root.devices === "input" ? "" : "input"
+
+						onMoved: value => {
+							if (!root.micAudio) return;
+							root.micAudio.muted = false;
+							root.micAudio.volume = value;
+						}
+						onIconClicked: if (root.micAudio) root.micAudio.muted = !root.micAudio.muted
 					}
 
-				}
-
-				PaneSlot {
-					shown: root.pane === "wall" ? wallPane : null
-
-					WallpaperPanel {
-						id: wallPane
-						width: parent.width
-						visible: root.pane === "wall"
-						active: visible
-					}
-				}
-
-				RowLayout {
-					Layout.fillWidth: true
-					spacing: root.gap
-
-					Tile {
+					DeviceList {
 						Layout.fillWidth: true
-						Layout.minimumWidth: 0
-						Layout.preferredHeight: root.unit
+						visible: root.devices === "input"
+						devices: Audio.inputs
+						current: Audio.source
+						emptyText: "No input devices"
+						onPicked: device => Audio.setInput(device)
+					}
 
-						icon: Config.icons.video
-						label: Recorder.recording ? "Recording" : "Record"
-		id: recTile
-						focused: root.cur === recTile
-						detail: Recorder.recording ? Recorder.clock() : Recorder.audioLabel
-						on: Recorder.recording
-						expanded: root.pane === "rec"
-						onTriggered: {
-							if (Recorder.recording) Recorder.stop();
-							else root.toggle("rec");
+					// ---- per-application volume ----
+					// Only present while something is playing: a section that is
+					// permanently empty is worse than one that appears when it
+					// has something to say.
+					Label {
+						Layout.fillWidth: true
+						Layout.leftMargin: 8
+						Layout.topMargin: 2
+						visible: Audio.streams.length > 0
+						text: "Applications"
+						color: Config.accent
+						font.pixelSize: Config.fontSize - 2
+					}
+
+					Repeater {
+						model: Audio.streams
+
+						SliderTile {
+							required property var modelData
+
+							Layout.fillWidth: true
+
+							icon: (modelData.audio?.muted ?? false)
+								? Config.icons.volMute : Config.icons.mixer
+							label: Audio.streamLabel(modelData)
+							readout: (modelData.audio?.muted ?? false) ? "muted"
+								: Math.round((modelData.audio?.volume ?? 0) * 100) + "%"
+							value: modelData.audio?.volume ?? 0
+							dimmed: modelData.audio?.muted ?? false
+							fill: Config.blue
+
+							onMoved: value => {
+								if (!modelData.audio) return;
+								modelData.audio.muted = false;
+								modelData.audio.volume = value;
+							}
+							onIconClicked: if (modelData.audio)
+								modelData.audio.muted = !modelData.audio.muted
 						}
 					}
 
-					Tile {
+					SliderTile {
 						Layout.fillWidth: true
-						Layout.minimumWidth: 0
-						Layout.preferredHeight: root.unit
 
-						icon: Config.icons.cpu
-						label: "Processes"
-		id: procTile
-						focused: root.cur === procTile
-						// Deliberately not a live figure: the pane only samples
-						// while it is open, so anything numeric here would sit
-						// frozen at its last value pretending to be current.
-						detail: "Top by usage"
-						expanded: root.pane === "proc"
-						onTriggered: root.toggle("proc")
+						icon: Config.icons.brightness
+						label: "Brightness"
+			id: brightSlider
+							focused: root.cur === brightSlider
+						readout: Brightness.percent + "%"
+						value: Brightness.percent / 100
+						fill: Config.yellow
+						visible: Brightness.available
+
+						// Never all the way to zero: a black screen with no
+						// backlight key is hard to recover from.
+						onMoved: value => Brightness.set(Math.max(1, value * 100))
 					}
-
 				}
 
-				PaneSlot {
-					shown: root.pane === "rec" ? recPane
-						: root.pane === "proc" ? procPane : null
+				Group {
+					RowLayout {
+						Layout.fillWidth: true
+						spacing: root.gap
 
-					RecorderPanel {
-						id: recPane
-						width: parent.width
-						visible: root.pane === "rec"
-						// Recording the control centre on top of everything is
-						// almost never wanted, so it steps aside first.
-						onRequested: geometry => {
-							layer.open = false;
-							root.startRecording(geometry);
+						Tile {
+							Layout.fillWidth: true
+							Layout.minimumWidth: 0
+							Layout.preferredHeight: root.unit
+
+							icon: Config.icons.nightLight
+							label: "Night light"
+			id: nightTile
+							focused: root.cur === nightTile
+							detail: NightLight.enabled
+								? NightLight.temperature + "K" : "Off"
+							on: NightLight.enabled
+							toggleable: true
+							onTriggered: NightLight.toggle()
+							onToggled: NightLight.toggle()
+						}
+
+						Tile {
+							Layout.fillWidth: true
+							Layout.minimumWidth: 0
+							Layout.preferredHeight: root.unit
+
+							icon: Config.icons.image
+							label: "Wallpaper"
+			id: wallTile
+							focused: root.cur === wallTile
+							detail: Wallpaper.current
+								? Wallpaper.current.split("/").pop()
+								: "None"
+							expanded: root.pane === "wall"
+							onTriggered: root.toggle("wall")
+						}
+
+					}
+
+					PaneSlot {
+						color: Config.surface
+						shown: root.pane === "wall" ? wallPane : null
+
+						WallpaperPanel {
+							id: wallPane
+							width: parent.width
+							visible: root.pane === "wall"
+							active: visible
 						}
 					}
 
-					ProcessList {
-						id: procPane
-						width: parent.width
-						visible: root.pane === "proc"
-						active: visible
-						framed: false
-						rows: 9
+					RowLayout {
+						Layout.fillWidth: true
+						spacing: root.gap
+
+						Tile {
+							Layout.fillWidth: true
+							Layout.minimumWidth: 0
+							Layout.preferredHeight: root.unit
+
+							icon: Config.icons.video
+							label: Recorder.recording ? "Recording" : "Record"
+			id: recTile
+							focused: root.cur === recTile
+							detail: Recorder.recording ? Recorder.clock() : Recorder.audioLabel
+							on: Recorder.recording
+							expanded: root.pane === "rec"
+							onTriggered: {
+								if (Recorder.recording) Recorder.stop();
+								else root.toggle("rec");
+							}
+						}
+
+						Tile {
+							Layout.fillWidth: true
+							Layout.minimumWidth: 0
+							Layout.preferredHeight: root.unit
+
+							icon: Config.icons.cpu
+							label: "Processes"
+			id: procTile
+							focused: root.cur === procTile
+							// Deliberately not a live figure: the pane only samples
+							// while it is open, so anything numeric here would sit
+							// frozen at its last value pretending to be current.
+							detail: "Top by usage"
+							expanded: root.pane === "proc"
+							onTriggered: root.toggle("proc")
+						}
+
 					}
-				}
 
-				Tile {
-					Layout.fillWidth: true
-					Layout.preferredHeight: root.unit
+					PaneSlot {
+						color: Config.surface
+						shown: root.pane === "rec" ? recPane
+							: root.pane === "proc" ? procPane : null
 
-					icon: Config.icons.palette
-					label: "Colorscheme"
-		id: themeTile
-						focused: root.cur === themeTile
-					detail: Config.theme.name
-					expanded: root.pane === "theme"
-					onTriggered: root.toggle("theme")
-				}
+						RecorderPanel {
+							id: recPane
+							width: parent.width
+							visible: root.pane === "rec"
+							// Recording the control centre on top of everything is
+							// almost never wanted, so it steps aside first.
+							onRequested: geometry => {
+								layer.open = false;
+								root.startRecording(geometry);
+							}
+						}
 
-				PaneSlot {
-					shown: root.pane === "theme" ? themePane : null
+						ProcessList {
+							id: procPane
+							width: parent.width
+							visible: root.pane === "proc"
+							active: visible
+							framed: false
+							rows: 9
+						}
+					}
 
-					ThemePanel {
-						id: themePane
-						width: parent.width
-						visible: root.pane === "theme"
-						active: visible
+					Tile {
+						Layout.fillWidth: true
+						Layout.preferredHeight: root.unit
+
+						icon: Config.icons.palette
+						label: "Colorscheme"
+			id: themeTile
+							focused: root.cur === themeTile
+						detail: Config.theme.name
+						expanded: root.pane === "theme"
+						onTriggered: root.toggle("theme")
+					}
+
+					PaneSlot {
+						color: Config.surface
+						shown: root.pane === "theme" ? themePane : null
+
+						ThemePanel {
+							id: themePane
+							width: parent.width
+							visible: root.pane === "theme"
+							active: visible
+						}
 					}
 				}
 
@@ -794,31 +812,25 @@ Pill {
 	// A section that expands belongs next to the control that expanded it: a
 	// single pane at the foot of the panel meant clicking Wi-Fi scrolled your
 	// eye past everything else to find what had opened.
-	component PaneSlot: ColumnLayout {
+	component PaneSlot: Rectangle {
 		id: slot
 
 		property Item shown: null
 		default property alias content: holder.data
 
 		Layout.fillWidth: true
-		spacing: 0
 		// Hidden rather than merely empty when nothing is open, so the parent
 		// layout drops its spacing too and closed slots take no room at all.
 		visible: slot.shown !== null
-
-		Rectangle {
-			Layout.fillWidth: true
-			Layout.topMargin: 2
-			Layout.bottomMargin: 6
-			Layout.preferredHeight: 1
-			color: Config.border
-		}
+		implicitHeight: slot.shown ? slot.shown.implicitHeight + 20 : 0
+		radius: Config.radius
+		color: Config.surfaceGroup
 
 		Item {
 			id: holder
 
-			Layout.fillWidth: true
-			Layout.preferredHeight: slot.shown ? slot.shown.implicitHeight : 0
+			anchors.fill: parent
+			anchors.margins: 10
 		}
 	}
 }

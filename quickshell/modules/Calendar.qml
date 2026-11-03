@@ -59,8 +59,8 @@ Item {
 
 	// Wider while the reminder form can be shown, for its row of repeat
 	// choices; the lock screen's copy keeps the narrower width.
-	implicitWidth: editable ? 336 : 288
-	implicitHeight: column.implicitHeight + Config.padding * 2
+	implicitWidth: editable ? 368 : 320
+	implicitHeight: column.implicitHeight + Config.inset * 2
 
 	// Seconds for the clock in the header; only ticking while it is shown.
 	SystemClock {
@@ -151,7 +151,7 @@ Item {
 		id: column
 
 		anchors.fill: parent
-		anchors.margins: Config.padding
+		anchors.margins: Config.inset
 		spacing: 8
 
 		focus: true
@@ -163,412 +163,408 @@ Item {
 			root.deselect();
 		}
 
-		// ---- today, in full ----
-		RowLayout {
-			Layout.fillWidth: true
+		Group {
 			visible: root.showToday
-			spacing: 14
 
-			// The time, large, with the seconds trailing small.
+			// ---- today, in full ----
 			RowLayout {
-				Layout.alignment: Qt.AlignVCenter
-				spacing: 2
+				Layout.fillWidth: true
+				visible: root.showToday
+				spacing: 14
 
-				Label {
-					Layout.alignment: Qt.AlignBaseline
-					text: Qt.formatTime(root.now, "hh:mm")
-					color: Config.fg
-					font.pixelSize: Config.fontSize + 22
-					font.weight: Font.DemiBold
+				// The time, large, with the seconds trailing small.
+				RowLayout {
+					Layout.alignment: Qt.AlignVCenter
+					spacing: 2
+
+					Label {
+						Layout.alignment: Qt.AlignBaseline
+						text: Qt.formatTime(root.now, "hh:mm")
+						color: Config.fg
+						font.pixelSize: Config.fontSize + 22
+						font.weight: Font.DemiBold
+					}
+
+					Label {
+						Layout.alignment: Qt.AlignBaseline
+						text: Qt.formatTime(root.now, "ss")
+						color: Config.accent
+						font.pixelSize: Config.fontSize + 2
+					}
 				}
 
-				Label {
-					Layout.alignment: Qt.AlignBaseline
-					text: Qt.formatTime(root.now, "ss")
-					color: Config.accent
-					font.pixelSize: Config.fontSize + 2
+				Rectangle {
+					Layout.preferredWidth: 1
+					Layout.fillHeight: true
+					Layout.topMargin: 6
+					Layout.bottomMargin: 6
+					color: Config.border
+				}
+
+				ColumnLayout {
+					Layout.fillWidth: true
+					Layout.alignment: Qt.AlignVCenter
+					spacing: 1
+
+					Label {
+						Layout.fillWidth: true
+						text: Qt.formatDate(root.today, "dddd")
+						color: Config.accent
+						font.pixelSize: Config.fontSize + 1
+						font.weight: Font.DemiBold
+						elide: Text.ElideRight
+					}
+
+					Label {
+						Layout.fillWidth: true
+						text: Qt.formatDate(root.today, "d MMMM yyyy")
+						elide: Text.ElideRight
+					}
+
+					Label {
+						Layout.fillWidth: true
+						text: "Week " + root.isoWeek(root.today)
+							+ " · Day " + root.dayOfYear(root.today)
+						color: Config.fgDim
+						font.pixelSize: Config.fontSize - 3
+						elide: Text.ElideRight
+					}
 				}
 			}
 
-			Rectangle {
-				Layout.preferredWidth: 1
-				Layout.fillHeight: true
-				Layout.topMargin: 6
-				Layout.bottomMargin: 6
-				color: Config.border
-			}
-
+			// How far through the year we are.
 			ColumnLayout {
 				Layout.fillWidth: true
-				Layout.alignment: Qt.AlignVCenter
-				spacing: 1
+				visible: root.showToday
+				spacing: 4
 
-				Label {
+				readonly property real done: root.dayOfYear(root.today) / root.daysThisYear
+
+				RowLayout {
 					Layout.fillWidth: true
-					text: Qt.formatDate(root.today, "dddd")
-					color: Config.accent
-					font.pixelSize: Config.fontSize + 1
-					font.weight: Font.DemiBold
-					elide: Text.ElideRight
+
+					Label {
+						text: root.today.getFullYear()
+						color: Config.fgDim
+						font.pixelSize: Config.fontSize - 4
+						font.letterSpacing: 1
+					}
+
+					Item { Layout.fillWidth: true }
+
+					Label {
+						text: Math.round(parent.parent.done * 100) + "% · "
+							+ (root.daysThisYear - root.dayOfYear(root.today)) + " days left"
+						color: Config.fgDim
+						font.pixelSize: Config.fontSize - 4
+					}
 				}
 
-				Label {
+				Rectangle {
 					Layout.fillWidth: true
-					text: Qt.formatDate(root.today, "d MMMM yyyy")
-					elide: Text.ElideRight
-				}
+					Layout.preferredHeight: 4
+					radius: 2
+					color: Config.bgAlt
 
-				Label {
-					Layout.fillWidth: true
-					text: "Week " + root.isoWeek(root.today)
-						+ " · Day " + root.dayOfYear(root.today)
-					color: Config.fgDim
-					font.pixelSize: Config.fontSize - 3
-					elide: Text.ElideRight
+					Rectangle {
+						width: parent.width * parent.parent.done
+						height: parent.height
+						radius: 2
+						color: Config.accent
+					}
 				}
 			}
 		}
 
-		// How far through the year we are.
-		ColumnLayout {
-			Layout.fillWidth: true
-			visible: root.showToday
-			spacing: 4
 
-			readonly property real done: root.dayOfYear(root.today) / root.daysThisYear
+		Group {
 
+			// ---- month navigation ----
 			RowLayout {
 				Layout.fillWidth: true
+				spacing: 2
+
+				RowLayout {
+					Layout.fillWidth: true
+					Layout.leftMargin: 4
+					spacing: 6
+
+					Label {
+						Layout.alignment: Qt.AlignBaseline
+						text: Qt.formatDate(root.shownMonth, "MMMM")
+						font.pixelSize: Config.fontSize + 2
+						font.weight: Font.DemiBold
+					}
+
+					Label {
+						Layout.alignment: Qt.AlignBaseline
+						text: root.shownMonth.getFullYear()
+						color: Config.fgDim
+					}
+
+					Item { Layout.fillWidth: true }
+				}
+
+				NavButton {
+					// Jumps back to the current month; hidden when already there.
+					icon: Config.icons.today
+					visible: root.monthOffset !== 0
+					onTriggered: root.monthOffset = 0
+				}
+
+				NavButton {
+					icon: Config.icons.chevronLeft
+					onTriggered: root.monthOffset--
+				}
+
+				NavButton {
+					icon: Config.icons.chevronRight
+					onTriggered: root.monthOffset++
+				}
+			}
+
+			// ---- weekday initials, after a blank over the week numbers ----
+			GridLayout {
+				Layout.fillWidth: true
+				columns: 8
+				columnSpacing: 2
+				rowSpacing: 0
 
 				Label {
-					text: root.today.getFullYear()
+					Layout.preferredWidth: 22
+					text: "wk"
+					color: Config.fgDim
+					opacity: 0.6
+					font.pixelSize: Config.fontSize - 5
+					horizontalAlignment: Text.AlignHCenter
+				}
+
+				Repeater {
+					model: 7
+
+					Label {
+						required property int index
+
+						readonly property int dow: (root.firstDay + index) % 7
+
+						Layout.fillWidth: true
+						Layout.preferredHeight: 20
+
+						text: root.locale.dayName(dow, Locale.ShortFormat).substring(0, 2)
+						color: dow === 0 || dow === 6 ? Config.red : Config.fgDim
+						opacity: dow === 0 || dow === 6 ? 0.8 : 1
+						font.pixelSize: Config.fontSize - 3
+						font.weight: Font.DemiBold
+						horizontalAlignment: Text.AlignHCenter
+					}
+				}
+			}
+
+			// ---- days ----
+			GridLayout {
+				id: days
+
+				Layout.fillWidth: true
+				columns: 8
+				columnSpacing: 2
+				rowSpacing: 2
+
+				// Slides in from the side the month was paged towards.
+				property int direction: 1
+				transform: Translate { id: slide }
+
+				ParallelAnimation {
+					id: paged
+
+					NumberAnimation {
+						target: slide; property: "x"
+						from: 18 * days.direction; to: 0
+						duration: 240; easing.type: Easing.OutCubic
+					}
+					NumberAnimation {
+						target: days; property: "opacity"
+						from: 0; to: 1; duration: 200
+					}
+				}
+
+				Connections {
+					target: root
+					property int last: 0
+
+					function onMonthOffsetChanged() {
+						days.direction = root.monthOffset >= last ? 1 : -1;
+						last = root.monthOffset;
+						paged.restart();
+					}
+				}
+
+				Repeater {
+					model: root.cells
+
+					Item {
+						id: slot
+
+						required property var modelData
+
+						readonly property bool isWeek: modelData.week !== undefined
+
+						Layout.fillWidth: !isWeek
+						Layout.preferredWidth: isWeek ? 22 : 0
+						Layout.preferredHeight: 30
+
+						Label {
+							anchors.fill: parent
+							visible: slot.isWeek
+							text: slot.modelData.week ?? ""
+							color: Config.fgDim
+							opacity: 0.6
+							font.pixelSize: Config.fontSize - 5
+							horizontalAlignment: Text.AlignHCenter
+							verticalAlignment: Text.AlignVCenter
+						}
+
+						DayCell {
+							anchors.fill: parent
+							visible: !slot.isWeek
+							modelData: slot.modelData
+						}
+					}
+				}
+			}
+
+			// ---- the picked day: what is on it, and the form to add more ----
+			DayEvents {
+				Layout.fillWidth: true
+				Layout.topMargin: 4
+				visible: root.editable && root.selected !== ""
+			}
+		}
+
+		// ---- coming up, while no day is picked ----
+		Group {
+			visible: root.editable && root.selected === ""
+
+			ColumnLayout {
+				Layout.fillWidth: true
+				spacing: 6
+
+				Label {
+					text: "UPCOMING"
 					color: Config.fgDim
 					font.pixelSize: Config.fontSize - 4
 					font.letterSpacing: 1
 				}
 
-				Item { Layout.fillWidth: true }
+				Repeater {
+					model: root.upcoming
+
+					MouseArea {
+						id: soon
+
+						required property var modelData
+
+						Layout.fillWidth: true
+						implicitHeight: 34
+						hoverEnabled: true
+						cursorShape: Qt.PointingHandCursor
+						onClicked: {
+							// Page to that month, then list the day.
+							const d = soon.modelData.when;
+							root.monthOffset = (d.getFullYear() - root.today.getFullYear()) * 12
+								+ d.getMonth() - root.today.getMonth();
+							root.select(soon.modelData.key, false);
+						}
+
+						Rectangle {
+							anchors.fill: parent
+							radius: Config.radius - 4
+							color: soon.containsMouse ? Config.bgAlt : "transparent"
+						}
+
+						RowLayout {
+							anchors.fill: parent
+							anchors.leftMargin: 4
+							anchors.rightMargin: 8
+							spacing: 10
+
+							// A small tear-off date: weekday over day number.
+							Rectangle {
+								Layout.preferredWidth: 30
+								Layout.preferredHeight: 30
+								radius: Config.radius - 4
+								color: soon.modelData.offset === 0 ? Config.accent : Config.bgAlt
+
+								Column {
+									anchors.centerIn: parent
+									spacing: -2
+
+									Label {
+										anchors.horizontalCenter: parent.horizontalCenter
+										text: Qt.formatDate(soon.modelData.when, "ddd").toUpperCase()
+										color: soon.modelData.offset === 0 ? Config.bg : Config.fgDim
+										font.pixelSize: Config.fontSize - 6
+									}
+
+									Label {
+										anchors.horizontalCenter: parent.horizontalCenter
+										text: soon.modelData.when.getDate()
+										color: soon.modelData.offset === 0 ? Config.bg : Config.fg
+										font.pixelSize: Config.fontSize - 1
+										font.weight: Font.DemiBold
+									}
+								}
+							}
+
+							ColumnLayout {
+								Layout.fillWidth: true
+								Layout.minimumWidth: 0
+								spacing: 0
+
+								Label {
+									Layout.fillWidth: true
+									text: soon.modelData.title
+									font.pixelSize: Config.fontSize - 2
+									elide: Text.ElideRight
+								}
+
+								Label {
+									Layout.fillWidth: true
+									text: (soon.modelData.offset === 0 ? "Today"
+										: soon.modelData.offset === 1 ? "Tomorrow"
+										: "In " + soon.modelData.offset + " days")
+										+ " · " + (soon.modelData.time || "All day")
+									color: Config.fgDim
+									font.pixelSize: Config.fontSize - 4
+									elide: Text.ElideRight
+								}
+							}
+
+							Label {
+								text: soon.modelData.kind === "meeting"
+									? Config.icons.meeting : Config.icons.bell
+								color: Config.accent
+								font.pixelSize: Config.fontSize - 3
+							}
+						}
+					}
+				}
 
 				Label {
-					text: Math.round(parent.parent.done * 100) + "% · "
-						+ (root.daysThisYear - root.dayOfYear(root.today)) + " days left"
-					color: Config.fgDim
-					font.pixelSize: Config.fontSize - 4
-				}
-			}
-
-			Rectangle {
-				Layout.fillWidth: true
-				Layout.preferredHeight: 4
-				radius: 2
-				color: Config.bgAlt
-
-				Rectangle {
-					width: parent.width * parent.parent.done
-					height: parent.height
-					radius: 2
-					color: Config.accent
-				}
-			}
-		}
-
-		Rectangle {
-			Layout.fillWidth: true
-			Layout.preferredHeight: 1
-			Layout.topMargin: 2
-			visible: root.showToday
-			color: Config.border
-		}
-
-		// ---- month navigation ----
-		RowLayout {
-			Layout.fillWidth: true
-			spacing: 2
-
-			RowLayout {
-				Layout.fillWidth: true
-				Layout.leftMargin: 4
-				spacing: 6
-
-				Label {
-					Layout.alignment: Qt.AlignBaseline
-					text: Qt.formatDate(root.shownMonth, "MMMM")
-					font.pixelSize: Config.fontSize + 2
-					font.weight: Font.DemiBold
-				}
-
-				Label {
-					Layout.alignment: Qt.AlignBaseline
-					text: root.shownMonth.getFullYear()
-					color: Config.fgDim
-				}
-
-				Item { Layout.fillWidth: true }
-			}
-
-			NavButton {
-				// Jumps back to the current month; hidden when already there.
-				icon: Config.icons.today
-				visible: root.monthOffset !== 0
-				onTriggered: root.monthOffset = 0
-			}
-
-			NavButton {
-				icon: Config.icons.chevronLeft
-				onTriggered: root.monthOffset--
-			}
-
-			NavButton {
-				icon: Config.icons.chevronRight
-				onTriggered: root.monthOffset++
-			}
-		}
-
-		// ---- weekday initials, after a blank over the week numbers ----
-		GridLayout {
-			Layout.fillWidth: true
-			columns: 8
-			columnSpacing: 2
-			rowSpacing: 0
-
-			Label {
-				Layout.preferredWidth: 22
-				text: "wk"
-				color: Config.fgDim
-				opacity: 0.6
-				font.pixelSize: Config.fontSize - 5
-				horizontalAlignment: Text.AlignHCenter
-			}
-
-			Repeater {
-				model: 7
-
-				Label {
-					required property int index
-
-					readonly property int dow: (root.firstDay + index) % 7
-
 					Layout.fillWidth: true
-					Layout.preferredHeight: 20
-
-					text: root.locale.dayName(dow, Locale.ShortFormat).substring(0, 2)
-					color: dow === 0 || dow === 6 ? Config.red : Config.fgDim
-					opacity: dow === 0 || dow === 6 ? 0.8 : 1
+					visible: root.upcoming.length === 0
+					text: "Nothing in the next two weeks"
+					color: Config.fgDim
 					font.pixelSize: Config.fontSize - 3
-					font.weight: Font.DemiBold
+				}
+
+				Label {
+					Layout.fillWidth: true
+					text: "Right-click a day to add a reminder"
+					color: Config.fgDim
+					opacity: 0.7
+					font.pixelSize: Config.fontSize - 5
 					horizontalAlignment: Text.AlignHCenter
 				}
-			}
-		}
-
-		// ---- days ----
-		GridLayout {
-			id: days
-
-			Layout.fillWidth: true
-			columns: 8
-			columnSpacing: 2
-			rowSpacing: 2
-
-			// Slides in from the side the month was paged towards.
-			property int direction: 1
-			transform: Translate { id: slide }
-
-			ParallelAnimation {
-				id: paged
-
-				NumberAnimation {
-					target: slide; property: "x"
-					from: 18 * days.direction; to: 0
-					duration: 240; easing.type: Easing.OutCubic
-				}
-				NumberAnimation {
-					target: days; property: "opacity"
-					from: 0; to: 1; duration: 200
-				}
-			}
-
-			Connections {
-				target: root
-				property int last: 0
-
-				function onMonthOffsetChanged() {
-					days.direction = root.monthOffset >= last ? 1 : -1;
-					last = root.monthOffset;
-					paged.restart();
-				}
-			}
-
-			Repeater {
-				model: root.cells
-
-				Item {
-					id: slot
-
-					required property var modelData
-
-					readonly property bool isWeek: modelData.week !== undefined
-
-					Layout.fillWidth: !isWeek
-					Layout.preferredWidth: isWeek ? 22 : 0
-					Layout.preferredHeight: 30
-
-					Label {
-						anchors.fill: parent
-						visible: slot.isWeek
-						text: slot.modelData.week ?? ""
-						color: Config.fgDim
-						opacity: 0.6
-						font.pixelSize: Config.fontSize - 5
-						horizontalAlignment: Text.AlignHCenter
-						verticalAlignment: Text.AlignVCenter
-					}
-
-					DayCell {
-						anchors.fill: parent
-						visible: !slot.isWeek
-						modelData: slot.modelData
-					}
-				}
-			}
-		}
-
-		// ---- the picked day: what is on it, and the form to add more ----
-		DayEvents {
-			Layout.fillWidth: true
-			Layout.topMargin: 4
-			visible: root.editable && root.selected !== ""
-		}
-
-		// ---- coming up, while no day is picked ----
-		ColumnLayout {
-			Layout.fillWidth: true
-			Layout.topMargin: 2
-			visible: root.editable && root.selected === ""
-			spacing: 6
-
-			Rectangle {
-				Layout.fillWidth: true
-				Layout.preferredHeight: 1
-				color: Config.border
-			}
-
-			Label {
-				text: "UPCOMING"
-				color: Config.fgDim
-				font.pixelSize: Config.fontSize - 4
-				font.letterSpacing: 1
-			}
-
-			Repeater {
-				model: root.upcoming
-
-				MouseArea {
-					id: soon
-
-					required property var modelData
-
-					Layout.fillWidth: true
-					implicitHeight: 34
-					hoverEnabled: true
-					cursorShape: Qt.PointingHandCursor
-					onClicked: {
-						// Page to that month, then list the day.
-						const d = soon.modelData.when;
-						root.monthOffset = (d.getFullYear() - root.today.getFullYear()) * 12
-							+ d.getMonth() - root.today.getMonth();
-						root.select(soon.modelData.key, false);
-					}
-
-					Rectangle {
-						anchors.fill: parent
-						radius: Config.radius - 4
-						color: soon.containsMouse ? Config.bgAlt : "transparent"
-					}
-
-					RowLayout {
-						anchors.fill: parent
-						anchors.leftMargin: 4
-						anchors.rightMargin: 8
-						spacing: 10
-
-						// A small tear-off date: weekday over day number.
-						Rectangle {
-							Layout.preferredWidth: 30
-							Layout.preferredHeight: 30
-							radius: Config.radius - 4
-							color: soon.modelData.offset === 0 ? Config.accent : Config.bgAlt
-
-							Column {
-								anchors.centerIn: parent
-								spacing: -2
-
-								Label {
-									anchors.horizontalCenter: parent.horizontalCenter
-									text: Qt.formatDate(soon.modelData.when, "ddd").toUpperCase()
-									color: soon.modelData.offset === 0 ? Config.bg : Config.fgDim
-									font.pixelSize: Config.fontSize - 6
-								}
-
-								Label {
-									anchors.horizontalCenter: parent.horizontalCenter
-									text: soon.modelData.when.getDate()
-									color: soon.modelData.offset === 0 ? Config.bg : Config.fg
-									font.pixelSize: Config.fontSize - 1
-									font.weight: Font.DemiBold
-								}
-							}
-						}
-
-						ColumnLayout {
-							Layout.fillWidth: true
-							Layout.minimumWidth: 0
-							spacing: 0
-
-							Label {
-								Layout.fillWidth: true
-								text: soon.modelData.title
-								font.pixelSize: Config.fontSize - 2
-								elide: Text.ElideRight
-							}
-
-							Label {
-								Layout.fillWidth: true
-								text: (soon.modelData.offset === 0 ? "Today"
-									: soon.modelData.offset === 1 ? "Tomorrow"
-									: "In " + soon.modelData.offset + " days")
-									+ " · " + (soon.modelData.time || "All day")
-								color: Config.fgDim
-								font.pixelSize: Config.fontSize - 4
-								elide: Text.ElideRight
-							}
-						}
-
-						Label {
-							text: soon.modelData.kind === "meeting"
-								? Config.icons.meeting : Config.icons.bell
-							color: Config.accent
-							font.pixelSize: Config.fontSize - 3
-						}
-					}
-				}
-			}
-
-			Label {
-				Layout.fillWidth: true
-				visible: root.upcoming.length === 0
-				text: "Nothing in the next two weeks"
-				color: Config.fgDim
-				font.pixelSize: Config.fontSize - 3
-			}
-
-			Label {
-				Layout.fillWidth: true
-				text: "Right-click a day to add a reminder"
-				color: Config.fgDim
-				opacity: 0.7
-				font.pixelSize: Config.fontSize - 5
-				horizontalAlignment: Text.AlignHCenter
 			}
 		}
 	}
@@ -652,12 +648,6 @@ Item {
 		}
 
 		spacing: 6
-
-		Rectangle {
-			Layout.fillWidth: true
-			Layout.preferredHeight: 1
-			color: Config.border
-		}
 
 		RowLayout {
 			Layout.fillWidth: true

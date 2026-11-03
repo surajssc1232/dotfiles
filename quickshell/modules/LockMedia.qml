@@ -32,7 +32,7 @@ Rectangle {
 	implicitHeight: body.implicitHeight + Config.padding * 2
 
 	radius: Config.radius
-	color: Config.bg
+	color: Config.surface
 	border.width: 1
 	border.color: Config.border
 

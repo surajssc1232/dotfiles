@@ -91,14 +91,14 @@ ShellRoot {
 		Switcher {}
 	}
 
-	// Volume, backlight and keyd-layer readout, mapped only while showing.
+	// Volume and backlight readout, mapped only while showing.
 	Variants {
 		model: Quickshell.screens
 
 		Osd {}
 	}
 
-	// Held keyd layer, shown above fullscreen windows too.
+	// Held keyd layer, bottom-right, shown above fullscreen windows too.
 	Variants {
 		model: Quickshell.screens
 

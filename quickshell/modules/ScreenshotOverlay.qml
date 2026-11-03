@@ -194,7 +194,7 @@ PanelWindow {
 		width: hint.implicitWidth + 24
 		height: hint.implicitHeight + 14
 		radius: Config.radius
-		color: Config.bg
+		color: Config.surface
 		border.width: 1
 		border.color: Config.border
 		visible: root.ready && !root.dragging && root.selection.width < 1

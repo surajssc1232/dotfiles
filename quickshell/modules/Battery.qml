@@ -83,7 +83,7 @@ Pill {
 
 		anchorItem: root
 		contentWidth: root.menuWidth
-		contentHeight: body.implicitHeight + Config.padding
+		contentHeight: body.implicitHeight + Config.inset * 2
 
 		onOpenChanged: {
 			Power.active = open;
@@ -97,67 +97,13 @@ Pill {
 				id: body
 
 				anchors.fill: parent
-				anchors.margins: Config.padding / 2
-				spacing: 2
+				anchors.margins: Config.inset
+				spacing: 8
 
-				// ---- status ----
-				RowLayout {
-					Layout.fillWidth: true
-					Layout.leftMargin: 8
-					Layout.rightMargin: 8
-					Layout.topMargin: 4
-					spacing: 8
+				Group {
 
-					Label {
-						text: root.percent + "%"
-						color: Config.accent
-						font.pixelSize: Config.fontSize + 4
-					}
-
-					ColumnLayout {
-						Layout.fillWidth: true
-						Layout.minimumWidth: 0
-						spacing: 0
-
-						Label {
-							Layout.fillWidth: true
-							Layout.minimumWidth: 0
-							text: root.charging ? "Charging" : "On battery"
-							font.pixelSize: Config.fontSize - 2
-							elide: Text.ElideRight
-						}
-
-						Label {
-							Layout.fillWidth: true
-							Layout.minimumWidth: 0
-							text: root.remaining()
-							color: Config.fgDim
-							font.pixelSize: Config.fontSize - 3
-							elide: Text.ElideRight
-						}
-					}
-				}
-
-				// Worth showing: a worn battery explains a short runtime.
-				Label {
-					Layout.fillWidth: true
-					Layout.leftMargin: 8
-					visible: root.battery?.healthSupported ?? false
-					text: "Health " + Math.round((root.battery?.healthPercentage ?? 0)) + "%"
-					color: Config.fgDim
-					font.pixelSize: Config.fontSize - 4
-				}
-
-				// ---- other batteries ----
-				// Finding out a headset is flat by having it cut out mid-call
-				// is the thing this exists to avoid.
-				Repeater {
-					model: UPower.devices.values.filter(d => d !== UPower.displayDevice
-						&& d.isPresent && !d.isLaptopBattery && d.percentage > 0)
-
+					// ---- status ----
 					RowLayout {
-						required property var modelData
-
 						Layout.fillWidth: true
 						Layout.leftMargin: 8
 						Layout.rightMargin: 8
@@ -165,113 +111,166 @@ Pill {
 						spacing: 8
 
 						Label {
-							text: root.deviceIcon(modelData.type)
-							color: Config.fgDim
-							font.pixelSize: Config.fontSize - 2
+							text: root.percent + "%"
+							color: Config.accent
+							font.pixelSize: Config.fontSize + 4
 						}
 
-						Label {
+						ColumnLayout {
 							Layout.fillWidth: true
 							Layout.minimumWidth: 0
-							text: modelData.model || UPowerDeviceType.toString(modelData.type)
-							color: Config.fg
-							font.pixelSize: Config.fontSize - 2
-							elide: Text.ElideRight
-						}
-
-						Label {
-							text: Math.round(modelData.percentage) + "%"
-							color: modelData.percentage <= 15 ? Config.red
-								: modelData.percentage <= 30 ? Config.yellow
-								: Config.fgDim
-							font.pixelSize: Config.fontSize - 2
-						}
-					}
-				}
-
-				Rectangle {
-					Layout.fillWidth: true
-					Layout.topMargin: 4
-					Layout.bottomMargin: 2
-					Layout.preferredHeight: 1
-					visible: Power.available
-					color: Config.border
-				}
-
-				// ---- power profile ----
-				Label {
-					Layout.fillWidth: true
-					Layout.leftMargin: 8
-					visible: Power.available
-					text: "Power profile"
-					color: Config.accent
-					font.pixelSize: Config.fontSize - 2
-				}
-
-				Repeater {
-					model: Power.available ? Power.profiles : []
-
-					MouseArea {
-						id: entry
-
-						required property var modelData
-						readonly property bool current: modelData === Power.profile
-
-						Layout.fillWidth: true
-						Layout.preferredHeight: root.rowHeight
-
-						hoverEnabled: true
-						cursorShape: Qt.PointingHandCursor
-						onClicked: Power.set(entry.modelData)
-
-						Rectangle {
-							anchors.fill: parent
-							radius: Config.radius - 4
-							color: entry.containsMouse ? Config.bgAlt : "transparent"
-							border.width: entry.current ? 1 : 0
-							border.color: Config.accent
-						}
-
-						RowLayout {
-							anchors.fill: parent
-							anchors.leftMargin: 8
-							anchors.rightMargin: 8
-							spacing: 8
+							spacing: 0
 
 							Label {
-								text: Power.icon(entry.modelData)
-								color: entry.current ? Config.accent : Config.fgDim
-								font.pixelSize: Config.fontSize - 1
+								Layout.fillWidth: true
+								Layout.minimumWidth: 0
+								text: root.charging ? "Charging" : "On battery"
+								font.pixelSize: Config.fontSize - 2
+								elide: Text.ElideRight
 							}
 
 							Label {
 								Layout.fillWidth: true
 								Layout.minimumWidth: 0
-								text: Power.title(entry.modelData)
+								text: root.remaining()
+								color: Config.fgDim
+								font.pixelSize: Config.fontSize - 3
 								elide: Text.ElideRight
-								color: entry.current ? Config.accent : Config.fg
-								font.pixelSize: Config.fontSize - 1
+							}
+						}
+					}
+
+					// Worth showing: a worn battery explains a short runtime.
+					Label {
+						Layout.fillWidth: true
+						Layout.leftMargin: 8
+						visible: root.battery?.healthSupported ?? false
+						text: "Health " + Math.round((root.battery?.healthPercentage ?? 0)) + "%"
+						color: Config.fgDim
+						font.pixelSize: Config.fontSize - 4
+					}
+
+					// ---- other batteries ----
+					// Finding out a headset is flat by having it cut out mid-call
+					// is the thing this exists to avoid.
+					Repeater {
+						model: UPower.devices.values.filter(d => d !== UPower.displayDevice
+							&& d.isPresent && !d.isLaptopBattery && d.percentage > 0)
+
+						RowLayout {
+							required property var modelData
+
+							Layout.fillWidth: true
+							Layout.leftMargin: 8
+							Layout.rightMargin: 8
+							Layout.topMargin: 4
+							spacing: 8
+
+							Label {
+								text: root.deviceIcon(modelData.type)
+								color: Config.fgDim
+								font.pixelSize: Config.fontSize - 2
 							}
 
 							Label {
-								text: Config.icons.check
-								color: Config.accent
-								visible: entry.current
-								font.pixelSize: Config.fontSize - 3
+								Layout.fillWidth: true
+								Layout.minimumWidth: 0
+								text: modelData.model || UPowerDeviceType.toString(modelData.type)
+								color: Config.fg
+								font.pixelSize: Config.fontSize - 2
+								elide: Text.ElideRight
+							}
+
+							Label {
+								text: Math.round(modelData.percentage) + "%"
+								color: modelData.percentage <= 15 ? Config.red
+									: modelData.percentage <= 30 ? Config.yellow
+									: Config.fgDim
+								font.pixelSize: Config.fontSize - 2
 							}
 						}
 					}
 				}
 
-				Label {
-					Layout.fillWidth: true
-					Layout.leftMargin: 8
-					Layout.rightMargin: 8
-					visible: Power.degraded !== ""
-					text: "Degraded: " + Power.degraded
-					color: Config.yellow
-					font.pixelSize: Config.fontSize - 4
-					wrapMode: Text.WordWrap
+
+				Group {
+					visible: Power.available
+
+					// ---- power profile ----
+					Label {
+						Layout.fillWidth: true
+						Layout.leftMargin: 8
+						visible: Power.available
+						text: "Power profile"
+						color: Config.accent
+						font.pixelSize: Config.fontSize - 2
+					}
+
+					Repeater {
+						model: Power.available ? Power.profiles : []
+
+						MouseArea {
+							id: entry
+
+							required property var modelData
+							readonly property bool current: modelData === Power.profile
+
+							Layout.fillWidth: true
+							Layout.preferredHeight: root.rowHeight
+
+							hoverEnabled: true
+							cursorShape: Qt.PointingHandCursor
+							onClicked: Power.set(entry.modelData)
+
+							Rectangle {
+								anchors.fill: parent
+								radius: Config.radius - 4
+								color: entry.containsMouse ? Config.bgAlt : "transparent"
+								border.width: entry.current ? 1 : 0
+								border.color: Config.accent
+							}
+
+							RowLayout {
+								anchors.fill: parent
+								anchors.leftMargin: 8
+								anchors.rightMargin: 8
+								spacing: 8
+
+								Label {
+									text: Power.icon(entry.modelData)
+									color: entry.current ? Config.accent : Config.fgDim
+									font.pixelSize: Config.fontSize - 1
+								}
+
+								Label {
+									Layout.fillWidth: true
+									Layout.minimumWidth: 0
+									text: Power.title(entry.modelData)
+									elide: Text.ElideRight
+									color: entry.current ? Config.accent : Config.fg
+									font.pixelSize: Config.fontSize - 1
+								}
+
+								Label {
+									text: Config.icons.check
+									color: Config.accent
+									visible: entry.current
+									font.pixelSize: Config.fontSize - 3
+								}
+							}
+						}
+					}
+
+					Label {
+						Layout.fillWidth: true
+						Layout.leftMargin: 8
+						Layout.rightMargin: 8
+						visible: Power.degraded !== ""
+						text: "Degraded: " + Power.degraded
+						color: Config.yellow
+						font.pixelSize: Config.fontSize - 4
+						wrapMode: Text.WordWrap
+				}
 				}
 			}
 		}

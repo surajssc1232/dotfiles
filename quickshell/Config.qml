@@ -73,16 +73,33 @@ Singleton {
 	}
 
 	// ---- colors ----
+	// Raw palette. bg doubles as the ink on anything filled with accent, so it
+	// stays exactly as the theme gives it.
 	readonly property color bg: theme.bg
-	readonly property color bgAlt: theme.bgAlt
 	readonly property color fg: theme.fg
-	readonly property color fgDim: theme.fgDim
 	readonly property color accent: theme.accent
 	readonly property color green: theme.green
 	readonly property color yellow: theme.yellow
 	readonly property color red: theme.red
 	readonly property color blue: theme.blue
-	readonly property color border: theme.border
+
+	// Tonal surfaces mixed out of the palette rather than taken from it, so
+	// every widget in every theme steps through the same three levels without
+	// each theme having to define them: a panel holds groups, a group holds
+	// tiles. The terminal and neovim still get the theme's own values, since
+	// applyExternal reads those from `theme` directly.
+	readonly property color surface: Qt.tint(bg, Qt.alpha(accent, 0.05))
+	readonly property color surfaceGroup: Qt.tint(bg, Qt.alpha(accent, 0.10))
+	readonly property color bgAlt: Qt.tint(bg, Qt.alpha(accent, 0.18))
+	readonly property color border: Qt.tint(bg, Qt.alpha(fg, 0.12))
+	// Several themes' own fgDim is too faint for small text on a tinted surface.
+	readonly property color fgDim: Qt.tint(theme.fgDim, Qt.alpha(fg, 0.5))
+
+	// Hover on a tile, whatever its colour: Qt.lighter does nothing useful on
+	// a light theme, where the surface is already near white.
+	function hover(base: color): color {
+		return Qt.tint(base, Qt.alpha(root.fg, 0.08));
+	}
 
 	// ---- bar geometry ----
 	readonly property int barHeight: 34
@@ -96,6 +113,11 @@ Singleton {
 	readonly property int compositorGap: 10
 	readonly property int spacing: 6
 	readonly property int padding: 10
+	// Between a panel's edge and what is on it: enough to clear radius.
+	readonly property int inset: 12
+
+	// How far past 100% a deliberate volume control may push the output.
+	readonly property real volumeMax: 1.5
 
 	// ---- fonts ----
 	readonly property string font: "JetBrainsMono Nerd Font"

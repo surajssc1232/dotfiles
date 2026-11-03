@@ -5,25 +5,31 @@ import qs
 import qs.services
 import qs.widgets
 
-// A notch hanging from the top edge for as long as a keyd layer is held. The
-// bar pill says the same thing, but a fullscreen video covers the bar; this
-// sits on the overlay layer, above fullscreen windows, so a sticky vim layer
-// can never be left on unseen. It takes no input, so nothing under it is lost.
+// A small card in the bottom-right corner for as long as a keyd layer is held.
+// It is the only layer indicator: it sits on the overlay layer, above
+// fullscreen windows, so a sticky vim layer can never be left on unseen even
+// under a video. It takes no input, so nothing under it is lost.
 PanelWindow {
 	id: root
 
 	required property var modelData
 	screen: modelData
 
-	// Stays mapped until the notch has finished sliding back up.
-	visible: Keyd.active || notch.y > -root.implicitHeight
+	// Stays mapped until the card has finished fading out.
+	visible: Keyd.active || card.opacity > 0
 
 	anchors {
-		top: true
+		bottom: true
+		right: true
+	}
+
+	margins {
+		bottom: 24
+		right: 24
 	}
 
 	implicitWidth: Math.max(96, row.implicitWidth + Config.padding * 3)
-	implicitHeight: 30
+	implicitHeight: 34
 
 	color: "transparent"
 	exclusionMode: ExclusionMode.Ignore
@@ -32,32 +38,21 @@ PanelWindow {
 
 	mask: Region {}
 
-	Rectangle {
-		id: notch
+	Panel {
+		id: card
 
 		width: root.implicitWidth
 		height: root.implicitHeight
-		y: Keyd.active ? 0 : -root.implicitHeight
 
-		color: Config.bg
-		border.width: 1
-		border.color: Config.border
-		// Only the bottom corners are rounded: the top ones are pushed off
-		// the surface by the overhang, so the notch reads as part of the edge.
-		radius: Config.radius
+		opacity: Keyd.active ? 1 : 0
+		y: Keyd.active ? 0 : 8
 
-		Behavior on y {
-			NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+		Behavior on opacity {
+			NumberAnimation { duration: 160; easing.type: Easing.OutQuad }
 		}
 
-		Rectangle {
-			anchors.left: parent.left
-			anchors.right: parent.right
-			anchors.top: parent.top
-			anchors.leftMargin: 1
-			anchors.rightMargin: 1
-			height: parent.radius
-			color: parent.color
+		Behavior on y {
+			NumberAnimation { duration: 160; easing.type: Easing.OutQuad }
 		}
 
 		Row {
@@ -75,7 +70,7 @@ PanelWindow {
 			Label {
 				id: name
 
-				// Last remembered name, so the text does not vanish mid-slide.
+				// Last remembered name, so the text does not vanish mid-fade.
 				property string shown: ""
 				text: shown.toUpperCase()
 				color: Config.fg

@@ -5,8 +5,8 @@ import Quickshell
 import Quickshell.Io
 import qs.services
 
-// The transient overlay that says what just changed: volume, mic, backlight,
-// or the keyd layer you just entered.
+// The transient overlay that says what just changed: volume, mic
+// or backlight. A held keyd layer has its own notch (LayerNotch).
 //
 // Volume arrives on its own — the keys go through wpctl, and Pipewire reports
 // the change to us. The backlight does not: those keys run brightnessctl
@@ -15,7 +15,7 @@ import qs.services
 Singleton {
 	id: root
 
-	// "volume" | "mic" | "brightness" | "layer"
+	// "volume" | "mic" | "brightness"
 	property string kind: ""
 	property bool shown: false
 
@@ -57,18 +57,6 @@ Singleton {
 		enabled: root.ready
 
 		function onMutedChanged(): void { root.show("mic"); }
-	}
-
-	// Entering a layer is worth announcing; leaving it just takes the OSD away
-	// rather than replacing it with a second flash.
-	Connections {
-		target: Keyd
-		enabled: root.ready
-
-		function onLayersChanged(): void {
-			if (Keyd.active) root.show("layer");
-			else if (root.kind === "layer") root.shown = false;
-		}
 	}
 
 	IpcHandler {

@@ -20,6 +20,10 @@ Item {
 	// One wheel notch.
 	property real step: 0.05
 
+	// How far scrolling may go. The bar still spans 0..1 and stays full above
+	// that, so dragging it can never ask for more than 100%.
+	property real scrollMax: 1
+
 	// Shows a chevron that reveals a device list under the tile.
 	property bool expandable: false
 	property bool expanded: false
@@ -40,25 +44,17 @@ Item {
 	function scrollBy(dir: int) {
 		if (dir === 0) return;
 
-		// A Pipewire sink can sit above 100%, past the end of this slider.
+		// A Pipewire sink can sit above scrollMax, past the end of this slider.
 		// Scrolling up there must do nothing rather than snap back into range,
 		// or asking for "louder" would quietly make it quieter.
-		if (dir > 0 && root.value >= 1) return;
+		if (dir > 0 && root.value >= root.scrollMax) return;
 
-		const base = Math.min(1, root.value);
+		const base = Math.min(root.scrollMax, root.value);
 		const next = Math.round((base + dir * root.step) / root.step) * root.step;
-		root.moved(Math.max(0, Math.min(1, next)));
+		root.moved(Math.max(0, Math.min(root.scrollMax, next)));
 	}
 
-	implicitHeight: 54
-
-	Rectangle {
-		anchors.fill: parent
-		radius: Config.radius
-		color: Config.bgAlt
-		border.width: root.focused ? 2 : 1
-		border.color: root.focused ? Config.fg : Config.border
-	}
+	implicitHeight: 46
 
 	// Scrolls anywhere on the tile, not just over the bar. Declared before the
 	// content so it sits underneath: it takes no buttons, and the controls
@@ -73,96 +69,104 @@ Item {
 
 	RowLayout {
 		anchors.fill: parent
-		anchors.leftMargin: 10
-		anchors.rightMargin: 12
-		spacing: 10
+		spacing: 6
 
-		// Doubles as the mute button where that makes sense.
-		MouseArea {
-			Layout.preferredWidth: 22
-			Layout.preferredHeight: 22
-			Layout.alignment: Qt.AlignVCenter
-
-			hoverEnabled: true
-			cursorShape: Qt.PointingHandCursor
-			onClicked: root.iconClicked()
-
-			Label {
-				anchors.centerIn: parent
-				text: root.icon
-				color: root.dimmed ? Config.fgDim : root.fill
-				font.pixelSize: Config.fontSize + 1
-			}
-		}
-
-		ColumnLayout {
-			id: body
+		// ---- track ----
+		// The whole pill is the slider. The icon sits in a badge the fill
+		// never shrinks past, so zero still reads as a slider and not as an
+		// empty box with some text in it.
+		Item {
+			id: track
 
 			Layout.fillWidth: true
+			Layout.fillHeight: true
 			Layout.minimumWidth: 0
-			spacing: 5
+
+			readonly property color tone: root.dimmed ? Config.fgDim : root.fill
+
+			// Measured across the span the fill's edge actually travels, so
+			// the edge lands under the pointer rather than a badge-width off.
+			function commit(x) {
+				const span = track.width - track.height;
+				if (span > 0)
+					root.moved(Math.max(0, Math.min(1, (x - track.height / 2) / span)));
+			}
+
+			Rectangle {
+				anchors.fill: parent
+				radius: Config.radius
+				color: Config.bgAlt
+				border.width: root.focused ? 2 : 0
+				border.color: Config.fg
+			}
+
+			Rectangle {
+				height: parent.height
+				width: Math.round(parent.height
+					+ (parent.width - parent.height) * Math.max(0, Math.min(1, root.value)))
+				radius: Config.radius
+				color: Qt.alpha(track.tone, 0.34)
+			}
+
+			// Grabbed as soon as it is pressed, so a click anywhere on the
+			// bar jumps there and keeps tracking without a second press.
+			MouseArea {
+				anchors.fill: parent
+				preventStealing: true
+				cursorShape: Qt.PointingHandCursor
+
+				onPressed: event => track.commit(event.x)
+				onPositionChanged: event => {
+					if (pressed) track.commit(event.x);
+				}
+			}
+
+			// Doubles as the mute button where that makes sense.
+			MouseArea {
+				id: iconHit
+
+				width: parent.height
+				height: parent.height
+
+				hoverEnabled: true
+				cursorShape: Qt.PointingHandCursor
+				onClicked: root.iconClicked()
+
+				Rectangle {
+					anchors.fill: parent
+					anchors.margins: 5
+					radius: Config.radius - 4
+					color: iconHit.containsMouse ? Qt.tint(track.tone, Qt.alpha(Config.fg, 0.2)) : track.tone
+
+					Label {
+						anchors.centerIn: parent
+						text: root.icon
+						color: Config.bg
+						font.pixelSize: Config.fontSize
+					}
+				}
+			}
 
 			RowLayout {
-				Layout.fillWidth: true
-				spacing: 6
+				anchors.fill: parent
+				anchors.leftMargin: track.height + 2
+				anchors.rightMargin: 16
+				spacing: 8
 
 				Label {
 					Layout.fillWidth: true
 					Layout.minimumWidth: 0
 					text: root.label
 					color: Config.fg
-					font.pixelSize: Config.fontSize - 2
+					font.pixelSize: Config.fontSize - 1
 					elide: Text.ElideRight
 				}
 
 				Label {
 					text: root.readout
-					color: Config.fgDim
-					font.pixelSize: Config.fontSize - 3
-				}
-			}
-
-			// ---- track ----
-			Item {
-				id: track
-
-				Layout.fillWidth: true
-				Layout.preferredHeight: 14
-
-				function commit(x) {
-					root.moved(Math.max(0, Math.min(1, x / track.width)));
-				}
-
-				Rectangle {
-					anchors.verticalCenter: parent.verticalCenter
-					width: parent.width
-					height: 6
-					radius: 3
-					color: Config.bg
-					border.width: 1
-					border.color: Config.border
-
-					Rectangle {
-						width: Math.round(parent.width * Math.max(0, Math.min(1, root.value)))
-						height: parent.height
-						radius: parent.radius
-						color: root.dimmed ? Config.fgDim : root.fill
-					}
-				}
-
-				// Grabbed as soon as it is pressed, so a click anywhere on the
-				// bar jumps there and keeps tracking without a second press.
-				MouseArea {
-					anchors.fill: parent
-					anchors.leftMargin: -4
-					anchors.rightMargin: -4
-					preventStealing: true
-					cursorShape: Qt.PointingHandCursor
-
-					onPressed: event => track.commit(event.x)
-					onPositionChanged: event => {
-						if (pressed) track.commit(event.x);
-					}
+					color: Config.fg
+					opacity: 0.8
+					font.pixelSize: Config.fontSize - 2
 				}
 			}
 		}
@@ -170,19 +174,28 @@ Item {
 		// Opens the device list. Its own hit target, so reaching for the
 		// device menu can never nudge the volume on the way past.
 		MouseArea {
-			Layout.preferredWidth: 20
-			Layout.preferredHeight: 22
-			Layout.alignment: Qt.AlignVCenter
+			id: more
+
+			Layout.preferredWidth: root.height
+			Layout.fillHeight: true
 
 			visible: root.expandable
 			hoverEnabled: true
 			cursorShape: Qt.PointingHandCursor
 			onClicked: root.toggled()
 
+			Rectangle {
+				anchors.fill: parent
+				radius: Config.radius
+				color: root.expanded ? Qt.alpha(Config.accent, 0.28)
+					: more.containsMouse ? Config.hover(Config.bgAlt)
+					: Config.bgAlt
+			}
+
 			Label {
 				anchors.centerIn: parent
 				text: root.expanded ? Config.icons.chevron : Config.icons.chevronRight
-				color: parent.containsMouse || root.expanded ? Config.accent : Config.fgDim
+				color: more.containsMouse || root.expanded ? Config.accent : Config.fgDim
 				font.pixelSize: Config.fontSize - 4
 			}
 		}

@@ -67,11 +67,16 @@ PanelWindow {
 	Panel {
 		id: card
 
-		anchors.horizontalCenter: parent.horizontalCenter
-		anchors.top: parent.top
-		anchors.topMargin: Math.round(parent.height * 0.1)
+		// Under the pill that opened it, just below the floating bar like every
+		// other bar menu, and pulled back inside the screen if it would hang
+		// off the edge.
+		readonly property real pillCentre: Storage.pillCentres[root.modelData.name] ?? root.width / 2
+
+		x: Math.round(Math.max(Config.barMargin,
+			Math.min(pillCentre - width / 2, root.width - width - Config.barMargin)))
+		y: Config.barMargin * 2 + Config.barHeight
 		width: root.cardWidth
-		height: col.implicitHeight + Config.padding
+		height: col.implicitHeight + Config.inset * 2
 
 		// Pops in on open, the same way the bar's menus do.
 		transformOrigin: Item.Top
@@ -107,7 +112,7 @@ PanelWindow {
 				anchors.left: parent.left
 				anchors.right: parent.right
 				anchors.top: parent.top
-				anchors.margins: Config.padding / 2 + 4
+				anchors.margins: Config.inset
 				spacing: 8
 
 				// ---- title and disk meter ----

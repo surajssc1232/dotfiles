@@ -66,9 +66,9 @@ Rectangle {
 	implicitHeight: layout.implicitHeight + Config.padding * 2
 
 	radius: Config.radius
-	color: root.critical ? Qt.tint(Config.bg, Qt.rgba(Config.red.r, Config.red.g, Config.red.b, 0.08))
-		: root.hovered ? Qt.tint(Config.bg, Qt.rgba(Config.fg.r, Config.fg.g, Config.fg.b, 0.03))
-		: Config.bg
+	color: root.critical ? Qt.tint(Config.surface, Qt.alpha(Config.red, 0.08))
+		: root.hovered ? Config.hover(Config.surface)
+		: Config.surface
 	border.width: root.critical ? 1.5 : 1
 	border.color: root.critical ? Config.red
 		: root.hovered ? Qt.alpha(Config.accent, 0.6) : Config.border

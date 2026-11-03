@@ -13,6 +13,17 @@ Singleton {
 	id: root
 
 	property bool shown: false
+
+	// Where the bar's pill sits on each screen, by screen name, so the panel
+	// can open underneath it. The pills publish this as the panel opens.
+	property var pillCentres: ({})
+
+	function setPillCentre(screen: string, x: real) {
+		if (root.pillCentres[screen] === x) return;
+		const next = Object.assign({}, root.pillCentres);
+		next[screen] = x;
+		root.pillCentres = next;
+	}
 	property bool scanning: false
 
 	// [{ kind, bytes, mtime (seconds), path, name }]
