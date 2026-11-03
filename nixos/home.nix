@@ -2,6 +2,7 @@
   imports = [
     ./nvim.nix
     ./helix.nix
+    ./dotfiles-sync.nix
   ];
 
   # --- System & Profile Basics ---

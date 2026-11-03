@@ -5,3 +5,4 @@ history.txt
 *.msgpackz
 *.db
 *.db-*
+.claude/
