@@ -49,7 +49,7 @@ Pill {
 
 	function navItems(): var {
 		return [wifiTile, btTile, dndTile, powerTile, outSlider, inSlider,
-			brightSlider, nightTile, wallTile, recTile, procTile, themeTile]
+			brightSlider, monitorSlider, nightTile, wallTile, recTile, procTile, themeTile]
 			.filter(item => item.visible);
 	}
 
@@ -206,6 +206,7 @@ Pill {
 				root.cur = null;
 			}
 			Brightness.active = open;
+			MonitorBrightness.active = open;
 		}
 
 		// A screenshot keybind can fire while this panel is up. It is captured
@@ -653,6 +654,22 @@ Pill {
 						// Never all the way to zero: a black screen with no
 						// backlight key is hard to recover from.
 						onMoved: value => Brightness.set(Math.max(1, value * 100))
+					}
+
+					SliderTile {
+						id: monitorSlider
+
+						Layout.fillWidth: true
+
+						icon: Config.icons.brightness
+						label: "Monitor"
+						focused: root.cur === monitorSlider
+						readout: MonitorBrightness.percent + "%"
+						value: MonitorBrightness.percent / 100
+						fill: Config.yellow
+						visible: MonitorBrightness.available
+
+						onMoved: value => MonitorBrightness.set(value * 100)
 					}
 				}
 

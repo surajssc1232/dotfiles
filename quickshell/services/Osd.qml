@@ -15,7 +15,7 @@ import qs.services
 Singleton {
 	id: root
 
-	// "volume" | "mic" | "brightness"
+	// "volume" | "mic" | "brightness" | "monitor"
 	property string kind: ""
 	property bool shown: false
 
@@ -65,6 +65,12 @@ Singleton {
 		function brightness(): void {
 			Brightness.refresh();
 			root.show("brightness");
+		}
+
+		// Called by the monitor-brightness script with the value it just set.
+		function monitorBrightness(percent: int): void {
+			MonitorBrightness.report(percent);
+			root.show("monitor");
 		}
 
 		function volume(): void {

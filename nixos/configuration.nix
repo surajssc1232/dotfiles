@@ -663,6 +663,68 @@
         fi
       '';
     })
+    # The Dell's brightness over DDC: up|down step 5% and show the shell's readout,
+    # get|set are for the shell's slider. A key press that lands while the last
+    # one is still running is dropped.
+    (writeShellApplication {
+      name = "monitor-brightness";
+      runtimeInputs = [ ddcutil libnotify util-linux ];
+      text = ''
+        action=''${1:-}
+        case "$action" in
+          up) sign=1 ;;
+          down) sign=-1 ;;
+          get|set) ;;
+          *) echo "usage: monitor-brightness up|down|get|set <value>" >&2; exit 1 ;;
+        esac
+
+        # Naming the bus skips ddcutil's scan of every display, about 1s per call.
+        # The number can change between boots, so it's looked up each time.
+        bus=""
+        for connector in /sys/class/drm/card*-*; do
+          case "$connector" in *eDP*|*LVDS*|*DSI*) continue ;; esac
+          if [[ -e $connector/ddc && $(cat "$connector/status") == connected ]]; then
+            bus=$(basename "$(readlink "$connector/ddc")")
+            bus=''${bus#i2c-}
+            break
+          fi
+        done
+
+        if [[ -z $bus ]]; then
+          if [[ $action == up || $action == down ]]; then
+            notify-send "Monitor brightness" "No external monitor connected"
+          fi
+          exit 1
+        fi
+
+        case "$action" in
+          get) exec ddcutil getvcp 10 --brief --bus "$bus" ;;
+          set) exec ddcutil setvcp 10 "$2" --noverify --bus "$bus" ;;
+        esac
+
+        exec 9>"$XDG_RUNTIME_DIR/monitor-brightness.lock"
+        flock -n 9 || exit 0
+
+        reading=$(ddcutil getvcp 10 --brief --bus "$bus" 2>/dev/null || true)
+        if [[ ! $reading =~ VCP\ 10\ C\ ([0-9]+)\ ([0-9]+) ]]; then
+          notify-send "Monitor brightness failed" "ddcutil could not read the monitor"
+          exit 1
+        fi
+        current=''${BASH_REMATCH[1]}
+        max=''${BASH_REMATCH[2]}
+
+        target=$(( current + sign * max * 5 / 100 ))
+        (( target < 0 )) && target=0
+        (( target > max )) && target=$max
+
+        if ! ddcutil setvcp 10 "$target" --noverify --bus "$bus"; then
+          notify-send "Monitor brightness failed" "ddcutil could not set brightness $target"
+          exit 1
+        fi
+
+        qs ipc call osd monitorBrightness "$(( target * 100 / max ))" >/dev/null 2>&1 || true
+      '';
+    })
     streamlink
     claude-code
     efibootmgr

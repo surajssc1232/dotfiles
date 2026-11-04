@@ -29,6 +29,7 @@ PanelWindow {
 		switch (root.kind) {
 		case "volume": return root.muted ? 0 : (root.sinkAudio?.volume ?? 0);
 		case "brightness": return Brightness.percent / 100;
+		case "monitor": return MonitorBrightness.percent / 100;
 		case "mic": return root.muted ? 0 : 1;
 		default: return 0;
 		}
@@ -40,7 +41,8 @@ PanelWindow {
 			if (root.muted) return Config.icons.volMute;
 			return root.fraction > 0.5 ? Config.icons.volHigh : Config.icons.volLow;
 		case "mic": return root.muted ? Config.icons.micOff : Config.icons.mic;
-		case "brightness": return Config.icons.brightness;
+		case "brightness":
+		case "monitor": return Config.icons.brightness;
 		default: return "";
 		}
 	}
@@ -50,6 +52,7 @@ PanelWindow {
 		case "volume": return root.muted ? "Muted" : Math.round(root.fraction * 100) + "%";
 		case "mic": return root.muted ? "Mic off" : "Mic on";
 		case "brightness": return Brightness.percent + "%";
+		case "monitor": return MonitorBrightness.percent + "%";
 		default: return "";
 		}
 	}
@@ -97,7 +100,8 @@ PanelWindow {
 			icon: root.icon
 			label: root.kind === "volume" ? "Volume"
 				: root.kind === "mic" ? "Microphone"
-				: root.kind === "brightness" ? "Brightness" : ""
+				: root.kind === "brightness" ? "Brightness"
+				: root.kind === "monitor" ? "Monitor" : ""
 			readout: root.caption
 			value: root.fraction
 			dimmed: root.muted
