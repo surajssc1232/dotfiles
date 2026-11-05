@@ -18,6 +18,11 @@ MouseArea {
 	property bool expanded: false
 	property bool busy: false
 
+	// Puts minus and plus either side of the status line, for a value that can
+	// be nudged without giving it a slider of its own. Scrolling the tile does
+	// the same. Row variant only.
+	property bool stepper: false
+
 	// Keyboard cursor, set by the panel that owns the tiles.
 	property bool focused: false
 
@@ -28,6 +33,7 @@ MouseArea {
 
 	signal triggered()
 	signal toggled()
+	signal stepped(int dir)
 
 	// Marks a destructive action. The tile keeps its usual dark surface and
 	// turns its glyph and label red instead: among a grid of dark tiles a
@@ -57,6 +63,10 @@ MouseArea {
 	hoverEnabled: true
 	cursorShape: Qt.PointingHandCursor
 	onClicked: root.triggered()
+	onWheel: event => {
+		if (root.stepper && event.angleDelta.y !== 0) root.stepped(event.angleDelta.y > 0 ? 1 : -1);
+		else event.accepted = false;
+	}
 
 	Rectangle {
 		anchors.fill: parent
@@ -125,14 +135,32 @@ MouseArea {
 
 			// The status line carries an SSID or a device name, so it has to
 			// be free to shrink rather than push the switch off the tile.
-			Label {
+			RowLayout {
 				Layout.fillWidth: true
 				Layout.minimumWidth: 0
-				text: root.detail
-				color: root.inkDim
-				font.pixelSize: Config.fontSize - 3
-				elide: Text.ElideRight
-				visible: text !== ""
+				spacing: 4
+				visible: root.detail !== ""
+
+				Step {
+					visible: root.stepper
+					glyph: Config.icons.minus
+					dir: -1
+				}
+
+				Label {
+					Layout.fillWidth: !root.stepper
+					Layout.minimumWidth: 0
+					text: root.detail
+					color: root.inkDim
+					font.pixelSize: Config.fontSize - 3
+					elide: Text.ElideRight
+				}
+
+				Step {
+					visible: root.stepper
+					glyph: Config.icons.plus
+					dir: 1
+				}
 			}
 		}
 
@@ -234,6 +262,34 @@ MouseArea {
 			font.pixelSize: Config.fontSize - 3
 			horizontalAlignment: Text.AlignHCenter
 			elide: Text.ElideRight
+		}
+	}
+
+	// Its own hit target, so a step can never fall through and flip the tile.
+	component Step: MouseArea {
+		id: step
+
+		property string glyph
+		property int dir
+
+		implicitWidth: 20
+		implicitHeight: 18
+
+		hoverEnabled: true
+		cursorShape: Qt.PointingHandCursor
+		onClicked: root.stepped(dir)
+
+		Rectangle {
+			anchors.fill: parent
+			radius: Config.radius - 6
+			color: step.pressed || step.containsMouse ? root.badge : "transparent"
+		}
+
+		Label {
+			anchors.centerIn: parent
+			text: step.glyph
+			color: root.ink
+			font.pixelSize: Config.fontSize - 5
 		}
 	}
 

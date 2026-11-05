@@ -61,9 +61,10 @@ Pill {
 		root.cur = list[i];
 	}
 
-	// Left and right steer a slider; on a tile they just move along.
+	// Left and right steer a slider or a stepper; on a tile they just move along.
 	function adjust(dir: int) {
 		if (root.cur && root.cur.scrollBy) root.cur.scrollBy(dir);
+		else if (root.cur && root.cur.stepper) root.cur.stepped(dir);
 		else root.move(dir);
 	}
 
@@ -691,8 +692,10 @@ Pill {
 								? NightLight.temperature + "K" : "Off"
 							on: NightLight.enabled
 							toggleable: true
+							stepper: NightLight.enabled
 							onTriggered: NightLight.toggle()
 							onToggled: NightLight.toggle()
+							onStepped: dir => NightLight.step(dir)
 						}
 
 						Tile {

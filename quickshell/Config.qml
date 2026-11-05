@@ -179,9 +179,14 @@ Singleton {
 	readonly property real weatherLatitude: 0
 	readonly property real weatherLongitude: 0
 
-	// Night light. Lower is warmer; 6500 is neutral daylight. Applied when the
-	// toggle is switched on, so a change here takes effect at the next toggle.
+	// Night light. Lower is warmer; 6500 is neutral daylight. nightTemp is only
+	// the starting point: once it has been stepped from the control centre, that
+	// value is remembered instead. The range must stay below dayTemp, as wlsunset
+	// refuses a low temperature that is not below the high one.
 	readonly property int nightTemp: 4000
+	readonly property int nightTempMin: 2000
+	readonly property int nightTempMax: 6000
+	readonly property int nightTempStep: 200
 	readonly property int dayTemp: 6500
 
 	// ---- icons (Nerd Font, escaped so the source stays plain ASCII) ----
@@ -280,6 +285,7 @@ Singleton {
 		wind: "\ue34b",        // nf-weather-strong_wind
 		leaf: "\uf06c",        // air quality
 		plus: "\uf067",
+		minus: "\uf068",
 		close: "\uf00d",
 		meeting: "\uf0c0",     // users
 		repeat: "\uf01e",
