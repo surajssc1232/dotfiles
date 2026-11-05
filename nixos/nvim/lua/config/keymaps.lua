@@ -17,3 +17,12 @@ map("v", "<leader>d", ":Rover<CR>", { silent = true, desc = "Ask Rover" })
 map("n", "<leader>k", vim.diagnostic.open_float, { silent = true, desc = "Show diagnostic" })
 map("n", "]d", function() vim.diagnostic.jump({ count = 1, float = true }) end, { desc = "Next diagnostic" })
 map("n", "[d", function() vim.diagnostic.jump({ count = -1, float = true }) end, { desc = "Prev diagnostic" })
+
+-- Helix-style :format and :fmt. Command names have to start with a capital, so
+-- these are abbreviations, and only expand when they are the whole command.
+for _, name in ipairs({ "format", "fmt" }) do
+	map("ca", name, function()
+		local whole = vim.fn.getcmdtype() == ":" and vim.fn.getcmdline() == name
+		return whole and "lua vim.lsp.buf.format()" or name
+	end, { expr = true, desc = "Format buffer with LSP" })
+end
