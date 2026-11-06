@@ -8,8 +8,8 @@ import qs.services
 
 // Current conditions and a short forecast, from open-meteo.
 //
-// This is the only part of the shell that talks to the internet, so it is
-// worth being plain about what leaves the machine:
+// This is one of two parts of the shell that talk to the internet (lyrics is
+// the other), so it is worth being plain about what leaves the machine:
 //
 //   · open-meteo.com receives a latitude and longitude every 15 minutes.
 //   · If no coordinates are configured, ipapi.co is asked once what city this

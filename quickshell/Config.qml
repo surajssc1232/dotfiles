@@ -170,7 +170,8 @@ Singleton {
 	// Where the wallpaper picker looks for images.
 	readonly property string wallpaperDir: Quickshell.env("HOME") + "/Downloads"
 
-	// Weather. The only part of this shell that makes a network request.
+	// Weather. One of the two parts of this shell that make network requests;
+	// the other is lyrics, below.
 	//
 	// Leave the coordinates at 0 and the location is looked up once from your
 	// IP address (through ipapi.co) and cached; set them and nothing but
@@ -178,6 +179,11 @@ Singleton {
 	readonly property bool weather: true
 	readonly property real weatherLatitude: 0
 	readonly property real weatherLongitude: 0
+
+	// Timed lyrics for whatever is playing, from lrclib.net. While the overlay
+	// is shown (Mod+Alt+Y), each new track's title and artist are sent there
+	// once and the answer cached. Set false and nothing is ever requested.
+	readonly property bool lyrics: true
 
 	// Night light. Lower is warmer; 6500 is neutral daylight. nightTemp is only
 	// the starting point: once it has been stepped from the control centre, that
@@ -277,6 +283,7 @@ Singleton {
 		next: "\uf051",
 		prev: "\uf048",
 		music: "\uf001",
+		lyrics: "\uf130",
 		mixer: "\uf1de",       // sliders
 		pin: "\uf08d",
 		timer: "\uf017",       // clock

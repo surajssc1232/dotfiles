@@ -98,6 +98,13 @@ ShellRoot {
 		Osd {}
 	}
 
+	// Timed lyrics for what is playing, mapped only while toggled on.
+	Variants {
+		model: Quickshell.screens
+
+		LyricsOverlay {}
+	}
+
 	// Held keyd layer, bottom-right, shown above fullscreen windows too.
 	Variants {
 		model: Quickshell.screens

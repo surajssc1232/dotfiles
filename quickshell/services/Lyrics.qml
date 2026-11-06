@@ -1,0 +1,429 @@
+pragma Singleton
+
+import QtQuick
+import Quickshell
+import Quickshell.Io
+import Quickshell.Services.Mpris
+import qs
+import qs.services
+
+// Lyrics for whatever is playing, from lrclib.net, timed to the player.
+//
+// Works for any MPRIS player — Spotify, and YouTube or anything else playing
+// in a browser — since all it needs is a title, an artist and a position.
+//
+// What leaves the machine: the title and artist of each new track, sent to
+// lrclib.net, and only while the lyrics are shown. Answers are cached, so a
+// song is asked about once; a miss is asked again after a few days in case
+// someone has added it since. Config.lyrics = false stops all of it.
+Singleton {
+	id: root
+
+	readonly property bool enabled: Config.lyrics
+
+	// Whether the overlay is up. Nothing is fetched while it is not.
+	property bool shown: Persist.get("lyricsShown", false)
+
+	function toggle() {
+		root.shown = !root.shown;
+		Persist.set("lyricsShown", root.shown);
+	}
+
+	// The player that is playing, else one that is paused on something.
+	readonly property var player: {
+		const all = Mpris.players.values;
+		return all.find(p => p.isPlaying)
+			?? all.find(p => p.playbackState === MprisPlaybackState.Paused && p.trackTitle !== "")
+			?? null;
+	}
+
+	readonly property string title: root.player?.trackTitle ?? ""
+	readonly property string artist: root.player?.trackArtist ?? ""
+	readonly property real length: root.player?.lengthSupported ? root.player.length : 0
+
+	// Length is left out on purpose: a browser often reports it a moment
+	// after the title, and that should not count as a second track.
+	readonly property string key: root.title === "" ? "" : (root.artist + "\u0001" + root.title).toLowerCase()
+
+	// idle · searching · synced · plain · instrumental · missing · error
+	property string status: "idle"
+
+	// [{ time, text }] in seconds, sorted. time is -1 throughout for plain lyrics.
+	property var lines: []
+
+	// Index into lines of the one being sung. Stays 0 for untimed lyrics.
+	property int index: 0
+
+	// Seconds added to the player's position for this track: positive brings
+	// the lyrics sooner. Remembered per song.
+	property real offset: 0
+
+	// What lrclib matched, for the header: "Artist — Title".
+	property string matched: ""
+
+	readonly property bool synced: root.status === "synced"
+
+	// ---- following the track ----
+
+	onKeyChanged: settle.restart()
+	onShownChanged: if (root.shown) settle.restart()
+	onEnabledChanged: settle.restart()
+
+	// Waits for the metadata to stop arriving piecemeal before looking it up.
+	Timer {
+		id: settle
+
+		interval: 700
+		onTriggered: root.load(false)
+	}
+
+	// The position is worked out by Quickshell from the last one the player
+	// reported, so reading it is free; nothing is asked of the player here.
+	Timer {
+		interval: 120
+		repeat: true
+		running: root.shown && root.synced && (root.player?.isPlaying ?? false)
+		triggeredOnStart: true
+		onTriggered: root.follow()
+	}
+
+	// A seek while paused does not start the timer above.
+	Connections {
+		target: root.player
+		ignoreUnknownSignals: true
+
+		function onPositionChanged() { root.follow(); }
+	}
+
+	// Untimed lyrics are left alone: guessing the line from how far through
+	// the track we are drifts at the first intro or solo, and a wrong line
+	// lit up is worse than none.
+	function follow() {
+		if (!root.player || !root.synced || root.lines.length === 0) return;
+		const position = (root.player.positionSupported ? root.player.position : 0) + root.offset;
+		let next = 0;
+		let low = 0;
+		let high = root.lines.length - 1;
+		while (low <= high) {
+			const mid = (low + high) >> 1;
+			if (root.lines[mid].time <= position) { next = mid; low = mid + 1; }
+			else high = mid - 1;
+		}
+		if (next !== root.index) root.index = next;
+	}
+
+	function nudge(seconds: real) {
+		if (root.key === "") return;
+		root.offset = Math.round((root.offset + seconds) * 100) / 100;
+		const entry = root.cached(root.key);
+		if (entry) {
+			entry.offset = root.offset;
+			root.remember(root.key, entry);
+		}
+		root.follow();
+	}
+
+	// ---- looking up ----
+
+	property int generation: 0
+
+	function load(force: bool) {
+		root.generation++;
+		root.index = 0;
+		root.lines = [];
+		root.matched = "";
+		root.offset = 0;
+
+		if (!root.enabled || root.key === "") { root.status = "idle"; return; }
+
+		const entry = force ? null : root.cached(root.key);
+		const stale = entry && entry.status === "missing" && Date.now() - entry.at > root.missLife;
+		if (entry && !stale) { root.apply(entry); return; }
+
+		// Not shown: leave it until it is, rather than sending every track
+		// that plays to lrclib for nothing.
+		if (!root.shown) { root.status = "idle"; return; }
+
+		root.status = "searching";
+		root.search(root.generation);
+	}
+
+	function apply(entry) {
+		root.offset = entry.offset ?? 0;
+		root.matched = entry.matched ?? "";
+		if (entry.synced) {
+			root.lines = root.parse(entry.synced);
+			root.status = root.lines.length > 0 ? "synced" : "missing";
+		} else if (entry.plain) {
+			root.lines = entry.plain.split(/\r?\n/).map(l => l.trim())
+				.filter((l, i, all) => l !== "" || (i > 0 && all[i - 1] !== ""))
+				.map(l => ({ time: -1, text: l }));
+			root.status = "plain";
+		} else {
+			root.status = entry.status === "instrumental" ? "instrumental" : "missing";
+		}
+		root.follow();
+	}
+
+	// One lookup is a few requests, tried in turn until one has timed
+	// lyrics for a recording about as long as this one. Untimed lyrics are
+	// kept as a fallback in case nothing better turns up.
+	function search(token: int) {
+		const steps = [];
+		for (const c of root.candidates(root.title, root.artist)) {
+			steps.push({ params: ["track_name=" + c.track, "artist_name=" + c.artist], want: c.track, strict: false });
+		}
+		const bare = root.cleanTitle(root.title);
+		const split = bare.split(/\s+[-–—]\s+/);
+		for (const part of (split.length === 2 ? [split[1], split[0], bare] : [bare])) {
+			steps.push({ params: ["q=" + part], want: part, strict: true });
+		}
+
+		const job = { token: token, steps: steps, best: null, failed: false, key: root.key, length: root.length };
+		root.step(job);
+	}
+
+	function step(job) {
+		if (job.token !== root.generation) return;
+
+		const next = job.steps.shift();
+		if (!next || (job.best?.syncedLyrics && job.best.score < 10)) { root.finish(job); return; }
+
+		const command = ["curl", "-sS", "--max-time", "10",
+			"-A", "quickshell-lyrics (personal desktop widget)",
+			"-G", "https://lrclib.net/api/search"];
+		for (const p of next.params) command.push("--data-urlencode", p);
+
+		request.createObject(root, {
+			command: command,
+			handle: text => {
+				let results = null;
+				try { results = JSON.parse(text); } catch (err) {}
+				if (!Array.isArray(results)) job.failed = true;
+				else {
+					const pick = root.pick(results, next.want, next.strict, job.length);
+					if (pick && (!job.best || pick.score < job.best.score)) job.best = pick;
+				}
+				root.step(job);
+			}
+		});
+	}
+
+	function finish(job) {
+		const best = job.best;
+		if (!best && job.failed) {
+			root.status = "error";
+			retry.restart();
+			return;
+		}
+
+		const entry = {
+			at: Date.now(),
+			status: !best ? "missing" : best.instrumental && !best.syncedLyrics && !best.plainLyrics ? "instrumental" : "found",
+			synced: best?.syncedLyrics ?? "",
+			plain: best?.syncedLyrics ? "" : (best?.plainLyrics ?? ""),
+			matched: best ? (best.artistName + " — " + best.trackName) : "",
+			offset: 0
+		};
+		root.remember(job.key, entry);
+		if (job.key === root.key) root.apply(entry);
+	}
+
+	// The closest recording by length, timed lyrics first. Anything far off
+	// in length is another recording — a live take, an extended mix — and
+	// its timings would be no use.
+	function pick(results, want: string, strict: bool, length: real): var {
+		let best = null;
+		for (const r of results) {
+			if (!r.syncedLyrics && !r.plainLyrics && !r.instrumental) continue;
+			const diff = length > 0 && r.duration ? Math.abs(r.duration - length) : 0;
+			if (diff > 45) continue;
+			if (strict && !root.similar(r.trackName, want)) continue;
+			const score = diff + (r.syncedLyrics ? 0 : 20) + (r.instrumental ? 30 : 0);
+			if (!best || score < best.score) best = Object.assign({ score: score }, r);
+		}
+		return best;
+	}
+
+	Timer {
+		id: retry
+
+		interval: 30000
+		onTriggered: if (root.status === "error" && root.shown) root.load(false)
+	}
+
+	Component {
+		id: request
+
+		Process {
+			id: proc
+
+			property var handle
+
+			running: true
+
+			stdout: StdioCollector {
+				onStreamFinished: proc.handle(text)
+			}
+
+			onExited: proc.destroy(1000)
+		}
+	}
+
+	// ---- tidying what players report ----
+	//
+	// Spotify sends clean metadata. YouTube sends whatever the uploader typed:
+	// "Artist - Song (Official Video) [4K]" from a channel called "ArtistVEVO",
+	// or "Song | Artist | Film" from a label's channel.
+
+	function cleanArtist(name: string): string {
+		return (name ?? "")
+			.replace(/\s*-\s*Topic$/i, "")
+			.replace(/VEVO$/, "")
+			.replace(/\s+(official|music)$/i, "")
+			.trim();
+	}
+
+	function cleanTitle(name: string): string {
+		const noise = "official|video|audio|lyric|visuali[sz]er|music|hd|hq|4k|mv|m/v|full song|remaster|explicit"
+			+ "|clean|version|from|feat|ft\\.|prod|teaser|trailer|out now|color coded|letra|slowed|reverb|sped";
+		return (name ?? "")
+			.replace(new RegExp("\\s*[\\(\\[\\{【][^\\)\\]\\}】]*(" + noise + ")[^\\)\\]\\}】]*[\\)\\]\\}】]", "gi"), "")
+			.replace(/\s*\[[^\]]*\]/g, "")
+			.replace(/^(full song|full video|video song|lyrical|lyric video|lyrics)\s*[:\-–]\s*/i, "")
+			.split(/\s+[|｜]\s*|\s+\/\/\s+/)[0]
+			.replace(/\s+(ft\.?|feat\.?|featuring)\s.*$/i, "")
+			.replace(/\s+[-–—]\s+[^-–—]*\b(remaster(ed)?|live|edit|version|mix|mono|stereo|from|bonus|demo|acoustic|official|video|audio|lyrics?)\b.*$/i, "")
+			.replace(/["“”]/g, "")
+			.replace(/\s+/g, " ")
+			.trim();
+	}
+
+	// (track, artist) pairs to try, most likely first.
+	function candidates(title: string, artist: string): var {
+		const track = root.cleanTitle(title);
+		const who = root.cleanArtist(artist);
+		const out = [];
+		const add = (t, a) => {
+			if (t && !out.some(c => c.track === t && c.artist === a)) out.push({ track: t, artist: a });
+		};
+
+		const parts = track.split(/\s+[-–—]\s+/);
+		if (parts.length === 2) {
+			// "Artist - Song", unless the channel's name is on the right.
+			if (root.similar(parts[1], who)) add(parts[0], who);
+			else add(parts[1], parts[0]);
+		}
+		add(track, who);
+
+		// "A, B & C" is often filed under A alone.
+		const first = who.split(/\s*(,|&| x | and )\s*/i)[0];
+		if (first !== who) add(out[0]?.track ?? track, first);
+
+		return out;
+	}
+
+	function similar(a: string, b: string): bool {
+		const norm = s => (s ?? "").toLowerCase().replace(/[\s.,'’"!?()\[\]\-–—_:;&/]/g, "");
+		const x = norm(a);
+		const y = norm(b);
+		return x !== "" && y !== "" && (x.includes(y) || y.includes(x));
+	}
+
+	// ---- LRC ----
+
+	function parse(lrc: string): var {
+		const out = [];
+		let shift = 0;
+		for (const raw of lrc.split(/\r?\n/)) {
+			const tag = raw.match(/^\[offset:\s*([+-]?\d+)\s*\]/i);
+			if (tag) { shift = Number(tag[1]) / 1000; continue; }
+
+			const times = [];
+			let rest = raw;
+			let m;
+			while ((m = rest.match(/^\[(\d+):(\d+(?:[.:]\d+)?)\]/))) {
+				times.push(Number(m[1]) * 60 + Number(m[2].replace(":", ".")));
+				rest = rest.slice(m[0].length);
+			}
+			// Word-level timings, which some entries carry, are not used.
+			const text = rest.replace(/<\d+:\d+(?:\.\d+)?>/g, "").trim();
+			for (const t of times) out.push({ time: Math.max(0, t - shift), text: text });
+		}
+		out.sort((a, b) => a.time - b.time);
+
+		const lines = [];
+		for (const line of out) {
+			const text = line.text || "♪";
+			if (text === "♪" && lines.length && lines[lines.length - 1].text === "♪") continue;
+			lines.push({ time: line.time, text: text });
+		}
+		// Something to sit on through the intro.
+		if (lines.length && lines[0].time > 1.5 && lines[0].text !== "♪") lines.unshift({ time: 0, text: "♪" });
+		return lines;
+	}
+
+	// ---- cache ----
+	//
+	// One JSON file of { key: entry }, read on first use. Kept to the most
+	// recent few hundred songs, which is well under a megabyte.
+
+	readonly property int cacheLimit: 400
+	readonly property real missLife: 3 * 24 * 3600 * 1000
+
+	property var entries
+
+	function cached(key: string): var {
+		if (root.entries === undefined) {
+			try {
+				const parsed = JSON.parse(cache.text().trim() || "{}");
+				root.entries = (parsed && typeof parsed === "object") ? parsed : ({});
+			} catch (err) {
+				root.entries = ({});
+			}
+		}
+		return root.entries[key] ?? null;
+	}
+
+	function remember(key: string, entry) {
+		root.cached(key);
+		root.entries[key] = entry;
+
+		const keys = Object.keys(root.entries);
+		if (keys.length > root.cacheLimit) {
+			keys.sort((a, b) => root.entries[a].at - root.entries[b].at);
+			for (const old of keys.slice(0, keys.length - root.cacheLimit)) delete root.entries[old];
+		}
+		cache.setText(JSON.stringify(root.entries));
+	}
+
+	FileView {
+		id: cache
+
+		path: Quickshell.cachePath("lyrics.json")
+		blockLoading: true
+		printErrors: false
+	}
+
+	IpcHandler {
+		target: "lyrics"
+
+		function toggle(): void { root.toggle(); }
+		function on(): void { if (!root.shown) root.toggle(); }
+		function off(): void { if (root.shown) root.toggle(); }
+
+		// Ignores the cache and asks lrclib again.
+		function refetch(): void { root.load(true); }
+
+		// For lyrics that trail the singer, and for ones that run ahead.
+		function sooner(): void { root.nudge(0.25); }
+		function delay(): void { root.nudge(-0.25); }
+
+		function state(): string {
+			return root.status
+				+ (root.matched ? " · " + root.matched : "")
+				+ " · line " + root.index + "/" + root.lines.length
+				+ (root.offset ? " · offset " + root.offset + "s" : "");
+		}
+	}
+}

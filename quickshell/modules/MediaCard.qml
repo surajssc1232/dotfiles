@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell.Services.Mpris
 import qs
+import qs.services
 import qs.widgets
 
 // What is playing: artwork, track, progress and controls. Click it to open up
@@ -241,6 +242,14 @@ Item {
 				hint: "Super+Alt+→"
 				enabled: root.player?.canGoNext ?? false
 				onTriggered: root.player.next()
+			}
+
+			Control {
+				icon: Config.icons.lyrics
+				hint: "Super+Alt+Y"
+				visible: Config.lyrics
+				accent: Lyrics.shown
+				onTriggered: Lyrics.toggle()
 			}
 		}
 	}
