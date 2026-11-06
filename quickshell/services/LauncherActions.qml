@@ -25,20 +25,19 @@ Singleton {
 			run: () => Lock.lock()
 		}),
 		({
-			id: "shot-region", when: Config.screenshot, name: "Screenshot a region", detail: "Super+Shift+S · Shift+Print",
+			id: "shot-region", name: "Screenshot a region", detail: "Super+Shift+S · Shift+Print",
 			glyph: Config.icons.crop,
-			run: () => Shot.start("region", 1)
+			run: () => root.niri("screenshot")
 		}),
 		({
-			id: "shot-full", when: Config.screenshot, name: "Screenshot the screen", detail: "Super+Ctrl+S · Print",
+			id: "shot-full", name: "Screenshot the screen", detail: "Super+Ctrl+S · Print",
 			glyph: Config.icons.camera,
-			run: () => Shot.start("full", 1)
+			run: () => root.niri("screenshot-screen")
 		}),
 		({
-			// The shell's capture has no window mode, so this one is niri's.
-			id: "shot-window", when: Config.screenshot, name: "Screenshot a window", detail: "Super+Alt+S · Super+Print",
+			id: "shot-window", name: "Screenshot a window", detail: "Super+Alt+S · Super+Print",
 			glyph: Config.icons.camera,
-			run: () => root.spawn(["niri", "msg", "action", "screenshot-window"])
+			run: () => root.niri("screenshot-window")
 		}),
 		({
 			id: "shot-delay", when: Config.screenshot, name: "Screenshot in 5 seconds", detail: "Super+Shift+Print",
@@ -155,8 +154,8 @@ Singleton {
 		})
 	]
 
-	// `when: false` hides an entry without deleting it — the screenshot
-	// commands go away with Config.screenshot, rather than sitting in the list
+	// `when: false` hides an entry without deleting it — the delayed
+	// screenshot goes away with Config.screenshot, rather than sitting in the list
 	// offering something that cannot happen.
 	function enabled(list): var {
 		return list.filter(a => a.when === undefined || a.when);
@@ -169,6 +168,12 @@ Singleton {
 		const n = Wallpaper.count;
 		if (n === 0) return;
 		Wallpaper.set(Wallpaper.pathAt(Math.floor(Math.random() * n)));
+	}
+
+	// niri's own screenshots, the same ones the keybinds take, so they work
+	// with the shell's capture (Config.screenshot) switched off.
+	function niri(action) {
+		root.spawn(["niri", "msg", "action", action]);
 	}
 
 	function spawn(argv) {

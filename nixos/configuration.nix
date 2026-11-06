@@ -482,7 +482,9 @@
     description = "Publish keyd layer state for the status bar";
     after = [ "keyd.service" ];
     bindsTo = [ "keyd.service" ];
-    wantedBy = [ "multi-user.target" ];
+    # bindsTo stops this with keyd but never starts it again; wanting it from
+    # keyd.service brings it back whenever keyd is (re)started.
+    wantedBy = [ "multi-user.target" "keyd.service" ];
 
     serviceConfig = {
       Restart = "always";
@@ -614,11 +616,12 @@
             f10 = "mail";
             f11 = "file";
             f12 = "calc";
-            # Fn+Esc sends Esc and then "wakeup". The chord catches both so
-            # the toggle doesn't also flip caps lock; a lone wakeup, when the
-            # two land too far apart, still toggles.
-            "esc+wakeup" = "toggle(fkeys)";
-            wakeup = "toggle(fkeys)";
+          };
+          # Ctrl+Esc flips the row to real F1-F12 and back. Fn+Esc can't do
+          # it: with keyd grabbing the receiver it arrives as a bare capslock,
+          # the same as the caps key. Mod+Esc is niri's shortcut inhibit.
+          control = {
+            esc = "toggle(fkeys)";
           };
           fkeys = {
             f1 = "f1";
