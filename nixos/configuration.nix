@@ -310,6 +310,15 @@
 
   services.upower.ignoreLid = true;
 
+  # Wake from suspend on a Wi-Fi magic packet (see ~/wake)
+  systemd.services.wowlan = {
+    description = "Enable Wake-on-WLAN";
+    after = [ "network.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig.Type = "oneshot";
+    serviceConfig.ExecStart = "${pkgs.iw}/bin/iw phy0 wowlan enable magic-packet";
+  };
+
   # Add these lines AFTER the boot.loader section
   boot.kernelParams = [
     "video=1920x1080"
@@ -547,100 +556,102 @@
     };
   };
 
-  services.keyd = let
-    main = {
-      capslock = "overload(vim, esc)";
-      esc = "capslock";
-      rightalt = "toggle(vim)";
-      # The new keyboard has no right alt; its Copilot key sits there
-      # instead and sends shift+meta+f23 as one press.
-      "leftshift+leftmeta+f23" = "toggle(vim)";
-    };
-    layers = {
-      vim = {
-        h = "left";
-        "[" = "{";
-        "]" = "}";
-        j = "down";
-        k = "up";
-        "C-w" = "C-w";
-        "'" = ''"'';
-        ";" = ":";
-        "9" = "(";
-        "0" = ")";
-        "8" = "*";
-        "\\" = "|";
-        "," = "<";
-        "." = ">";
-        "C-l" = "C-l";
-        l = "right";
-        u = "esc";
-        o = "A-left";
-        p = "A-right";
-        q = "C-f1";
-        w = "C-f2";
-        e = "C-f3";
+  services.keyd =
+    let
+      main = {
+        capslock = "overload(vim, esc)";
+        esc = "capslock";
+        rightalt = "toggle(vim)";
+        # The new keyboard has no right alt; its Copilot key sits there
+        # instead and sends shift+meta+f23 as one press.
+        "leftshift+leftmeta+f23" = "toggle(vim)";
       };
-      bloodyroar = {
-        i = "up";
-        j = "left";
-        k = "down";
-        l = "right";
+      layers = {
+        vim = {
+          h = "left";
+          "[" = "{";
+          "]" = "}";
+          j = "down";
+          k = "up";
+          "C-w" = "C-w";
+          "'" = ''"'';
+          ";" = ":";
+          "9" = "(";
+          "0" = ")";
+          "8" = "*";
+          "\\" = "|";
+          "," = "<";
+          "." = ">";
+          "C-l" = "C-l";
+          l = "right";
+          u = "esc";
+          o = "A-left";
+          p = "A-right";
+          q = "C-f1";
+          w = "C-f2";
+          e = "C-f3";
+        };
+        bloodyroar = {
+          i = "up";
+          j = "left";
+          k = "down";
+          l = "right";
+        };
       };
-    };
-  in {
-    enable = true;
-    keyboards = {
-      default = {
-        ids = [ "*" ];
-        settings = layers // { inherit main; };
-      };
+    in
+    {
+      enable = true;
+      keyboards = {
+        default = {
+          ids = [ "*" ];
+          settings = layers // { inherit main; };
+        };
 
-      # The HS6209 wireless keyboard has no Fn lock, so its media row only
-      # works with Fn held. This makes the icons the default and keeps real
-      # F1-F12 one toggle away. A specific id wins over "*", so this config
-      # carries the shared layers too. k: keeps it off the receiver's mouse.
-      wireless = {
-        ids = [ "k:32c2:0018" ];
-        settings = layers // {
-          main = main // {
-            f1 = "config";
-            f2 = "volumedown";
-            f3 = "volumeup";
-            f4 = "mute";
-            f5 = "previoussong";
-            f6 = "nextsong";
-            f7 = "playpause";
-            f8 = "stopcd";
-            f9 = "homepage";
-            f10 = "mail";
-            f11 = "file";
-            f12 = "calc";
-          };
-          # Ctrl+Caps (the caps key is Esc here) flips the row to real
-          # F1-F12 and back. Fn+Caps can't: the keyboard sends it as a bare
-          # capslock, same as caps alone.
-          control = {
-            capslock = "toggle(fkeys)";
-          };
-          fkeys = {
-            f1 = "f1";
-            f2 = "f2";
-            f3 = "f3";
-            f4 = "f4";
-            f5 = "f5";
-            f6 = "f6";
-            f7 = "f7";
-            f8 = "f8";
-            f9 = "f9";
-            f10 = "f10";
-            f11 = "f11";
-            f12 = "f12";
+        # The HS6209 wireless keyboard has no Fn lock, so its media row only
+        # works with Fn held. This makes the icons the default and keeps real
+        # F1-F12 one toggle away. A specific id wins over "*", so this config
+        # carries the shared layers too. k: keeps it off the receiver's mouse.
+        wireless = {
+          ids = [ "k:32c2:0018" ];
+          settings = layers // {
+            main = main // {
+              f1 = "config";
+              f2 = "volumedown";
+              f3 = "volumeup";
+              f4 = "mute";
+              f5 = "previoussong";
+              f6 = "nextsong";
+              f7 = "playpause";
+              f8 = "stopcd";
+              f9 = "homepage";
+              f10 = "mail";
+              f11 = "file";
+              f12 = "calc";
+            };
+            # Ctrl+Caps (the caps key is Esc here) flips the row to real
+            # F1-F12 and back. Fn+Caps can't: the keyboard sends it as a bare
+            # capslock, same as caps alone.
+            control = {
+              capslock = "toggle(fkeys)";
+            };
+            fkeys = {
+              f1 = "f1";
+              f2 = "f2";
+              f3 = "f3";
+              f4 = "f4";
+              f5 = "f5";
+              f6 = "f6";
+              f7 = "f7";
+              f8 = "f8";
+              f9 = "f9";
+              f10 = "f10";
+              f11 = "f11";
+              f12 = "f12";
+            };
           };
         };
       };
     };
-  };
 
   programs.gamemode.enable = true;
   services.udev.packages = [ pkgs.game-devices-udev-rules ];
@@ -857,6 +868,16 @@
   # Bluetooth keyboard can wake it with the lid closed.
   services.udev.extraRules = ''
     ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="8087", ATTR{idProduct}=="0aaa", ATTR{power/wakeup}="enabled"
+  '';
+
+  # The udev rule above gets reset to "disabled" after boot, so re-enable
+  # Bluetooth wakeup right before every suspend.
+  powerManagement.powerDownCommands = ''
+    for d in /sys/bus/usb/devices/*; do
+      if [ "$(cat $d/idVendor 2>/dev/null)" = 8087 ] && [ "$(cat $d/idProduct 2>/dev/null)" = 0aaa ]; then
+        echo enabled > $d/power/wakeup
+      fi
+    done
   '';
 
   hardware.bluetooth = {
