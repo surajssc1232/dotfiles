@@ -545,49 +545,94 @@
     };
   };
 
-  services.keyd = {
+  services.keyd = let
+    main = {
+      capslock = "overload(vim, esc)";
+      esc = "capslock";
+      rightalt = "toggle(vim)";
+      # The new keyboard has no right alt; its Copilot key sits there
+      # instead and sends shift+meta+f23 as one press.
+      "leftshift+leftmeta+f23" = "toggle(vim)";
+    };
+    layers = {
+      vim = {
+        h = "left";
+        "[" = "{";
+        "]" = "}";
+        j = "down";
+        k = "up";
+        "C-w" = "C-w";
+        "'" = ''"'';
+        ";" = ":";
+        "9" = "(";
+        "0" = ")";
+        "8" = "*";
+        "\\" = "|";
+        "," = "<";
+        "." = ">";
+        "C-l" = "C-l";
+        l = "right";
+        u = "esc";
+        o = "A-left";
+        p = "A-right";
+        q = "C-f1";
+        w = "C-f2";
+        e = "C-f3";
+      };
+      bloodyroar = {
+        i = "up";
+        j = "left";
+        k = "down";
+        l = "right";
+      };
+    };
+  in {
     enable = true;
     keyboards = {
       default = {
         ids = [ "*" ];
-        settings = {
-          main = {
-            capslock = "overload(vim, esc)";
-            esc = "capslock";
-            rightalt = "toggle(vim)";
-            # The new keyboard has no right alt; its Copilot key sits there
-            # instead and sends shift+meta+f23 as one press.
-            "leftshift+leftmeta+f23" = "toggle(vim)";
+        settings = layers // { inherit main; };
+      };
+
+      # The HS6209 wireless keyboard has no Fn lock, so its media row only
+      # works with Fn held. This makes the icons the default and keeps real
+      # F1-F12 one toggle away. A specific id wins over "*", so this config
+      # carries the shared layers too. k: keeps it off the receiver's mouse.
+      wireless = {
+        ids = [ "k:32c2:0018" ];
+        settings = layers // {
+          main = main // {
+            f1 = "config";
+            f2 = "volumedown";
+            f3 = "volumeup";
+            f4 = "mute";
+            f5 = "previoussong";
+            f6 = "nextsong";
+            f7 = "playpause";
+            f8 = "stopcd";
+            f9 = "homepage";
+            f10 = "mail";
+            f11 = "file";
+            f12 = "calc";
+            # Fn+Esc sends Esc and then "wakeup". The chord catches both so
+            # the toggle doesn't also flip caps lock; a lone wakeup, when the
+            # two land too far apart, still toggles.
+            "esc+wakeup" = "toggle(fkeys)";
+            wakeup = "toggle(fkeys)";
           };
-          vim = {
-            h = "left";
-            "[" = "{";
-            "]" = "}";
-            j = "down";
-            k = "up";
-            "C-w" = "C-w";
-            "'" = ''"'';
-            ";" = ":";
-            "9" = "(";
-            "0" = ")";
-            "8" = "*";
-            "\\" = "|";
-            "," = "<";
-            "." = ">";
-            "C-l" = "C-l";
-            l = "right";
-            u = "esc";
-            o = "A-left";
-            p = "A-right";
-            q = "C-f1";
-            w = "C-f2";
-            e = "C-f3";
-          };
-          bloodyroar = {
-            i = "up";
-            j = "left";
-            k = "down";
-            l = "right";
+          fkeys = {
+            f1 = "f1";
+            f2 = "f2";
+            f3 = "f3";
+            f4 = "f4";
+            f5 = "f5";
+            f6 = "f6";
+            f7 = "f7";
+            f8 = "f8";
+            f9 = "f9";
+            f10 = "f10";
+            f11 = "f11";
+            f12 = "f12";
           };
         };
       };
@@ -748,6 +793,7 @@
     winetricks
     quickshell
     playerctl
+    gnome-calculator
     gcc
     gdb
     zig

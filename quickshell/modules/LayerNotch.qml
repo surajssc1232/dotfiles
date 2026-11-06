@@ -5,8 +5,8 @@ import qs
 import qs.services
 import qs.widgets
 
-// A small card in the bottom-right corner for as long as a keyd layer is held.
-// It is the only layer indicator: it sits on the overlay layer, above
+// A small card in the bottom-right corner for as long as a keyd layer is held
+// or caps lock is on. It is the only layer indicator: it sits on the overlay layer, above
 // fullscreen windows, so a sticky vim layer can never be left on unseen even
 // under a video. It takes no input, so nothing under it is lost.
 PanelWindow {
@@ -15,8 +15,15 @@ PanelWindow {
 	required property var modelData
 	screen: modelData
 
+	// Layer names as the card shows them, where the raw name reads badly.
+	readonly property var titles: ({ fkeys: "F1–F12" })
+	readonly property var names: Keyd.layers.map(l => root.titles[l] ?? l)
+		.concat(CapsLock.on ? ["caps"] : [])
+	readonly property bool active: names.length > 0
+	readonly property string label: names.join(" · ")
+
 	// Stays mapped until the card has finished fading out.
-	visible: Keyd.active || card.opacity > 0
+	visible: root.active || card.opacity > 0
 
 	anchors {
 		bottom: true
@@ -44,8 +51,8 @@ PanelWindow {
 		width: root.implicitWidth
 		height: root.implicitHeight
 
-		opacity: Keyd.active ? 1 : 0
-		y: Keyd.active ? 0 : 8
+		opacity: root.active ? 1 : 0
+		y: root.active ? 0 : 8
 
 		Behavior on opacity {
 			NumberAnimation { duration: 160; easing.type: Easing.OutQuad }
@@ -77,13 +84,13 @@ PanelWindow {
 				font.bold: true
 
 				Connections {
-					target: Keyd
+					target: root
 					function onLabelChanged() {
-						if (Keyd.label.length > 0) name.shown = Keyd.label;
+						if (root.label.length > 0) name.shown = root.label;
 					}
 				}
 
-				Component.onCompleted: shown = Keyd.label
+				Component.onCompleted: shown = root.label
 			}
 		}
 	}

@@ -25,14 +25,20 @@ Singleton {
 			run: () => Lock.lock()
 		}),
 		({
-			id: "shot-region", when: Config.screenshot, name: "Screenshot a region", detail: "Shift+Print",
+			id: "shot-region", when: Config.screenshot, name: "Screenshot a region", detail: "Super+Shift+S · Shift+Print",
 			glyph: Config.icons.crop,
 			run: () => Shot.start("region", 1)
 		}),
 		({
-			id: "shot-full", when: Config.screenshot, name: "Screenshot the screen", detail: "Super+Print",
+			id: "shot-full", when: Config.screenshot, name: "Screenshot the screen", detail: "Super+Ctrl+S · Print",
 			glyph: Config.icons.camera,
 			run: () => Shot.start("full", 1)
+		}),
+		({
+			// The shell's capture has no window mode, so this one is niri's.
+			id: "shot-window", when: Config.screenshot, name: "Screenshot a window", detail: "Super+Alt+S · Super+Print",
+			glyph: Config.icons.camera,
+			run: () => root.spawn(["niri", "msg", "action", "screenshot-window"])
 		}),
 		({
 			id: "shot-delay", when: Config.screenshot, name: "Screenshot in 5 seconds", detail: "Super+Shift+Print",

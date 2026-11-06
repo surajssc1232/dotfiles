@@ -484,6 +484,13 @@ binds {
     XF86AudioPlay allow-when-locked=true { spawn "playerctl" "play-pause"; }
     XF86AudioNext allow-when-locked=true { spawn "playerctl" "next"; }
     XF86AudioPrev allow-when-locked=true { spawn "playerctl" "previous"; }
+    XF86AudioStop allow-when-locked=true { spawn "playerctl" "stop"; }
+    // The wireless keyboard's launcher keys, by their printed icons.
+    XF86Tools      hotkey-overlay-title="Music" { spawn "foot" "ytermusic"; }
+    XF86HomePage   hotkey-overlay-title="Browser" { spawn "helium"; }
+    XF86Mail       hotkey-overlay-title="Mail" { spawn "helium" "https://mail.google.com"; }
+    XF86Explorer   hotkey-overlay-title="Files" { spawn "nemo"; }
+    XF86Calculator hotkey-overlay-title="Calculator" { spawn "gnome-calculator"; }
     XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
     XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
 
@@ -723,6 +730,10 @@ binds {
     Print { screenshot-screen; }
     Shift+Print { screenshot; }
     Mod+Print { screenshot-window; }
+    // The wireless keyboard has no Print key.
+    Mod+Shift+S hotkey-overlay-title="Screenshot Region" { screenshot; }
+    Mod+Ctrl+S  hotkey-overlay-title="Screenshot Screen" { screenshot-screen; }
+    Mod+Alt+S   hotkey-overlay-title="Screenshot Window" { screenshot-window; }
 
     // Applications such as remote-desktop clients and software KVM switches may
     // request that niri stops processing the keyboard shortcuts defined here
