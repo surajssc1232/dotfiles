@@ -72,7 +72,57 @@ Singleton {
 				? Math.round(device.battery * 100) + "%"
 				: "connected";
 		}
+		const failed = root.failures[device.address];
+		if (failed) return failed;
 		return root.isKnown(device) ? "paired" : "";
+	}
+
+	// ---- failures ----
+	//
+	// BlueZ reports a failed connect or pair only as the device quietly
+	// falling back to where it was. Watching each device's transitions turns
+	// that into something a row can say, until the next attempt clears it.
+	property var failures: ({})
+
+	function setFailure(address: string, text: string) {
+		const next = Object.assign({}, root.failures);
+		if (text) next[address] = text;
+		else delete next[address];
+		root.failures = next;
+	}
+
+	Instantiator {
+		model: root.all
+
+		delegate: Connections {
+			required property var modelData
+			property bool wasConnecting: false
+			property bool wasPairing: false
+
+			target: modelData
+
+			function onStateChanged() {
+				const s = modelData.state;
+				if (s === BluetoothDeviceState.Connecting) {
+					wasConnecting = true;
+				} else if (s === BluetoothDeviceState.Connected) {
+					wasConnecting = false;
+					root.setFailure(modelData.address, "");
+				} else if (s === BluetoothDeviceState.Disconnected && wasConnecting) {
+					wasConnecting = false;
+					root.setFailure(modelData.address, "couldn't connect");
+				}
+			}
+
+			function onPairingChanged() {
+				if (modelData.pairing) {
+					wasPairing = true;
+				} else if (wasPairing) {
+					wasPairing = false;
+					root.setFailure(modelData.address, modelData.paired ? "" : "pairing failed");
+				}
+			}
+		}
 	}
 
 	function inFlight(device): bool {
@@ -84,6 +134,7 @@ Singleton {
 	// One click does the obvious thing for whatever state the device is in.
 	function activate(device) {
 		if (root.inFlight(device)) return;
+		root.setFailure(device.address, "");
 		if (device.connected) {
 			device.disconnect();
 		} else if (root.isKnown(device)) {
@@ -207,6 +258,12 @@ Singleton {
 		if (root.request?.kind === "display"
 				&& root.connectedDevices.some(d => d.address === root.request.address && d.paired))
 			root.request = null;
+	}
+
+	// A soft block (airplane mode, the rfkill key) is the user's to lift; a
+	// hard block is a physical switch and this can do nothing about it.
+	function unblock() {
+		Quickshell.execDetached(["rfkill", "unblock", "bluetooth"]);
 	}
 
 	function setEnabled(on: bool) {

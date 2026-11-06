@@ -68,7 +68,7 @@ Singleton {
 		calc: "Expression", window: "Open windows",
 		command: "Shell commands", clip: "Clipboard history",
 		file: "Find a file under ~", emoji: "Search emoji by name",
-		unit: "Failed systemd units", bt: "Connect a device",
+		unit: "Failed systemd units", bt: "Device, or on / off / scan",
 		controls: "Volume, mic and brightness", help: "Modes"
 	})
 
@@ -363,7 +363,10 @@ Singleton {
 	property string anchorTerm: ""
 	property string anchorMode: ""
 
-	onIndexChanged: root.anchorKey = root.results[root.index]?.key ?? ""
+	onIndexChanged: {
+		root.anchorKey = root.results[root.index]?.key ?? "";
+		root.btForgetArmed = "";
+	}
 
 	onResultsChanged: {
 		// A new query really does invalidate the position: a selection made
@@ -468,54 +471,133 @@ Singleton {
 		return rows;
 	}
 
-	// Known devices, connected first — the point of this mode is reconnecting
-	// a headset without opening a panel and aiming at a row.
+	// Known devices first, connected at the top — the point of this mode is
+	// reconnecting a headset without opening a panel and aiming at a row —
+	// then whatever a scan has turned up, then the adapter's own actions.
+	//
+	// Typing filters on name or address; "on", "off", "scan" and "stop" reach
+	// the action rows, so "& off" is a complete sentence.
 	function btRows(needle: string): var {
+		const info = (key, name, detail) => ({
+			kind: "info", key: "bt:" + key, name: name, detail: detail,
+			iconName: "", glyph: Config.icons.bluetooth
+		});
+		const action = (act, name, detail, words) => ({
+			kind: "btAction", key: "bt:act:" + act, btAct: act,
+			name: name, detail: detail, words: words,
+			iconName: "", glyph: Config.icons.bluetooth
+		});
+
 		if (!Bt.available) {
-			return [({
-				kind: "info", key: "bt:none",
-				name: "No Bluetooth adapter",
-				detail: "Nothing to connect to",
-				iconName: "", glyph: Config.icons.bluetooth
-			})];
+			return Bt.present
+				? [info("wait", "Looking for the Bluetooth adapter…", "BlueZ is still starting")]
+				: [info("none", "No Bluetooth adapter", "Nothing to connect to — is bluetooth.service running?")];
+		}
+
+		if (Bt.blocked) {
+			return [action("unblock", "Unblock Bluetooth",
+				"Blocked by rfkill (airplane mode or the wireless key) · enter unblocks", "unblock on")];
+		}
+
+		if (Bt.busy) {
+			return [info("busy", Bt.enabled ? "Turning Bluetooth off…" : "Turning Bluetooth on…", "One moment")];
 		}
 
 		if (!Bt.enabled) {
-			return [({
-				kind: "btEnable", key: "bt:enable",
-				name: "Turn Bluetooth on",
-				detail: "The adapter is switched off",
-				iconName: "", glyph: Config.icons.bluetooth
-			})];
+			return [action("on", "Turn Bluetooth on", "The adapter is switched off · enter turns it on", "on enable")];
 		}
 
-		const rows = [];
-		for (const device of Bt.devices) {
-			if (!Bt.isKnown(device)) continue;
-			const name = Bt.label(device);
-			if (needle && name.toLowerCase().indexOf(needle) === -1) continue;
-			rows.push({
+		const matches = device => !needle
+			|| Bt.label(device).toLowerCase().indexOf(needle) !== -1
+			|| device.address.toLowerCase().indexOf(needle) !== -1;
+
+		const deviceRow = (device, hint) => {
+			const armed = root.btForgetArmed === device.address;
+			const status = Bt.status(device);
+			return {
 				kind: "bt", key: "bt:" + device.address,
-				name: name,
-				detail: device.connected
-					? Bt.status(device) + " · enter disconnects"
-					: Bt.status(device) + " · enter connects",
+				name: Bt.label(device),
+				detail: armed
+					? "press del again to forget this device"
+					: (status ? status + " · " : "") + hint,
 				iconName: "", glyph: Bt.icon(device),
 				device: device
-			});
+			};
+		};
+
+		const rows = [];
+
+		for (const device of Bt.devices) {
+			if (!Bt.isKnown(device) || !matches(device)) continue;
+			const hint = Bt.inFlight(device) ? "please wait"
+				: device.connected ? "enter disconnects · del forgets"
+				: "enter connects · del forgets";
+			rows.push(deviceRow(device, hint));
 		}
 
-		if (rows.length === 0) {
-			rows.push({
-				kind: "info", key: "bt:empty",
-				name: "No paired devices",
-				detail: "Pair one from the Bluetooth panel first",
-				iconName: "", glyph: Config.icons.bluetooth
-			});
+		// Discoveries without a name are mostly phones and beacons broadcasting
+		// rotating addresses; they only clutter the list unless searched for.
+		if (Bt.discovering) {
+			for (const device of Bt.all) {
+				if (Bt.isKnown(device) || !matches(device)) continue;
+				if (!device.name && !device.deviceName && !needle) continue;
+				rows.push(deviceRow(device, Bt.inFlight(device) ? "please wait" : "new · enter pairs"));
+			}
+		}
+
+		if (needle && rows.length === 0) {
+			rows.push(info("nomatch", "No device matches \u201c" + root.term + "\u201d",
+				Bt.discovering ? "Still searching — make sure it is in pairing mode"
+					: "Search to find devices that are not paired yet"));
+		} else if (rows.length === 0) {
+			rows.push(info("empty", Bt.discovering ? "Searching…" : "No paired devices",
+				Bt.discovering ? "Put the device in pairing mode — its light usually blinks fast"
+					: "Search below to pair one"));
+		}
+
+		const actions = [
+			Bt.discovering
+				? action("stop", "Stop searching", "Scanning stops by itself when you leave this mode", "stop scan search")
+				: action("scan", "Search for new devices", "Lists nearby devices in pairing mode", "scan search find pair new"),
+			action("off", "Turn Bluetooth off", "Disconnects everything", "off disable")
+		];
+		for (const row of actions) {
+			if (!needle || row.name.toLowerCase().indexOf(needle) !== -1
+					|| row.words.split(" ").some(w => w.startsWith(needle)))
+				rows.push(row);
 		}
 
 		return rows;
 	}
+
+	// Delete on a device row asks first, because forgetting means pairing it
+	// all over again. Any movement disarms it.
+	property string btForgetArmed: ""
+	onQueryChanged: root.btForgetArmed = ""
+
+	// Enter on a paired, disconnected device keeps the launcher up until it
+	// either connects (and the launcher closes) or fails (and the row says so).
+	property string btWaiting: ""
+
+	Connections {
+		target: Bt
+
+		function onConnectedDevicesChanged() {
+			if (root.btWaiting !== ""
+					&& Bt.connectedDevices.some(d => d.address === root.btWaiting)) {
+				root.btWaiting = "";
+				root.close();
+			}
+		}
+
+		function onFailuresChanged() {
+			if (root.btWaiting !== "" && Bt.failures[root.btWaiting])
+				root.btWaiting = "";
+		}
+	}
+
+	// Scanning is tied to being in this mode, never left running behind it.
+	onModeChanged: if (root.mode !== "bt") Bt.stopDiscovery()
 
 	// Enter restarts; Delete opens the journal, because "why did it fail" is
 	// the question you actually have.
@@ -1126,6 +1208,8 @@ Singleton {
 
 	function close() {
 		root.open = false;
+		root.btWaiting = "";
+		Bt.stopDiscovery();
 		// Cleared on the way out rather than on the way in: clearing at open
 		// time leaves one frame showing the last search before the new one.
 		root.query = "";
@@ -1206,15 +1290,36 @@ Singleton {
 		}
 
 		if (row.kind === "bt") {
-			Bt.activate(row.device);
+			const device = row.device;
+			if (Bt.inFlight(device)) return;
+			const pairing = !Bt.isKnown(device);
+			const connecting = !pairing && !device.connected;
+			Bt.activate(device);
+			if (connecting) {
+				root.btWaiting = device.address;
+				return;
+			}
+			// Pairing may need a code or a yes, and that prompt cannot take the
+			// keyboard while the launcher holds it.
 			root.close();
 			return;
 		}
 
-		// Left open: turning the adapter on is a step towards picking
-		// something, not the thing you came to do.
-		if (row.kind === "btEnable") {
-			Bt.setEnabled(true);
+		// Adapter actions leave the launcher open: they are steps towards
+		// picking a device, not the thing you came to do.
+		if (row.kind === "btAction") {
+			if (row.btAct === "unblock") Bt.unblock();
+			else if (row.btAct === "on") Bt.setEnabled(true);
+			else if (row.btAct === "scan") Bt.setDiscovering(true);
+			else if (row.btAct === "stop") Bt.stopDiscovery();
+			else if (row.btAct === "off") {
+				Bt.setEnabled(false);
+				root.close();
+			}
+			// The query was likely "& on" or "& scan"; the list it unlocks is
+			// what you want to see next.
+			root.query = "&";
+			root.index = 0;
 			return;
 		}
 
@@ -1283,6 +1388,14 @@ Singleton {
 		if (row.kind === "clip") Clipboard.remove(row.text);
 		else if (row.kind === "clipImage") Clipboard.removeImage(row.path);
 		else if (row.kind === "unit") Units.journal(row.entry);
+		else if (row.kind === "bt" && Bt.isKnown(row.device)) {
+			if (root.btForgetArmed === row.device.address) {
+				row.device.forget();
+				root.btForgetArmed = "";
+			} else {
+				root.btForgetArmed = row.device.address;
+			}
+		}
 		else if (row.kind === "run" && row.detail === "Recent")
 			root.forgetCommand(row.command);
 	}
