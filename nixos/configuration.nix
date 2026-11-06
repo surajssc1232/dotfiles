@@ -558,7 +558,6 @@
             # The new keyboard has no right alt; its Copilot key sits there
             # instead and sends shift+meta+f23 as one press.
             "leftshift+leftmeta+f23" = "toggle(vim)";
-            f5 = "macro(C-a C-c)";
           };
           vim = {
             h = "left";
