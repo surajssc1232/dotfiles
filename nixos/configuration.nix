@@ -617,11 +617,11 @@
             f11 = "file";
             f12 = "calc";
           };
-          # Ctrl+Esc flips the row to real F1-F12 and back. Fn+Esc can't do
-          # it: with keyd grabbing the receiver it arrives as a bare capslock,
-          # the same as the caps key. Mod+Esc is niri's shortcut inhibit.
+          # Ctrl+Caps (the caps key is Esc here) flips the row to real
+          # F1-F12 and back. Fn+Caps can't: the keyboard sends it as a bare
+          # capslock, same as caps alone.
           control = {
-            esc = "toggle(fkeys)";
+            capslock = "toggle(fkeys)";
           };
           fkeys = {
             f1 = "f1";
