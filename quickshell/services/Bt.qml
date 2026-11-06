@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Bluetooth
+import Quickshell.Io
 import qs
 
 // Thin layer over Quickshell's BlueZ binding: ordering, labels and the
@@ -91,8 +92,121 @@ Singleton {
 			// BlueZ connects on its own once pairing completes for most
 			// devices; trusting it first stops it asking again next time.
 			device.trusted = true;
+			root.pairingAddress = device.address;
 			device.pair();
 		}
+	}
+
+	// ---- pairing agent ----
+	//
+	// pair() alone is not enough: BlueZ hands the device's "accept pairing?",
+	// "confirm this code" and "type this code" requests to a registered agent,
+	// and with none running most keyboards just time out. bluetoothctl is that
+	// agent here, but it never answers on its own: every request is exposed as
+	// `request` and waits for a choice in BluetoothPrompt.
+	//
+	// request.kind is one of
+	//   "authorize" — device asks to pair, nothing to compare        (yes/no)
+	//   "confirm"   — both sides show request.code; check they match (yes/no)
+	//   "display"   — type request.code on the device, then Enter   (cancel only)
+	//   "pin"       — device wants a PIN/passkey typed here          (text)
+	//   "service"   — paired device asks to use a profile            (yes/no)
+	property var request: null
+
+	// Last device to start pairing from the widget; only used to name the
+	// device in the prompt, never to decide anything.
+	property string pairingAddress: ""
+
+	function requestDevice(): var {
+		return root.all.find(d => d.address === root.pairingAddress && d.pairing)
+			?? root.all.find(d => d.pairing)
+			?? null;
+	}
+
+	function ask(kind: string, code: string) {
+		const device = root.requestDevice();
+		root.request = {
+			kind: kind,
+			code: code,
+			address: device?.address ?? "",
+			name: device ? root.label(device) : "Unknown device",
+		};
+	}
+
+	function accept() {
+		if (!root.request) return;
+		if (root.request.kind !== "display") agent.write("yes\n");
+		root.request = null;
+	}
+
+	function reject() {
+		if (!root.request) return;
+		if (root.request.kind === "display" || root.request.kind === "pin") {
+			if (root.request.address !== "")
+				agent.write("cancel-pairing " + root.request.address + "\n");
+			if (root.request.kind === "pin") agent.write("\n");
+		} else {
+			agent.write("no\n");
+		}
+		root.request = null;
+	}
+
+	function answerPin(pin: string) {
+		if (!root.request || root.request.kind !== "pin") return;
+		agent.write(pin + "\n");
+		root.request = null;
+	}
+
+	Process {
+		id: agent
+
+		command: ["bluetoothctl"]
+		running: root.available
+		stdinEnabled: true
+
+		onStarted: {
+			agent.write("agent KeyboardDisplay\n");
+			agent.write("default-agent\n");
+		}
+
+		stdout: SplitParser {
+			onRead: data => {
+				const line = data.replace(/\x1b\[[0-9;]*[A-Za-z]/g, "");
+				let m;
+				if ((m = line.match(/Confirm passkey (\d+)/i)))
+					root.ask("confirm", m[1]);
+				else if (/Accept pairing/i.test(line))
+					root.ask("authorize", "");
+				else if (/Authorize service/i.test(line))
+					root.ask("service", "");
+				else if (/Enter (PIN code|passkey)/i.test(line))
+					root.ask("pin", "");
+				else if ((m = line.match(/(?:Passkey|PIN code):\s*(\d+)/i)))
+					root.ask("display", m[1]);
+				else if (/Request canceled|Pairing successful|Failed to pair/i.test(line))
+					root.request = null;
+			}
+		}
+
+		// bluetoothd restarting kills the agent with it; come back.
+		onExited: {
+			root.request = null;
+			if (root.available) restartAgent.start();
+		}
+	}
+
+	Timer {
+		id: restartAgent
+		interval: 2000
+		onTriggered: agent.running = true
+	}
+
+	// A "type this code" prompt has nothing to answer, so it is closed by the
+	// device itself finishing.
+	onConnectedDevicesChanged: {
+		if (root.request?.kind === "display"
+				&& root.connectedDevices.some(d => d.address === root.request.address && d.paired))
+			root.request = null;
 	}
 
 	function setEnabled(on: bool) {

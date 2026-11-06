@@ -119,6 +119,13 @@ ShellRoot {
 		RecorderPrompt {}
 	}
 
+	// Bluetooth pairing requests: accept, compare or type a code, or a PIN.
+	Variants {
+		model: Quickshell.screens
+
+		BluetoothPrompt {}
+	}
+
 	// Session lock. Not per-monitor: a lock owns every output at once and
 	// makes its own surface for each, including any plugged in while locked.
 	LockScreen {}
