@@ -320,9 +320,9 @@ Singleton {
 
 	// The same song, by the closest recording in length, timed lyrics first.
 	// lrclib's search is loose and happily returns the artist's other songs,
-	// so results are only pooled once the title really matches. Anything far off in length is
-	// another recording — a live take, an extended mix — whose timings would
-	// be no use.
+	// so results are only pooled once the title really matches. Anything
+	// far off in length is another recording — a live take, an extended
+	// mix — whose timings would be no use.
 	//
 	// Length alone is not enough, though: anyone can upload, and a broken
 	// upload labelled with exactly the right length beats a good one that is
