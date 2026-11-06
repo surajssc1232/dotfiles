@@ -11,10 +11,14 @@ import qs.widgets
 //
 // On the top layer, so it floats over windows but a fullscreen video or game
 // covers it. Only the card takes input:
-//   · click     the whole song / three lines
-//   · scroll    lyrics sooner or later, for ones that are out of time;
-//               for untimed lyrics, which do not follow along, it scrolls them
-//   · right     hide
+//   · double-click  the whole song / three lines
+//   · scroll        lyrics sooner or later, for ones that are out of time;
+//                   for untimed lyrics, which do not follow along, it scrolls them
+//   · right-click   hide
+//
+// Untimed lyrics get a "time it" button. While timing, the card takes the
+// keyboard: Space (or a click) as each line starts, Backspace to take one
+// back, Esc to give up.
 PanelWindow {
 	id: root
 
@@ -27,8 +31,12 @@ PanelWindow {
 	property bool quiet: false
 	readonly property bool hasLines: Lyrics.lines.length > 0
 
-	readonly property bool active: Config.lyrics && Lyrics.shown && Lyrics.player !== null
-		&& !(root.quiet && !root.hasLines)
+	readonly property bool active: Config.lyrics && Lyrics.player !== null
+		&& (Lyrics.timing || Lyrics.shown && !(root.quiet && !root.hasLines))
+
+	// Only one screen's overlay takes the keyboard while timing.
+	readonly property bool timingHere: Lyrics.timing && Lyrics.timingScreen === (root.screen?.name ?? "")
+	onTimingHereChanged: if (root.timingHere) keys.forceActiveFocus()
 
 	Connections {
 		target: Lyrics
@@ -62,7 +70,7 @@ PanelWindow {
 	color: "transparent"
 	exclusionMode: ExclusionMode.Ignore
 	WlrLayershell.layer: WlrLayer.Top
-	WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+	WlrLayershell.keyboardFocus: root.timingHere ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 	WlrLayershell.namespace: "quickshell-lyrics"
 
 	mask: Region { item: card }
@@ -71,8 +79,35 @@ PanelWindow {
 	readonly property real rowHeight: root.lineSize * 1.55
 
 	// The one animated value; everything that grows is bound to it.
-	property real rows: root.expanded ? 9 : 3
+	property real rows: root.expanded || Lyrics.timing ? 9 : 3
 	Behavior on rows { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
+
+	Item {
+		id: keys
+
+		focus: true
+		Keys.onPressed: event => {
+			if (!root.timingHere) return;
+			switch (event.key) {
+			case Qt.Key_Space:
+			case Qt.Key_Return:
+			case Qt.Key_Enter:
+			case Qt.Key_Down:
+				if (!event.isAutoRepeat) Lyrics.tap();
+				break;
+			case Qt.Key_Backspace:
+			case Qt.Key_Up:
+				Lyrics.untap();
+				break;
+			case Qt.Key_Escape:
+				Lyrics.cancelTiming();
+				break;
+			default:
+				return;
+			}
+			event.accepted = true;
+		}
+	}
 
 	Rectangle {
 		id: card
@@ -94,12 +129,21 @@ PanelWindow {
 			anchors.fill: parent
 			acceptedButtons: Qt.LeftButton | Qt.RightButton
 			cursorShape: Qt.PointingHandCursor
+			// While timing every press counts, so a quick pair of taps is
+			// not swallowed as a double-click.
+			onPressed: mouse => {
+				if (!Lyrics.timing) return;
+				if (mouse.button === Qt.RightButton) Lyrics.cancelTiming();
+				else Lyrics.tap();
+			}
 			onClicked: mouse => {
-				if (mouse.button === Qt.RightButton) Lyrics.toggle();
-				else root.expanded = !root.expanded;
+				if (!Lyrics.timing && mouse.button === Qt.RightButton) Lyrics.toggle();
+			}
+			onDoubleClicked: mouse => {
+				if (!Lyrics.timing && mouse.button === Qt.LeftButton) root.expanded = !root.expanded;
 			}
 			onWheel: wheel => {
-				if (!Lyrics.synced) return;
+				if (!Lyrics.synced || Lyrics.timing) return;
 				Lyrics.nudge(wheel.angleDelta.y > 0 ? 0.25 : -0.25);
 				offsetHint.restart();
 			}
@@ -137,12 +181,44 @@ PanelWindow {
 
 				Label {
 					readonly property bool nudging: offsetHint.running
-					text: nudging || Lyrics.offset !== 0
+					text: Lyrics.timing
+						? Lyrics.tapIndex + "/" + Lyrics.lines.length + " · space as each line starts · ⌫ undo · esc cancel"
+						: nudging || Lyrics.offset !== 0
 						? (Lyrics.offset > 0 ? "+" : "") + Lyrics.offset.toFixed(2) + "s"
-						: Lyrics.status === "plain" ? "not timed · scroll to read" : ""
-					color: nudging ? Config.accent : Config.fgDim
+						: Lyrics.status === "plain" ? "not timed"
+						: Lyrics.source === "tapped" ? "timed by you" : ""
+					color: nudging || Lyrics.timing ? Config.accent : Config.fgDim
 					font.pixelSize: Config.fontSize - 3
 					visible: text !== ""
+				}
+
+				// Untimed lyrics can be timed by hand, from the top of the song.
+				MouseArea {
+					id: timeIt
+
+					visible: Lyrics.status === "plain" && !Lyrics.timing
+					implicitWidth: timeItLabel.implicitWidth + 14
+					implicitHeight: timeItLabel.implicitHeight + 6
+					hoverEnabled: true
+					cursorShape: Qt.PointingHandCursor
+					onClicked: Lyrics.startTiming(root.screen?.name ?? "")
+
+					Rectangle {
+						anchors.fill: parent
+						radius: height / 2
+						color: timeIt.containsMouse ? Qt.alpha(Config.accent, 0.25) : "transparent"
+						border.width: 1
+						border.color: Config.accent
+					}
+
+					Label {
+						id: timeItLabel
+
+						anchors.centerIn: parent
+						text: "\uf017  time it"
+						color: Config.accent
+						font.pixelSize: Config.fontSize - 3
+					}
 				}
 
 				Timer {
@@ -178,16 +254,16 @@ PanelWindow {
 				visible: root.hasLines
 				clip: true
 				// Timed lyrics follow the song; untimed ones are read by hand.
-				interactive: !Lyrics.synced
+				interactive: !Lyrics.following
 				boundsBehavior: Flickable.StopAtBounds
 				contentWidth: width
-				contentHeight: column.implicitHeight + (Lyrics.synced ? height : 0)
+				contentHeight: column.implicitHeight + (Lyrics.following ? height : 0)
 
 
 				// Keeps the current line in the middle, however many lines
 				// above it wrapped.
 				function recentre() {
-					if (!Lyrics.synced) return;
+					if (!Lyrics.following) return;
 					const line = lines.itemAt(Lyrics.index);
 					if (!line) return;
 					follow.to = Math.max(0, line.y + line.height / 2);
@@ -219,7 +295,7 @@ PanelWindow {
 
 					// Half a view of space above, so the first line can sit
 					// in the middle too.
-					y: Lyrics.synced ? view.height / 2 : 0
+					y: Lyrics.following ? view.height / 2 : 0
 					width: view.width
 					spacing: 4
 
@@ -233,7 +309,8 @@ PanelWindow {
 							required property int index
 
 							readonly property int distance: Math.abs(index - Lyrics.index)
-							readonly property bool current: distance === 0 && Lyrics.synced
+							// While timing, "current" is the line waiting for a tap.
+							readonly property bool current: distance === 0 && Lyrics.following
 
 							width: column.width
 							horizontalAlignment: Text.AlignHCenter
@@ -241,9 +318,9 @@ PanelWindow {
 							text: modelData.text
 							font.pixelSize: root.lineSize
 							font.weight: current ? Font.DemiBold : Font.Normal
-							color: current ? Config.fg : Config.fgDim
-							opacity: !Lyrics.synced ? 0.9 : current ? 1 : distance === 1 ? 0.65 : 0.4
-							scale: current || !Lyrics.synced ? 1 : 0.94
+							color: current ? (Lyrics.timing ? Config.accent : Config.fg) : Config.fgDim
+							opacity: !Lyrics.following ? 0.9 : current ? 1 : distance === 1 ? 0.65 : 0.4
+							scale: current || !Lyrics.following ? 1 : 0.94
 
 							Behavior on opacity { NumberAnimation { duration: 260 } }
 							Behavior on scale { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }

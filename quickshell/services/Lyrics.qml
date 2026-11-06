@@ -63,11 +63,25 @@ Singleton {
 
 	readonly property bool synced: root.status === "synced"
 
+	// "lrclib" or "tapped": where the timings came from.
+	property string source: ""
+
+	// The overlay follows a line, rather than leaving the page still, while
+	// lyrics are timed or are being timed by hand.
+	readonly property bool following: root.synced || root.timing
+
 	// ---- following the track ----
 
-	onKeyChanged: settle.restart()
+	onKeyChanged: { root.lengthTries = 0; root.cancelTiming(); settle.restart(); }
 	onShownChanged: if (root.shown) settle.restart()
 	onEnabledChanged: settle.restart()
+
+	// A browser can report the length well after the title. A match made
+	// without it is a guess between every recording of the song — an album
+	// cut and a music video with an intro — so look again once it is known.
+	onLengthChanged: {
+		if (root.length > 0 && root.searchedLength === 0 && root.key !== "" && !root.timing) settle.restart();
+	}
 
 	// Waits for the metadata to stop arriving piecemeal before looking it up.
 	Timer {
@@ -99,7 +113,7 @@ Singleton {
 	// the track we are drifts at the first intro or solo, and a wrong line
 	// lit up is worse than none.
 	function follow() {
-		if (!root.player || !root.synced || root.lines.length === 0) return;
+		if (!root.player || !root.synced || root.timing || root.lines.length === 0) return;
 		const position = (root.player.positionSupported ? root.player.position : 0) + root.offset;
 		let next = 0;
 		let low = 0;
@@ -113,12 +127,14 @@ Singleton {
 	}
 
 	function nudge(seconds: real) {
-		if (root.key === "") return;
+		if (root.key === "" || root.timing) return;
 		root.offset = Math.round((root.offset + seconds) * 100) / 100;
-		const entry = root.cached(root.key);
+		const mine = root.tapped(root.key);
+		const entry = mine ?? root.cached(root.key);
 		if (entry) {
 			entry.offset = root.offset;
-			root.remember(root.key, entry);
+			if (mine) root.keep(root.key, mine);
+			else root.remember(root.key, entry);
 		}
 		root.follow();
 	}
@@ -127,19 +143,32 @@ Singleton {
 
 	property int generation: 0
 
+	// The length the current lyrics were chosen for; 0 if it was not known.
+	property real searchedLength: -1
+	property int lengthTries: 0
+
 	function load(force: bool) {
+		if (root.timing) return;
 		root.generation++;
 		root.index = 0;
 		root.lines = [];
 		root.matched = "";
 		root.offset = 0;
+		root.source = "";
+		root.searchedLength = -1;
 
 		if (!root.enabled || root.key === "") { root.status = "idle"; return; }
 
+		// Timings tapped in by hand beat anything lrclib has.
+		const mine = root.tapped(root.key);
+		if (mine && !force) { root.apply(mine); return; }
+
 		const entry = force ? null : root.cached(root.key);
-		// Entries from older matching rules are looked up again.
+		// Entries from older matching rules, and ones chosen before the
+		// length was known, are looked up again.
 		const stale = entry && (entry.v !== root.cacheVersion
-			|| entry.status === "missing" && Date.now() - entry.at > root.missLife);
+			|| entry.status === "missing" && Date.now() - entry.at > root.missLife
+			|| entry.status === "found" && !(entry.length > 0) && root.length > 0);
 		if (entry && !stale) { root.apply(entry); return; }
 
 		// Not shown: leave it until it is, rather than sending every track
@@ -147,12 +176,23 @@ Singleton {
 		if (!root.shown) { root.status = "idle"; return; }
 
 		root.status = "searching";
+
+		// Give the length a few seconds to turn up before guessing without it.
+		if (root.length <= 0 && root.lengthTries < 5) {
+			root.lengthTries++;
+			settle.restart();
+			return;
+		}
+
+		root.searchedLength = root.length;
 		root.search(root.generation);
 	}
 
 	function apply(entry) {
 		root.offset = entry.offset ?? 0;
 		root.matched = entry.matched ?? "";
+		root.source = entry.source ?? "lrclib";
+		root.searchedLength = entry.length ?? 0;
 		if (entry.synced) {
 			root.lines = root.parse(entry.synced);
 			root.status = root.lines.length > 0 ? "synced" : "missing";
@@ -225,6 +265,7 @@ Singleton {
 			synced: best?.syncedLyrics ?? "",
 			plain: best?.syncedLyrics ? "" : (best?.plainLyrics ?? ""),
 			matched: best ? (best.artistName + " — " + best.trackName) : "",
+			length: job.length,
 			offset: 0
 		};
 		root.remember(job.key, entry);
@@ -390,7 +431,7 @@ Singleton {
 	// recent few hundred songs, which is well under a megabyte.
 
 	readonly property int cacheLimit: 400
-	readonly property int cacheVersion: 2
+	readonly property int cacheVersion: 3
 	readonly property real missLife: 3 * 24 * 3600 * 1000
 
 	property var entries
@@ -427,6 +468,137 @@ Singleton {
 		printErrors: false
 	}
 
+	// ---- timing by hand ----
+	//
+	// For songs lrclib only has untimed lyrics for (or bad timings): play the
+	// song and tap as each line starts. The result is kept in the state
+	// directory rather than the cache, since it is work that cannot be
+	// fetched again, and is used in preference to lrclib from then on.
+
+	property bool timing: false
+
+	// The screen whose overlay takes the keyboard while timing.
+	property string timingScreen: ""
+
+	// The line to tap next, and the times tapped so far.
+	property int tapIndex: 0
+	property var taps: []
+
+	// Taps land a little after the line starts; this much is taken off.
+	readonly property real reaction: 0.2
+
+	function startTiming(screen: string) {
+		if (root.timing || root.key === "" || root.lines.length === 0) return;
+		const text = root.lines.map(l => l.text).filter(t => t !== "" && t !== "♪");
+		if (text.length === 0) return;
+
+		root.timingScreen = screen || (Quickshell.screens[0]?.name ?? "");
+		root.taps = [];
+		root.tapIndex = 0;
+		root.lines = text.map(t => ({ time: -1, text: t }));
+		root.index = 0;
+		root.timing = true;
+
+		// From the top, so the first line is not missed.
+		if (root.player?.canSeek) root.player.position = 0;
+		if (root.player && !root.player.isPlaying && root.player.canPlay) root.player.play();
+	}
+
+	function playhead(): real {
+		return root.player?.positionSupported ? root.player.position : 0;
+	}
+
+	function tap() {
+		if (!root.timing) return;
+		const last = root.taps.length ? root.taps[root.taps.length - 1] : 0;
+		const at = Math.max(last + 0.05, root.playhead() - root.reaction);
+		root.taps = root.taps.concat([at]);
+		root.tapIndex = root.taps.length;
+		if (root.tapIndex >= root.lines.length) root.finishTiming();
+		else root.index = root.tapIndex;
+	}
+
+	// Takes back the last tap and goes back to just before it, so the line
+	// can be tapped again when it comes round.
+	function untap() {
+		if (!root.timing || root.taps.length === 0) return;
+		const back = root.taps[root.taps.length - 1];
+		root.taps = root.taps.slice(0, -1);
+		root.tapIndex = root.taps.length;
+		root.index = root.tapIndex;
+		if (root.player?.canSeek) root.player.position = Math.max(0, back - 3);
+	}
+
+	function cancelTiming() {
+		if (!root.timing) return;
+		root.timing = false;
+		root.taps = [];
+		root.tapIndex = 0;
+		root.load(false);
+	}
+
+	function finishTiming() {
+		const stamp = t => {
+			const cs = Math.round(t * 100);
+			return "[" + String(Math.floor(cs / 6000)).padStart(2, "0") + ":"
+				+ String(Math.floor(cs / 100) % 60).padStart(2, "0") + "."
+				+ String(cs % 100).padStart(2, "0") + "]";
+		};
+		const lrc = root.lines.map((l, i) => stamp(root.taps[i]) + l.text).join("\n");
+		const entry = {
+			at: Date.now(),
+			status: "found",
+			source: "tapped",
+			synced: lrc,
+			plain: "",
+			matched: root.matched || ((root.cleanArtist(root.artist) || "?") + " — " + root.cleanTitle(root.title)),
+			length: root.length,
+			offset: 0
+		};
+		root.keep(root.key, entry);
+		root.timing = false;
+		root.taps = [];
+		root.tapIndex = 0;
+		root.load(false);
+	}
+
+	// Drops hand timings for this song, back to whatever lrclib has.
+	function forgetTiming() {
+		if (!root.tapped(root.key)) return;
+		root.cancelTiming();
+		delete root.mine[root.key];
+		timedStore.setText(JSON.stringify(root.mine));
+		root.load(false);
+	}
+
+	property var mine
+
+	function tapped(key: string): var {
+		if (root.mine === undefined) {
+			try {
+				const parsed = JSON.parse(timedStore.text().trim() || "{}");
+				root.mine = (parsed && typeof parsed === "object") ? parsed : ({});
+			} catch (err) {
+				root.mine = ({});
+			}
+		}
+		return root.mine[key] ?? null;
+	}
+
+	function keep(key: string, entry) {
+		root.tapped(key);
+		root.mine[key] = entry;
+		timedStore.setText(JSON.stringify(root.mine));
+	}
+
+	FileView {
+		id: timedStore
+
+		path: Quickshell.statePath("lyrics-timed.json")
+		blockLoading: true
+		printErrors: false
+	}
+
 	IpcHandler {
 		target: "lyrics"
 
@@ -434,16 +606,28 @@ Singleton {
 		function on(): void { if (!root.shown) root.toggle(); }
 		function off(): void { if (root.shown) root.toggle(); }
 
-		// Ignores the cache and asks lrclib again.
+		// Ignores the cache (and any hand timings, without deleting them)
+		// and asks lrclib again.
 		function refetch(): void { root.load(true); }
+
+		// Timing by hand: start, tap each line, take one back, give up, or
+		// throw away saved timings for this song.
+		function time(): void { root.startTiming(""); }
+		function tap(): void { root.tap(); }
+		function untap(): void { root.untap(); }
+		function cancel(): void { root.cancelTiming(); }
+		function forget(): void { root.forgetTiming(); }
 
 		// For lyrics that trail the singer, and for ones that run ahead.
 		function sooner(): void { root.nudge(0.25); }
 		function delay(): void { root.nudge(-0.25); }
 
 		function state(): string {
+			if (root.timing) return "timing · " + root.tapIndex + "/" + root.lines.length + " tapped";
 			return root.status
+				+ (root.source ? " (" + root.source + ")" : "")
 				+ (root.matched ? " · " + root.matched : "")
+				+ (root.searchedLength >= 0 ? " · for " + Math.round(root.searchedLength) + "s" : "")
 				+ " · line " + root.index + "/" + root.lines.length
 				+ (root.offset ? " · offset " + root.offset + "s" : "");
 		}
