@@ -137,7 +137,9 @@ Singleton {
 		if (!root.enabled || root.key === "") { root.status = "idle"; return; }
 
 		const entry = force ? null : root.cached(root.key);
-		const stale = entry && entry.status === "missing" && Date.now() - entry.at > root.missLife;
+		// Entries from older matching rules are looked up again.
+		const stale = entry && (entry.v !== root.cacheVersion
+			|| entry.status === "missing" && Date.now() - entry.at > root.missLife);
 		if (entry && !stale) { root.apply(entry); return; }
 
 		// Not shown: leave it until it is, rather than sending every track
@@ -169,17 +171,16 @@ Singleton {
 	// lyrics for a recording about as long as this one. Untimed lyrics are
 	// kept as a fallback in case nothing better turns up.
 	function search(token: int) {
-		const steps = [];
-		for (const c of root.candidates(root.title, root.artist)) {
-			steps.push({ params: ["track_name=" + c.track, "artist_name=" + c.artist], want: c.track, strict: false });
-		}
-		const bare = root.cleanTitle(root.title);
-		const split = bare.split(/\s+[-–—]\s+/);
-		for (const part of (split.length === 2 ? [split[1], split[0], bare] : [bare])) {
-			steps.push({ params: ["q=" + part], want: part, strict: true });
-		}
+		const pairs = root.candidates(root.title, root.artist);
+		const artists = pairs.map(c => c.artist).filter(a => a !== "");
 
-		const job = { token: token, steps: steps, best: null, failed: false, key: root.key, length: root.length };
+		const steps = pairs.map(c => ({ params: ["track_name=" + c.track, "artist_name=" + c.artist], want: c.track }));
+		// Last, the title alone, for when the channel is a label rather than
+		// the artist. Only ever a song title: searching for the artist alone
+		// turns up their other songs, which are then "close enough".
+		for (const track of new Set(pairs.map(c => c.track))) steps.push({ params: ["q=" + track], want: track });
+
+		const job = { token: token, steps: steps, artists: artists, best: null, failed: false, key: root.key, length: root.length };
 		root.step(job);
 	}
 
@@ -201,7 +202,7 @@ Singleton {
 				try { results = JSON.parse(text); } catch (err) {}
 				if (!Array.isArray(results)) job.failed = true;
 				else {
-					const pick = root.pick(results, next.want, next.strict, job.length);
+					const pick = root.pick(results, next.want, job.artists, job.length);
 					if (pick && (!job.best || pick.score < job.best.score)) job.best = pick;
 				}
 				root.step(job);
@@ -218,6 +219,7 @@ Singleton {
 		}
 
 		const entry = {
+			v: root.cacheVersion,
 			at: Date.now(),
 			status: !best ? "missing" : best.instrumental && !best.syncedLyrics && !best.plainLyrics ? "instrumental" : "found",
 			synced: best?.syncedLyrics ?? "",
@@ -229,17 +231,20 @@ Singleton {
 		if (job.key === root.key) root.apply(entry);
 	}
 
-	// The closest recording by length, timed lyrics first. Anything far off
-	// in length is another recording — a live take, an extended mix — and
-	// its timings would be no use.
-	function pick(results, want: string, strict: bool, length: real): var {
+	// The same song, by the closest recording in length, timed lyrics first.
+	// lrclib's search is loose and happily returns the artist's other songs,
+	// so the title has to really match. Anything far off in length is
+	// another recording — a live take, an extended mix — whose timings would
+	// be no use.
+	function pick(results, want: string, artists: var, length: real): var {
 		let best = null;
 		for (const r of results) {
 			if (!r.syncedLyrics && !r.plainLyrics && !r.instrumental) continue;
+			if (!root.sameTitle(r.trackName, want)) continue;
 			const diff = length > 0 && r.duration ? Math.abs(r.duration - length) : 0;
 			if (diff > 45) continue;
-			if (strict && !root.similar(r.trackName, want)) continue;
-			const score = diff + (r.syncedLyrics ? 0 : 20) + (r.instrumental ? 30 : 0);
+			const byThem = artists.length === 0 || artists.some(a => root.similar(r.artistName, a));
+			const score = diff + (r.syncedLyrics ? 0 : 20) + (r.instrumental ? 30 : 0) + (byThem ? 0 : 15);
 			if (!best || score < best.score) best = Object.assign({ score: score }, r);
 		}
 		return best;
@@ -286,10 +291,11 @@ Singleton {
 
 	function cleanTitle(name: string): string {
 		const noise = "official|video|audio|lyric|visuali[sz]er|music|hd|hq|4k|mv|m/v|full song|remaster|explicit"
-			+ "|clean|version|from|feat|ft\\.|prod|teaser|trailer|out now|color coded|letra|slowed|reverb|sped";
+			+ "|clean|version|from|feat|ft\\b|prod|teaser|trailer|out now|color coded|letra|slowed|reverb|sped";
 		return (name ?? "")
 			.replace(new RegExp("\\s*[\\(\\[\\{【][^\\)\\]\\}】]*(" + noise + ")[^\\)\\]\\}】]*[\\)\\]\\}】]", "gi"), "")
 			.replace(/\s*\[[^\]]*\]/g, "")
+			.replace(/\s*\(\s*(ft|feat|featuring|with)\b[^)]*\)/gi, "")
 			.replace(/^(full song|full video|video song|lyrical|lyric video|lyrics)\s*[:\-–]\s*/i, "")
 			.split(/\s+[|｜]\s*|\s+\/\/\s+/)[0]
 			.replace(/\s+(ft\.?|feat\.?|featuring)\s.*$/i, "")
@@ -321,6 +327,21 @@ Singleton {
 		if (first !== who) add(out[0]?.track ?? track, first);
 
 		return out;
+	}
+
+	// Strict enough to tell "Rap God" from "God", loose enough to let
+	// "Song (Remastered)" or "Song - From the film" through.
+	function sameTitle(found: string, want: string): bool {
+		const x = root.norm(root.cleanTitle(found));
+		const y = root.norm(want);
+		if (x === "" || y === "") return false;
+		if (x === y) return true;
+		const [short, long] = x.length < y.length ? [x, y] : [y, x];
+		return long.startsWith(short) && short.length >= long.length * 0.6;
+	}
+
+	function norm(s: string): string {
+		return (s ?? "").toLowerCase().replace(/[\s.,'’"!?()\[\]\-–—_:;&/]/g, "");
 	}
 
 	function similar(a: string, b: string): bool {
@@ -369,6 +390,7 @@ Singleton {
 	// recent few hundred songs, which is well under a megabyte.
 
 	readonly property int cacheLimit: 400
+	readonly property int cacheVersion: 2
 	readonly property real missLife: 3 * 24 * 3600 * 1000
 
 	property var entries

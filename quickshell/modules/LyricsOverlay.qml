@@ -53,8 +53,11 @@ PanelWindow {
 	anchors.bottom: true
 	margins.bottom: 40
 
+	// Sized for the card fully open, with a mask handing clicks outside it
+	// back to whatever is underneath, so opening is only an animation of the
+	// card inside. Resizing the surface itself every frame is what stutters.
 	implicitWidth: Math.min(root.screen.width - 80, 640)
-	implicitHeight: card.height + 12
+	implicitHeight: Config.padding * 2 + header.implicitHeight + body.spacing + root.rowHeight * 9 + 12
 
 	color: "transparent"
 	exclusionMode: ExclusionMode.Ignore
@@ -65,7 +68,11 @@ PanelWindow {
 	mask: Region { item: card }
 
 	readonly property int lineSize: Config.fontSize + 5
-	readonly property int rows: root.expanded ? 9 : 3
+	readonly property real rowHeight: root.lineSize * 1.55
+
+	// The one animated value; everything that grows is bound to it.
+	property real rows: root.expanded ? 9 : 3
+	Behavior on rows { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
 
 	Rectangle {
 		id: card
@@ -82,7 +89,6 @@ PanelWindow {
 
 		opacity: root.active ? ((Lyrics.player?.isPlaying ?? false) ? 1 : 0.6) : 0
 		Behavior on opacity { NumberAnimation { duration: 220; easing.type: Easing.OutQuad } }
-		Behavior on height { NumberAnimation { duration: Config.animMed; easing.type: Easing.OutCubic } }
 
 		MouseArea {
 			anchors.fill: parent
@@ -109,6 +115,8 @@ PanelWindow {
 
 			// ---- what this is ----
 			RowLayout {
+				id: header
+
 				Layout.fillWidth: true
 				spacing: 8
 
@@ -166,7 +174,7 @@ PanelWindow {
 				id: view
 
 				Layout.fillWidth: true
-				Layout.preferredHeight: root.rows * root.lineSize * 1.55
+				Layout.preferredHeight: root.rows * root.rowHeight
 				visible: root.hasLines
 				clip: true
 				// Timed lyrics follow the song; untimed ones are read by hand.
@@ -175,9 +183,6 @@ PanelWindow {
 				contentWidth: width
 				contentHeight: column.implicitHeight + (Lyrics.synced ? height : 0)
 
-				Behavior on Layout.preferredHeight {
-					NumberAnimation { duration: Config.animMed; easing.type: Easing.OutCubic }
-				}
 
 				// Keeps the current line in the middle, however many lines
 				// above it wrapped.
@@ -205,7 +210,9 @@ PanelWindow {
 					function onLinesChanged() { view.contentY = 0; Qt.callLater(view.recentre); }
 				}
 
-				onHeightChanged: Qt.callLater(view.recentre)
+				// No recentre on resize: the column starts half a view down,
+				// so the contentY that centres a line does not depend on the
+				// view's height, and the line stays put while it grows.
 
 				Column {
 					id: column
