@@ -110,6 +110,67 @@ Singleton {
 			run: () => Storage.show()
 		}),
 		({
+			id: "bt", when: Bt.available,
+			name: Bt.enabled ? "Turn Bluetooth off" : "Turn Bluetooth on",
+			detail: Bt.blocked ? "Blocked by rfkill"
+				: Bt.connectedDevices.length > 0
+					? Bt.connectedDevices.map(d => Bt.label(d)).join(", ")
+					: "Nothing connected · & lists devices",
+			keywords: "bluetooth bt wireless",
+			glyph: Config.icons.bluetooth,
+			run: () => Bt.blocked ? Bt.unblock() : Bt.setEnabled(!Bt.enabled)
+		}),
+		({
+			id: "airplane",
+			name: root.airplane ? "Turn airplane mode off" : "Turn airplane mode on",
+			detail: root.airplane ? "Wi-Fi and Bluetooth are off" : "Switches off Wi-Fi and Bluetooth",
+			keywords: "flight offline radio rfkill wireless",
+			glyph: Config.icons.wifiOff,
+			run: () => root.spawn(["rfkill", root.airplane ? "unblock" : "block", "all"])
+		}),
+		({
+			id: "mute", when: Audio.sink !== null,
+			name: Audio.sink?.audio?.muted ? "Unmute sound" : "Mute sound",
+			detail: Audio.label(Audio.sink),
+			keywords: "audio volume speaker output silence",
+			glyph: Audio.sink?.audio?.muted ? Config.icons.volMute : Config.icons.volHigh,
+			run: () => { if (Audio.sink?.audio) Audio.sink.audio.muted = !Audio.sink.audio.muted; }
+		}),
+		({
+			id: "mic-mute", when: Audio.source !== null,
+			name: Audio.source?.audio?.muted ? "Unmute microphone" : "Mute microphone",
+			detail: Audio.label(Audio.source),
+			keywords: "mic input record capture",
+			glyph: Config.icons.mic,
+			run: () => { if (Audio.source?.audio) Audio.source.audio.muted = !Audio.source.audio.muted; }
+		}),
+		({
+			id: "lyrics", when: Lyrics.enabled,
+			name: Lyrics.shown ? "Hide lyrics" : "Show lyrics",
+			detail: Lyrics.title ? Lyrics.title + (Lyrics.artist ? " · " + Lyrics.artist : "") : "Nothing playing",
+			keywords: "song music karaoke overlay",
+			glyph: Config.icons.music,
+			run: () => Lyrics.toggle()
+		}),
+		({
+			id: "control-centre", name: "Control centre", detail: "Wi-Fi, Bluetooth, power, sliders",
+			keywords: "settings quick panel toggles",
+			glyph: Config.icons.settings,
+			run: () => root.spawn(["quickshell", "ipc", "call", "settings", "toggle"])
+		}),
+		({
+			id: "notif-centre", name: "Notification centre", detail: Notifs.count + " in history",
+			keywords: "notifications history",
+			glyph: Config.icons.bell,
+			run: () => Notifs.centerToggled()
+		}),
+		({
+			id: "clipboard", name: "Clipboard history", detail: "; searches it here too",
+			keywords: "paste copied",
+			glyph: Config.icons.clipboard,
+			run: () => Clipboard.show()
+		}),
+		({
 			id: "reload", name: "Reload the shell", detail: "Re-reads the config",
 			glyph: Config.icons.refresh,
 			run: () => Quickshell.reload(false)
@@ -125,18 +186,33 @@ Singleton {
 		run: () => Config.setTheme(t.id)
 	}))
 
-	// Deliberately absent from a plain search. Typing three letters of an
-	// application's name should never put "Power off" under the cursor, so
-	// these are reachable only through the ! prefix, where asking for them is
-	// the whole point of what you typed.
+	// One per power profile the daemon offers, the current one ticked.
+	readonly property var powerModes: Power.available ? Power.profiles.map(id => ({
+		id: "power:" + id,
+		name: "Power mode: " + Power.title(id),
+		detail: Power.profile === id ? "Current" : "",
+		keywords: "power profile performance balanced saver battery",
+		glyph: Power.profile === id ? Config.icons.check : Power.icon(id),
+		run: () => Power.set(id)
+	})) : []
+
+	readonly property bool airplane: !Network.wifiEnabled && !(Bt.available && Bt.enabled)
+
+	// Reachable from a plain search too, but only strictly: `strict` rows
+	// match only when what you typed starts the name or one of its keywords
+	// (three letters at least), never as a fuzzy scatter, so typing part of
+	// an application's name cannot put "Power off" under the cursor. Anything
+	// that ends the session also wants Enter twice (`confirm`).
 	readonly property var session: [
 		({
 			id: "suspend", name: "Suspend", detail: "Sleep now",
+			strict: true, keywords: "sleep",
 			glyph: Config.icons.nightLight,
 			run: () => root.spawn(["systemctl", "suspend"])
 		}),
 		({
 			id: "logout", name: "Log out", detail: "Ends this session",
+			strict: true, confirm: true, keywords: "logout sign out exit quit session",
 			glyph: Config.icons.disconnect,
 			run: () => root.spawn(["sh", "-c",
 				'loginctl terminate-session "${XDG_SESSION_ID:-}" '
@@ -144,13 +220,21 @@ Singleton {
 		}),
 		({
 			id: "reboot", name: "Restart", detail: "Reboots the machine",
+			strict: true, confirm: true, keywords: "reboot",
 			glyph: Config.icons.refresh,
 			run: () => root.spawn(["systemctl", "reboot"])
 		}),
 		({
 			id: "poweroff", name: "Power off", detail: "Shuts the machine down",
+			strict: true, confirm: true, keywords: "shutdown shut down turn off",
 			glyph: Config.icons.plug,
 			run: () => root.spawn(["systemctl", "poweroff"])
+		}),
+		({
+			id: "firmware", name: "Restart into firmware setup", detail: "BIOS / UEFI settings",
+			strict: true, confirm: true, keywords: "bios uefi firmware",
+			glyph: Config.icons.refresh,
+			run: () => root.spawn(["systemctl", "reboot", "--firmware-setup"])
 		})
 	]
 
@@ -161,8 +245,10 @@ Singleton {
 		return list.filter(a => a.when === undefined || a.when);
 	}
 
-	readonly property var all: root.enabled(root.everyday).concat(root.themes)
-	readonly property var withSession: root.all.concat(root.enabled(root.session))
+	readonly property var all: root.enabled(root.everyday).concat(root.powerModes)
+		.concat(root.themes).concat(root.enabled(root.session))
+	// The ! mode lists the same things; kept as a name for its callers.
+	readonly property var withSession: root.all
 
 	function randomWallpaper() {
 		const n = Wallpaper.count;

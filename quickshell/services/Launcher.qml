@@ -155,22 +155,35 @@ Singleton {
 	// The shell's own commands, searchable next to the applications. Cheap to
 	// rebuild, and it has to be: the names change as things are toggled, so
 	// this list is rebuilt every time one of them flips.
-	readonly property var commandCatalog: LauncherActions.all.map(a => ({
-		kind: "command",
-		key: "cmd:" + a.id,
-		name: a.name,
-		detail: a.detail,
-		iconName: "",
-		glyph: a.glyph,
-		act: a,
-		hay: ({
-			name: a.name.toLowerCase(),
-			generic: (a.detail ?? "").toLowerCase(),
-			keywords: "shell setting toggle",
-			comment: "",
-			id: a.id.toLowerCase()
-		})
-	}))
+	readonly property var commandCatalog: LauncherActions.all.map(a => root.commandRow(a, true))
+
+	// `strict` only holds in a plain search; behind ! asking for a session
+	// action is the whole point of what was typed, so it matches like any row.
+	function commandRow(a, strict: bool): var {
+		const key = "cmd:" + a.id;
+		return {
+			kind: "command",
+			key: key,
+			name: a.name,
+			detail: root.confirmKey === key
+				? "press enter again to " + a.name.toLowerCase()
+				: a.detail,
+			iconName: "",
+			glyph: a.glyph,
+			act: a,
+			strict: strict && !!a.strict,
+			hay: ({
+				name: a.name.toLowerCase(),
+				generic: (a.detail ?? "").toLowerCase(),
+				keywords: ((a.keywords ?? "") + " shell setting toggle").toLowerCase(),
+				comment: "",
+				id: a.id.toLowerCase()
+			})
+		};
+	}
+
+	// A `confirm` action armed by its first Enter. Any movement disarms it.
+	property string confirmKey: ""
 
 	// Volume and brightness, as rows that are their own control: Left and
 	// Right move them, the wheel and a drag on the bar do too. The row carries
@@ -272,6 +285,18 @@ Singleton {
 	// a comment match from ever outranking a name match.
 	function score(row, needle: string): int {
 		const h = row.hay;
+
+		// Only a deliberate word start, three letters or more, and never
+		// boosted by use: suspending yesterday must not make "su" suspend today.
+		if (row.strict) {
+			if (needle.length < 3) return -1;
+			const words = (h.name + " " + h.keywords).split(/\s+/);
+			const phrase = h.name.startsWith(needle) || h.keywords.indexOf(needle) !== -1
+				&& /\s/.test(needle);
+			if (!phrase && !words.some(w => w.startsWith(needle))) return -1;
+			return (h.name.startsWith(needle) ? 900 : 780) - 20;
+		}
+
 		let best = root.fieldScore(h.name, needle, true);
 		best = Math.max(best, root.fieldScore(h.generic, needle, true) - 120);
 		best = Math.max(best, root.fieldScore(h.id, needle, true) - 200);
@@ -366,6 +391,7 @@ Singleton {
 	onIndexChanged: {
 		root.anchorKey = root.results[root.index]?.key ?? "";
 		root.btForgetArmed = "";
+		root.confirmKey = "";
 	}
 
 	onResultsChanged: {
@@ -418,15 +444,7 @@ Singleton {
 	// The ! mode searches the same commands as a plain search, plus the ones
 	// that end the session — those are only ever reached deliberately.
 	function commandRows(needle: string): var {
-		const rows = LauncherActions.withSession.map(a => ({
-			kind: "command", key: "cmd:" + a.id, name: a.name,
-			detail: a.detail, iconName: "", glyph: a.glyph, act: a,
-			hay: ({
-				name: a.name.toLowerCase(),
-				generic: (a.detail ?? "").toLowerCase(),
-				keywords: "", comment: "", id: a.id.toLowerCase()
-			})
-		}));
+		const rows = LauncherActions.withSession.map(a => root.commandRow(a, false));
 
 		if (!needle) return rows;
 
@@ -573,7 +591,10 @@ Singleton {
 	// Delete on a device row asks first, because forgetting means pairing it
 	// all over again. Any movement disarms it.
 	property string btForgetArmed: ""
-	onQueryChanged: root.btForgetArmed = ""
+	onQueryChanged: {
+		root.btForgetArmed = "";
+		root.confirmKey = "";
+	}
 
 	// Enter on a paired, disconnected device keeps the launcher up until it
 	// either connects (and the launcher closes) or fails (and the row says so).
@@ -1209,6 +1230,7 @@ Singleton {
 	function close() {
 		root.open = false;
 		root.btWaiting = "";
+		root.confirmKey = "";
 		Bt.stopDiscovery();
 		// Cleared on the way out rather than on the way in: clearing at open
 		// time leaves one frame showing the last search before the new one.
@@ -1351,6 +1373,14 @@ Singleton {
 			root.close();
 			return;
 		}
+
+		// Log out, restart and power off are not undoable; the first Enter
+		// only asks.
+		if (row.kind === "command" && row.act?.confirm && root.confirmKey !== row.key) {
+			root.confirmKey = row.key;
+			return;
+		}
+		root.confirmKey = "";
 
 		// Everything else starts a process, and that wants the keyboard handed
 		// back first, so the new window is what the compositor focuses.

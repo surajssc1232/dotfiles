@@ -306,8 +306,12 @@ PanelWindow {
 								break;
 							// Delete drops the selected row from whatever
 							// history produced it, and does nothing elsewhere.
+							// Text to the right of the cursor still gets the
+							// ordinary forward delete; at the end there is
+							// none, so the key is free for the row — which is
+							// what makes it reachable behind a mode prefix.
 							case Qt.Key_Delete:
-								if (field.text.length > 0 && !ctrl) return;
+								if (field.cursorPosition < field.text.length && !ctrl) return;
 								Launcher.deleteSelected();
 								break;
 							case Qt.Key_Down:
