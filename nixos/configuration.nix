@@ -871,12 +871,14 @@
   '';
 
   # The udev rule above gets reset to "disabled" after boot, so re-enable
-  # Bluetooth wakeup right before every suspend.
+  # wakeup right before every suspend. The xHCI root hubs (1d6b) must allow
+  # wakeup too, or the 2.4 GHz keyboard/mouse receivers can't wake the laptop.
   powerManagement.powerDownCommands = ''
     for d in /sys/bus/usb/devices/*; do
-      if [ "$(cat $d/idVendor 2>/dev/null)" = 8087 ] && [ "$(cat $d/idProduct 2>/dev/null)" = 0aaa ]; then
-        echo enabled > $d/power/wakeup
-      fi
+      case "$(cat $d/idVendor 2>/dev/null):$(cat $d/idProduct 2>/dev/null)" in
+        8087:0aaa|1d6b:0002|1d6b:0003|3554:fc03|32c2:0018)
+          echo enabled > $d/power/wakeup ;;
+      esac
     done
   '';
 
