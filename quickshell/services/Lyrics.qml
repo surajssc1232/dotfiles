@@ -228,7 +228,7 @@ Singleton {
 		if (job.token !== root.generation) return;
 
 		const next = job.steps.shift();
-		if (!next || (job.best?.syncedLyrics && job.best.score < 10)) { root.finish(job); return; }
+		if (!next || (job.best?.syncedLyrics && job.best.score < 5)) { root.finish(job); return; }
 
 		const command = ["curl", "-sS", "--max-time", "10",
 			"-A", "quickshell-lyrics (personal desktop widget)",
@@ -277,18 +277,58 @@ Singleton {
 	// so the title has to really match. Anything far off in length is
 	// another recording — a live take, an extended mix — whose timings would
 	// be no use.
+	//
+	// Length alone is not enough, though: anyone can upload, and a broken
+	// upload labelled with exactly the right length beats a good one that is
+	// a second out. So timings are also judged on whether they cover the
+	// song, and on whether other uploads agree with them — a popular song
+	// usually has several, and the good ones match each other.
 	function pick(results, want: string, artists: var, length: real): var {
+		const usable = results.filter(r => (r.syncedLyrics || r.plainLyrics || r.instrumental)
+			&& root.sameTitle(r.trackName, want));
+		const shapes = usable.map(r => r.syncedLyrics ? root.shape(r.syncedLyrics) : null);
+		const timed = shapes.filter(sh => sh !== null).length;
+
 		let best = null;
-		for (const r of results) {
-			if (!r.syncedLyrics && !r.plainLyrics && !r.instrumental) continue;
-			if (!root.sameTitle(r.trackName, want)) continue;
+		usable.forEach((r, i) => {
 			const diff = length > 0 && r.duration ? Math.abs(r.duration - length) : 0;
-			if (diff > 45) continue;
+			if (diff > 45) return;
 			const byThem = artists.length === 0 || artists.some(a => root.similar(r.artistName, a));
-			const score = diff + (r.syncedLyrics ? 0 : 20) + (r.instrumental ? 30 : 0) + (byThem ? 0 : 15);
+			let score = diff + (r.instrumental ? 30 : 0) + (byThem ? 0 : 15);
+
+			const sh = shapes[i];
+			if (!sh) score += 20;
+			else {
+				const span = length > 0 ? length : (r.duration || 0);
+				// Lines after the song has ended, or stopping well short of it.
+				if (span > 0 && sh.last > span + 3) return;
+				if (span > 0 && sh.last < span * 0.7) score += 25;
+				if (sh.stacked) score += 10;
+
+				const agree = shapes.filter((o, j) => j !== i && o
+					&& Math.abs(o.first - sh.first) < 1.5 && Math.abs(o.last - sh.last) < 3).length;
+				if (agree === 0 && timed >= 3) score += 15;
+				score -= Math.min(agree, 5) * 0.5;
+			}
+
 			if (!best || score < best.score) best = Object.assign({ score: score }, r);
-		}
+		});
 		return best;
+	}
+
+	// Enough of an LRC's timings to compare it with another: when the first
+	// and last sung lines start, and whether lines pile up on one stamp,
+	// which hand-made uploads that went wrong tend to do.
+	function shape(lrc: string): var {
+		const times = [];
+		const re = /^\[(\d+):(\d+(?:\.\d+)?)\][^\S\n]*\S/gm;
+		let m;
+		while ((m = re.exec(lrc)) !== null) times.push(Number(m[1]) * 60 + Number(m[2]));
+		if (times.length < 2) return null;
+		times.sort((a, b) => a - b);
+		let stacked = 0;
+		for (let i = 1; i < times.length; i++) if (times[i] - times[i - 1] < 0.01) stacked++;
+		return { first: times[0], last: times[times.length - 1], stacked: stacked > 0 };
 	}
 
 	Timer {
@@ -431,7 +471,7 @@ Singleton {
 	// recent few hundred songs, which is well under a megabyte.
 
 	readonly property int cacheLimit: 400
-	readonly property int cacheVersion: 3
+	readonly property int cacheVersion: 4
 	readonly property real missLife: 3 * 24 * 3600 * 1000
 
 	property var entries
