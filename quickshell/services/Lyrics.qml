@@ -66,6 +66,11 @@ Singleton {
 	// "lrclib" or "tapped": where the timings came from.
 	property string source: ""
 
+	// Why these timings might not fit this recording, or "" if nothing
+	// suggests they would not. The overlay leaves doubtful lyrics as a page
+	// to scroll by hand rather than following along with a guess.
+	property string doubt: ""
+
 	// The overlay follows a line, rather than leaving the page still, while
 	// lyrics are timed or are being timed by hand.
 	readonly property bool following: root.synced || root.timing
@@ -126,12 +131,26 @@ Singleton {
 		if (next !== root.index) root.index = next;
 	}
 
+	// Following doubtful lyrics anyway, for this song from now on.
+	function trust() {
+		if (root.doubt === "" || root.key === "") return;
+		root.doubt = "";
+		const entry = root.cached(root.key);
+		if (entry) {
+			entry.trusted = true;
+			root.remember(root.key, entry);
+		}
+	}
+
 	function nudge(seconds: real) {
 		if (root.key === "" || root.timing) return;
 		root.offset = Math.round((root.offset + seconds) * 100) / 100;
 		const mine = root.tapped(root.key);
 		const entry = mine ?? root.cached(root.key);
+		// Correcting the timing is as good as saying they are the right ones.
+		root.doubt = "";
 		if (entry) {
+			entry.trusted = true;
 			entry.offset = root.offset;
 			if (mine) root.keep(root.key, mine);
 			else root.remember(root.key, entry);
@@ -155,6 +174,7 @@ Singleton {
 		root.matched = "";
 		root.offset = 0;
 		root.source = "";
+		root.doubt = "";
 		root.searchedLength = -1;
 
 		if (!root.enabled || root.key === "") { root.status = "idle"; return; }
@@ -193,6 +213,7 @@ Singleton {
 		root.matched = entry.matched ?? "";
 		root.source = entry.source ?? "lrclib";
 		root.searchedLength = entry.length ?? 0;
+		root.doubt = entry.trusted || entry.source === "tapped" ? "" : (entry.doubt ?? "");
 		if (entry.synced) {
 			root.lines = root.parse(entry.synced);
 			root.status = root.lines.length > 0 ? "synced" : "missing";
@@ -220,7 +241,10 @@ Singleton {
 		// turns up their other songs, which are then "close enough".
 		for (const track of new Set(pairs.map(c => c.track))) steps.push({ params: ["q=" + track], want: track });
 
-		const job = { token: token, steps: steps, artists: artists, best: null, failed: false, key: root.key, length: root.length };
+		// Every matching result from every request goes into one pool, judged
+		// as a whole: agreement between uploads means more the more of them
+		// there are to compare, and each request only turns up some.
+		const job = { token: token, steps: steps, artists: artists, pool: [], best: null, failed: false, key: root.key, length: root.length };
 		root.step(job);
 	}
 
@@ -242,12 +266,33 @@ Singleton {
 				try { results = JSON.parse(text); } catch (err) {}
 				if (!Array.isArray(results)) job.failed = true;
 				else {
-					const pick = root.pick(results, next.want, job.artists, job.length);
-					if (pick && (!job.best || pick.score < job.best.score)) job.best = pick;
+					for (const r of results) {
+						if (!(r.syncedLyrics || r.plainLyrics || r.instrumental)) continue;
+						if (!root.sameTitle(r.trackName, next.want)) continue;
+						if (!job.pool.some(o => o.id === r.id)) job.pool.push(r);
+					}
+					job.best = root.pick(job.pool, job.artists, job.length);
 				}
 				root.step(job);
 			}
 		});
+	}
+
+	// The things that make timed lyrics likely to be out with this
+	// recording, worst first. A lone upload is not one of them: plenty of
+	// good timings are the only ones there are.
+	function doubtOf(facts, length: real): string {
+		if (!facts) return "";
+		if (length <= 0) return "length unknown";
+		// Under that, it is the same audio with its length reported a little
+		// differently by whichever service the uploader took it from.
+		if (Math.abs(facts.diff) > 6) {
+			return "timed for a " + Math.abs(Math.round(facts.diff)) + "s " + (facts.diff > 0 ? "longer" : "shorter") + " version";
+		}
+		if (facts.short) return "timings stop early";
+		if (facts.agree === 0 && facts.timed >= 2) return "other uploads disagree";
+		if (!facts.byThem) return "uploaded under another artist";
+		return "";
 	}
 
 	function finish(job) {
@@ -266,6 +311,7 @@ Singleton {
 			plain: best?.syncedLyrics ? "" : (best?.plainLyrics ?? ""),
 			matched: best ? (best.artistName + " — " + best.trackName) : "",
 			length: job.length,
+			doubt: best?.syncedLyrics ? root.doubtOf(best.facts, job.length) : "",
 			offset: 0
 		};
 		root.remember(job.key, entry);
@@ -274,7 +320,7 @@ Singleton {
 
 	// The same song, by the closest recording in length, timed lyrics first.
 	// lrclib's search is loose and happily returns the artist's other songs,
-	// so the title has to really match. Anything far off in length is
+	// so results are only pooled once the title really matches. Anything far off in length is
 	// another recording — a live take, an extended mix — whose timings would
 	// be no use.
 	//
@@ -283,9 +329,7 @@ Singleton {
 	// a second out. So timings are also judged on whether they cover the
 	// song, and on whether other uploads agree with them — a popular song
 	// usually has several, and the good ones match each other.
-	function pick(results, want: string, artists: var, length: real): var {
-		const usable = results.filter(r => (r.syncedLyrics || r.plainLyrics || r.instrumental)
-			&& root.sameTitle(r.trackName, want));
+	function pick(usable, artists: var, length: real): var {
 		const shapes = usable.map(r => r.syncedLyrics ? root.shape(r.syncedLyrics) : null);
 		const timed = shapes.filter(sh => sh !== null).length;
 
@@ -297,21 +341,31 @@ Singleton {
 			let score = diff + (r.instrumental ? 30 : 0) + (byThem ? 0 : 15);
 
 			const sh = shapes[i];
+			const facts = { diff: r.duration && length > 0 ? r.duration - length : 0, byThem: byThem, agree: 0, timed: timed, short: false };
 			if (!sh) score += 20;
 			else {
 				const span = length > 0 ? length : (r.duration || 0);
 				// Lines after the song has ended, or stopping well short of it.
 				if (span > 0 && sh.last > span + 3) return;
-				if (span > 0 && sh.last < span * 0.7) score += 25;
+				if (span > 0 && sh.last < span * 0.7) { score += 25; facts.short = true; }
 				if (sh.stacked) score += 10;
 
-				const agree = shapes.filter((o, j) => j !== i && o
-					&& Math.abs(o.first - sh.first) < 1.5 && Math.abs(o.last - sh.last) < 3).length;
+				const backing = usable.filter((o, j) => j !== i && shapes[j]
+					&& Math.abs(shapes[j].first - sh.first) < 1.5 && Math.abs(shapes[j].last - sh.last) < 3);
+				const agree = backing.length;
+				facts.agree = agree;
+
+				// Uploads that share these timings were all timed to one
+				// recording, whatever length each was labelled with; most
+				// of their labels say which. One mislabelled copy of the
+				// album timings must not pass for the video's.
+				const lengths = backing.concat([r]).map(o => o.duration).filter(d => d > 0).sort((x, y) => x - y);
+				if (length > 0 && lengths.length >= 3) facts.diff = lengths[lengths.length >> 1] - length;
 				if (agree === 0 && timed >= 3) score += 15;
 				score -= Math.min(agree, 5) * 0.5;
 			}
 
-			if (!best || score < best.score) best = Object.assign({ score: score }, r);
+			if (!best || score < best.score) best = Object.assign({ score: score, facts: facts }, r);
 		});
 		return best;
 	}
@@ -471,7 +525,7 @@ Singleton {
 	// recent few hundred songs, which is well under a megabyte.
 
 	readonly property int cacheLimit: 400
-	readonly property int cacheVersion: 4
+	readonly property int cacheVersion: 6
 	readonly property real missLife: 3 * 24 * 3600 * 1000
 
 	property var entries
@@ -668,6 +722,7 @@ Singleton {
 				+ (root.source ? " (" + root.source + ")" : "")
 				+ (root.matched ? " · " + root.matched : "")
 				+ (root.searchedLength >= 0 ? " · for " + Math.round(root.searchedLength) + "s" : "")
+				+ (root.doubt ? " · doubtful: " + root.doubt : "")
 				+ " · line " + root.index + "/" + root.lines.length
 				+ (root.offset ? " · offset " + root.offset + "s" : "");
 		}

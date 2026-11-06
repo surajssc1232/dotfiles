@@ -12,9 +12,13 @@ import qs.widgets
 // On the top layer, so it floats over windows but a fullscreen video or game
 // covers it. Only the card takes input:
 //   · double-click  the whole song / three lines
-//   · scroll        lyrics sooner or later, for ones that are out of time;
-//                   for untimed lyrics, which do not follow along, it scrolls them
+//   · scroll        read ahead or back; it picks the song up again shortly
+//                   after, or from the "follow" button
+//   · ctrl+scroll   lyrics sooner or later, for ones that are out of time
 //   · right-click   hide
+//
+// Timings that might not fit this recording (see Lyrics.doubt) start out as
+// a page to scroll by hand; "follow" goes along with them anyway.
 //
 // Untimed lyrics get a "time it" button. While timing, the card takes the
 // keyboard: Space (or a click) as each line starts, Backspace to take one
@@ -26,6 +30,33 @@ PanelWindow {
 	screen: modelData
 
 	property bool expanded: false
+
+	// Scrolled away by hand, or not trusted to follow: the page stays where
+	// it is instead of tracking the current line.
+	property bool detached: false
+	readonly property bool tracking: Lyrics.following && !root.detached
+
+	function attach() {
+		root.detached = false;
+		Lyrics.trust();
+		view.recentre();
+	}
+
+	Connections {
+		target: Lyrics
+
+		function onLinesChanged() { root.detached = Lyrics.doubt !== "" && !Lyrics.timing; }
+		function onTimingChanged() { if (Lyrics.timing) root.detached = false; }
+	}
+
+	// A scroll away from a song that is trusted is a look ahead, not a
+	// decision to stop following it.
+	Timer {
+		id: reattach
+
+		interval: 6000
+		onTriggered: if (Lyrics.doubt === "") { root.detached = false; view.recentre(); }
+	}
 
 	// "No lyrics found" is worth saying, but not for the whole song.
 	property bool quiet: false
@@ -143,9 +174,22 @@ PanelWindow {
 				if (!Lyrics.timing && mouse.button === Qt.LeftButton) root.expanded = !root.expanded;
 			}
 			onWheel: wheel => {
-				if (!Lyrics.synced || Lyrics.timing) return;
-				Lyrics.nudge(wheel.angleDelta.y > 0 ? 0.25 : -0.25);
-				offsetHint.restart();
+				if (Lyrics.timing || !root.hasLines) return;
+
+				if (wheel.modifiers & Qt.ControlModifier) {
+					if (!Lyrics.synced) return;
+					Lyrics.nudge(wheel.angleDelta.y > 0 ? 0.25 : -0.25);
+					offsetHint.restart();
+					root.attach();
+					return;
+				}
+
+				// Touchpads send pixels, wheels send notches.
+				const delta = wheel.pixelDelta.y !== 0 ? wheel.pixelDelta.y : wheel.angleDelta.y / 120 * root.rowHeight * 1.5;
+				follow.stop();
+				if (Lyrics.following) root.detached = true;
+				view.contentY = Math.max(0, Math.min(view.contentHeight - view.height, view.contentY - delta));
+				reattach.restart();
 			}
 		}
 
@@ -186,39 +230,25 @@ PanelWindow {
 						: nudging || Lyrics.offset !== 0
 						? (Lyrics.offset > 0 ? "+" : "") + Lyrics.offset.toFixed(2) + "s"
 						: Lyrics.status === "plain" ? "not timed"
+						: Lyrics.doubt !== "" ? "\uf071  " + Lyrics.doubt
 						: Lyrics.source === "tapped" ? "timed by you" : ""
-					color: nudging || Lyrics.timing ? Config.accent : Config.fgDim
+					color: nudging || Lyrics.timing ? Config.accent : Lyrics.doubt !== "" && Lyrics.synced ? Config.yellow : Config.fgDim
 					font.pixelSize: Config.fontSize - 3
 					visible: text !== ""
 				}
 
-				// Untimed lyrics can be timed by hand, from the top of the song.
-				MouseArea {
-					id: timeIt
+				// Back to following the song, once scrolled away or held back.
+				Chip {
+					visible: Lyrics.synced && root.detached && !Lyrics.timing
+					text: "\uf04b  follow"
+					onClicked: root.attach()
+				}
 
-					visible: Lyrics.status === "plain" && !Lyrics.timing
-					implicitWidth: timeItLabel.implicitWidth + 14
-					implicitHeight: timeItLabel.implicitHeight + 6
-					hoverEnabled: true
-					cursorShape: Qt.PointingHandCursor
+				// Untimed or doubtful lyrics can be timed by hand, from the top.
+				Chip {
+					visible: (Lyrics.status === "plain" || Lyrics.doubt !== "") && !Lyrics.timing
+					text: "\uf017  time it"
 					onClicked: Lyrics.startTiming(root.screen?.name ?? "")
-
-					Rectangle {
-						anchors.fill: parent
-						radius: height / 2
-						color: timeIt.containsMouse ? Qt.alpha(Config.accent, 0.25) : "transparent"
-						border.width: 1
-						border.color: Config.accent
-					}
-
-					Label {
-						id: timeItLabel
-
-						anchors.centerIn: parent
-						text: "\uf017  time it"
-						color: Config.accent
-						font.pixelSize: Config.fontSize - 3
-					}
 				}
 
 				Timer {
@@ -253,8 +283,10 @@ PanelWindow {
 				Layout.preferredHeight: root.rows * root.rowHeight
 				visible: root.hasLines
 				clip: true
-				// Timed lyrics follow the song; untimed ones are read by hand.
-				interactive: !Lyrics.following
+				// Scrolling is the card's wheel handler's job, so that a scroll
+				// can also mean "stop following" and ctrl+scroll can mean
+				// something else entirely.
+				interactive: false
 				boundsBehavior: Flickable.StopAtBounds
 				contentWidth: width
 				contentHeight: column.implicitHeight + (Lyrics.following ? height : 0)
@@ -263,7 +295,7 @@ PanelWindow {
 				// Keeps the current line in the middle, however many lines
 				// above it wrapped.
 				function recentre() {
-					if (!Lyrics.following) return;
+					if (!root.tracking) return;
 					const line = lines.itemAt(Lyrics.index);
 					if (!line) return;
 					follow.to = Math.max(0, line.y + line.height / 2);
@@ -328,6 +360,34 @@ PanelWindow {
 					}
 				}
 			}
+		}
+	}
+
+	component Chip: MouseArea {
+		id: chip
+
+		property string text
+
+		implicitWidth: chipLabel.implicitWidth + 14
+		implicitHeight: chipLabel.implicitHeight + 6
+		hoverEnabled: true
+		cursorShape: Qt.PointingHandCursor
+
+		Rectangle {
+			anchors.fill: parent
+			radius: height / 2
+			color: chip.containsMouse ? Qt.alpha(Config.accent, 0.25) : "transparent"
+			border.width: 1
+			border.color: Config.accent
+		}
+
+		Label {
+			id: chipLabel
+
+			anchors.centerIn: parent
+			text: chip.text
+			color: Config.accent
+			font.pixelSize: Config.fontSize - 3
 		}
 	}
 }
