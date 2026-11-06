@@ -853,6 +853,12 @@
 
   powerManagement.powertop.enable = false;
 
+  # Let the internal Intel Bluetooth adapter wake the laptop from suspend, so a
+  # Bluetooth keyboard can wake it with the lid closed.
+  services.udev.extraRules = ''
+    ACTION=="add", SUBSYSTEM=="usb", ATTR{idVendor}=="8087", ATTR{idProduct}=="0aaa", ATTR{power/wakeup}="enabled"
+  '';
+
   hardware.bluetooth = {
     enable = true;
     powerOnBoot = true;

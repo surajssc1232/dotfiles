@@ -17,8 +17,11 @@ import qs.widgets
 //   · ctrl+scroll   lyrics sooner or later, for ones that are out of time
 //   · right-click   hide
 //   · drag          move it anywhere
-//   · corner grip   resize: width, and how many lines show
-//   · alt+scroll    text size (or the A−/A+ buttons on hover)
+//   · right-drag    resize from the nearest edge, like GNOME; the text
+//                   scales with the width, and taller shows more lines
+//                   (also the corner grip). A right-click that does not
+//                   move still hides it.
+//   · alt+scroll    fine-tune text size (or the A−/A+ buttons on hover)
 //   · middle-click  back to the default place, size and text size
 //
 // Timings that might not fit this recording (see Lyrics.doubt) start out as
@@ -146,6 +149,66 @@ PanelWindow {
 		Persist.set("lyricsFont", root.fontPx);
 	}
 
+	// ---- resizing ----
+	//
+	// One engine for both the corner grip and a right-button drag. Like GNOME,
+	// the edges nearest where the press landed are the ones that move: press
+	// in the left half and the left edge follows the pointer, the top half and
+	// the top does. Height is counted in lines, so it ends on a whole one.
+	property bool resizing: false
+	property bool rFromLeft: false
+	property bool rFromTop: false
+	property real rStartX
+	property real rStartY
+	property real rCardX
+	property real rCardY
+	property int rWidth
+	property int rRows
+
+	function beginResize(px: real, py: real, fromLeft: bool, fromTop: bool) {
+		root.resizing = true;
+		root.rFromLeft = fromLeft;
+		root.rFromTop = fromTop;
+		root.rStartX = px;
+		root.rStartY = py;
+		root.rCardX = card.x;
+		root.rCardY = card.y;
+		root.rWidth = root.shownWidth;
+		root.rRows = root.compactRows;
+		// Pinned while resizing; the fractions are worked out again at the end.
+		card.x = card.x;
+		card.y = card.y;
+	}
+
+	function updateResize(px: real, py: real) {
+		if (!root.resizing) return;
+		const dx = px - root.rStartX;
+		const dy = py - root.rStartY;
+
+		// Width, kept on screen whichever edge is moving.
+		let w = root.rWidth + (root.rFromLeft ? -dx : dx);
+		const room = root.rFromLeft ? root.rCardX + root.rWidth : root.width - root.rCardX;
+		w = Math.round(Math.max(280, Math.min(w, room, root.maxWidth)));
+		root.cardWidth = w;
+		if (root.rFromLeft) card.x = root.rCardX + root.rWidth - w;
+
+		// Lines. Expanded already shows a page, so only width changes there.
+		if (root.expanded || Lyrics.timing) return;
+		const lines = Math.round((root.rFromTop ? -dy : dy) / root.rowHeight);
+		const rows = Math.max(1, Math.min(15, root.rRows + lines));
+		const grown = (rows - root.rRows) * root.rowHeight;
+		root.compactRows = rows;
+		if (root.rFromTop) card.y = Math.max(0, root.rCardY - grown);
+	}
+
+	function endResize() {
+		if (!root.resizing) return;
+		root.resizing = false;
+		Persist.set("lyricsWidth", root.cardWidth);
+		Persist.set("lyricsRows", root.compactRows);
+		root.savePlace();
+	}
+
 	function resetLayout() {
 		root.fx = 0.5;
 		root.fy = 1;
@@ -165,7 +228,11 @@ PanelWindow {
 
 	mask: Region { item: card }
 
-	readonly property int lineSize: root.fontPx
+	// Text grows and shrinks with the card: fontPx is the size at the default
+	// width, and the card's actual width scales it. A−/A+ and alt+scroll move
+	// fontPx, so they fine-tune whatever size the grip gave.
+	readonly property real widthScale: root.shownWidth / root.defaultWidth
+	readonly property int lineSize: Math.max(8, Math.min(96, Math.round(root.fontPx * root.widthScale)))
 	readonly property real rowHeight: root.lineSize * 1.55
 
 	// The one animated value; everything that grows is bound to it. Expanded
@@ -224,11 +291,17 @@ PanelWindow {
 
 			anchors.fill: parent
 			acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-			cursorShape: drag.active ? Qt.ClosedHandCursor : Qt.PointingHandCursor
+			cursorShape: root.resizing
+				? (root.rFromLeft === root.rFromTop ? Qt.SizeFDiagCursor : Qt.SizeBDiagCursor)
+				: drag.active ? Qt.ClosedHandCursor : Qt.PointingHandCursor
+
+			// Right button: a press that moves resizes, one that does not hides.
+			property point rightAt
+			property bool rightMoved: false
 
 			// A press that moves is a drag; one that does not is still a
 			// click. Never while timing, where every press is a tap.
-			drag.target: Lyrics.timing ? null : card
+			drag.target: Lyrics.timing || grab.pressedButtons !== Qt.LeftButton ? null : card
 			drag.axis: Drag.XAndYAxis
 			drag.minimumX: 0
 			drag.maximumX: root.width - card.width
@@ -239,13 +312,38 @@ PanelWindow {
 			// While timing every press counts, so a quick pair of taps is
 			// not swallowed as a double-click.
 			onPressed: mouse => {
-				if (!Lyrics.timing) return;
-				if (mouse.button === Qt.RightButton) Lyrics.cancelTiming();
-				else Lyrics.tap();
+				if (Lyrics.timing) {
+					if (mouse.button === Qt.RightButton) Lyrics.cancelTiming();
+					else Lyrics.tap();
+					return;
+				}
+				if (mouse.button === Qt.RightButton) {
+					grab.rightAt = Qt.point(mouse.x, mouse.y);
+					grab.rightMoved = false;
+				}
 			}
+			onPositionChanged: mouse => {
+				if (Lyrics.timing || !(mouse.buttons & Qt.RightButton)) return;
+				const p = grab.mapToItem(null, mouse.x, mouse.y);
+				if (!grab.rightMoved) {
+					if (Math.abs(mouse.x - grab.rightAt.x) < 6 && Math.abs(mouse.y - grab.rightAt.y) < 6) return;
+					grab.rightMoved = true;
+					const start = grab.mapToItem(null, grab.rightAt.x, grab.rightAt.y);
+					root.beginResize(start.x, start.y,
+						grab.rightAt.x < card.width / 2, grab.rightAt.y < card.height / 2);
+				}
+				root.updateResize(p.x, p.y);
+			}
+			onReleased: mouse => {
+				if (mouse.button === Qt.RightButton) root.endResize();
+			}
+			onCanceled: root.endResize()
 			onClicked: mouse => {
 				if (Lyrics.timing) return;
-				if (mouse.button === Qt.RightButton) Lyrics.toggle();
+				if (mouse.button === Qt.RightButton) {
+					if (!grab.rightMoved) Lyrics.toggle();
+					grab.rightMoved = false;
+				}
 				else if (mouse.button === Qt.MiddleButton) root.resetLayout();
 			}
 			onDoubleClicked: mouse => {
@@ -363,7 +461,7 @@ PanelWindow {
 				visible: !root.hasLines
 				horizontalAlignment: Text.AlignHCenter
 				color: Config.fgDim
-				font.pixelSize: Config.fontSize + 1
+				font.pixelSize: Math.max(Config.fontSize - 2, root.lineSize - 4)
 				text: ({
 					searching: "Looking for lyrics…",
 					instrumental: "♪  Instrumental",
@@ -465,7 +563,7 @@ PanelWindow {
 		MouseArea {
 			id: grip
 
-			visible: !Lyrics.timing && (cardHover.hovered || pressed)
+			visible: !Lyrics.timing && (cardHover.hovered || pressed) && !root.resizing || pressed
 			anchors.right: parent.right
 			anchors.bottom: parent.bottom
 			width: 18
@@ -473,36 +571,17 @@ PanelWindow {
 			cursorShape: Qt.SizeFDiagCursor
 			preventStealing: true
 
-			property real startX
-			property real startY
-			property int startWidth
-			property int startRows
-
 			onPressed: mouse => {
 				const p = mapToItem(null, mouse.x, mouse.y);
-				startX = p.x;
-				startY = p.y;
-				startWidth = root.shownWidth;
-				startRows = root.compactRows;
-				// Pin the top-left while resizing; the fractions are worked out
-				// again from wherever it ends up.
-				card.x = card.x;
-				card.y = card.y;
+				root.beginResize(p.x, p.y, false, false);
 			}
-
 			onPositionChanged: mouse => {
 				if (!pressed) return;
 				const p = mapToItem(null, mouse.x, mouse.y);
-				root.cardWidth = Math.max(280, Math.min(root.maxWidth - 0, startWidth + (p.x - startX)));
-				if (!root.expanded)
-					root.compactRows = Math.max(1, Math.min(15, startRows + Math.round((p.y - startY) / root.rowHeight)));
+				root.updateResize(p.x, p.y);
 			}
-
-			onReleased: {
-				Persist.set("lyricsWidth", root.cardWidth);
-				Persist.set("lyricsRows", root.compactRows);
-				root.savePlace();
-			}
+			onReleased: root.endResize()
+			onCanceled: root.endResize()
 
 			Label {
 				anchors.right: parent.right
