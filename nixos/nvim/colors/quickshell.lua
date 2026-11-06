@@ -20,7 +20,11 @@ local groups = {
 	MatchParen = { fg = p.accent, bold = true }, VertSplit = { fg = p.border }, WinSeparator = { fg = p.border },
 	StatusLine = { fg = p.fg, bg = p.bgAlt }, StatusLineNC = { fg = p.dim, bg = p.bgAlt },
 	Pmenu = { fg = p.fg, bg = p.bgAlt }, PmenuSel = { fg = p.bg, bg = p.accent },
-	Folded = { fg = p.dim, bg = p.bgAlt }, NonText = { fg = p.border }, EndOfBuffer = { fg = p.bg },
+	-- NonText is inherited by inlay hints, completion ghost text and code lens,
+	-- so it needs readable dim text; the border grey vanishes on dark themes.
+	-- Whitespace (and indent guides via it) can stay faint.
+	Folded = { fg = p.dim, bg = p.bgAlt }, NonText = { fg = p.dim }, Whitespace = { fg = p.border },
+	EndOfBuffer = { fg = p.bg },
 	Comment = { fg = p.dim, italic = true }, Constant = { fg = p.accent }, String = { fg = p.green },
 	Character = { fg = p.green }, Number = { fg = p.accent }, Boolean = { fg = p.accent },
 	Identifier = { fg = p.blue }, Function = { fg = p.yellow }, Statement = { fg = p.red },
