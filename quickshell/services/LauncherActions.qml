@@ -121,14 +121,6 @@ Singleton {
 			run: () => Bt.blocked ? Bt.unblock() : Bt.setEnabled(!Bt.enabled)
 		}),
 		({
-			id: "airplane",
-			name: root.airplane ? "Turn airplane mode off" : "Turn airplane mode on",
-			detail: root.airplane ? "Wi-Fi and Bluetooth are off" : "Switches off Wi-Fi and Bluetooth",
-			keywords: "flight offline radio rfkill wireless",
-			glyph: Config.icons.wifiOff,
-			run: () => root.spawn(["rfkill", root.airplane ? "unblock" : "block", "all"])
-		}),
-		({
 			id: "mute", when: Audio.sink !== null,
 			name: Audio.sink?.audio?.muted ? "Unmute sound" : "Mute sound",
 			detail: Audio.label(Audio.sink),
@@ -195,8 +187,6 @@ Singleton {
 		glyph: Power.profile === id ? Config.icons.check : Power.icon(id),
 		run: () => Power.set(id)
 	})) : []
-
-	readonly property bool airplane: !Network.wifiEnabled && !(Bt.available && Bt.enabled)
 
 	// Reachable from a plain search too, but only strictly: `strict` rows
 	// match only when what you typed starts the name or one of its keywords

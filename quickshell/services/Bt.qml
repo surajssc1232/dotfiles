@@ -260,7 +260,7 @@ Singleton {
 			root.request = null;
 	}
 
-	// A soft block (airplane mode, the rfkill key) is the user's to lift; a
+	// A soft block (the rfkill key) is the user's to lift; a
 	// hard block is a physical switch and this can do nothing about it.
 	function unblock() {
 		Quickshell.execDetached(["rfkill", "unblock", "bluetooth"]);

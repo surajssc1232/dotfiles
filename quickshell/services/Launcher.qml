@@ -514,7 +514,7 @@ Singleton {
 
 		if (Bt.blocked) {
 			return [action("unblock", "Unblock Bluetooth",
-				"Blocked by rfkill (airplane mode or the wireless key) · enter unblocks", "unblock on")];
+				"Blocked by rfkill (the wireless key) · enter unblocks", "unblock on")];
 		}
 
 		if (Bt.busy) {
