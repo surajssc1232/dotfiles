@@ -175,7 +175,7 @@ Singleton {
 		name: "Theme: " + t.name,
 		detail: (t.dark ? "Dark" : "Light") + (Config.themeId === t.id ? " · Current" : ""),
 		keywords: t.dark ? "dark" : "light",
-		swatches: [t.bg, t.accent, t.green, t.yellow, t.red, t.blue],
+		swatches: [t.bg, t.accent, t.fg],
 		glyph: Config.themeId === t.id ? Config.icons.check : Config.icons.swatch,
 		run: () => Config.setTheme(t.id)
 	}))

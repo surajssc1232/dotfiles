@@ -668,23 +668,24 @@ PanelWindow {
 								}
 							}
 
-							// A theme previews its own palette: background
-							// first, then accent and the four signal colours.
-							Row {
-								spacing: 4
+							// A theme previews itself as a strip: background,
+							// accent, foreground.
+							Rectangle {
 								visible: (entry.modelData.act?.swatches ?? []).length > 0
-								Repeater {
-									model: entry.modelData.act?.swatches ?? []
-									Rectangle {
-										required property string modelData
-										required property int index
-										width: index === 0 ? 18 : 12
-										height: width
-										radius: width / 2
-										anchors.verticalCenter: parent.verticalCenter
-										color: modelData
-										border.width: 1
-										border.color: Config.border
+								implicitWidth: strip.width + 2
+								implicitHeight: strip.height + 2
+								color: Config.border
+								Row {
+									id: strip
+									anchors.centerIn: parent
+									Repeater {
+										model: entry.modelData.act?.swatches ?? []
+										Rectangle {
+											required property string modelData
+											width: 16
+											height: 16
+											color: modelData
+										}
 									}
 								}
 							}
