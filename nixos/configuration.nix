@@ -702,7 +702,6 @@
     google-chrome
     prismlauncher
     uv
-    chiaki-ng
     # Toggles the Dell between the laptop (HDMI 2) and the PS5 (HDMI 1).
     # If the current input can't be read, it goes to the laptop.
     (writeShellApplication {
