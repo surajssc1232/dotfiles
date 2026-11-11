@@ -1,0 +1,83 @@
+# Only what differs from Helix's built-in defaults belongs in this file.
+#
+# Helix already ships language servers (rust-analyzer, clangd, gopls, jdtls,
+# ols, fish-lsp, bash-language-server, pyright), tree-sitter grammars, and
+# lldb-dap debug templates for rust/c/cpp/odin. Run `hx --health <language>`
+# to see what a language gets with no configuration at all before adding
+# anything here.
+
+# --- Python -----------------------------------------------------------------
+# Helix defaults to ty/ruff/jedi/pylsp; we want pyright instead.
+[[language]]
+name = "python"
+language-servers = ["pyright"]
+
+# --- Go ---------------------------------------------------------------------
+# auto-format is already on by default; goimports is not, and organises
+# imports on save.
+[[language]]
+name = "go"
+formatter = { command = "goimports" }
+
+[language-server.gopls.config]
+"ui.diagnostic.staticcheck" = true
+"formatting.gofumpt" = true
+"ui.completion.usePlaceholders" = true
+"ui.navigation.importShortcut" = "Both"
+
+[language-server.gopls.config.hints]
+assignVariableTypes = true
+compositeLiteralFields = true
+compositeLiteralTypes = true
+constantValues = true
+functionTypeParameters = true
+parameterNames = true
+rangeVariableTypes = true
+
+# --- C / C++ ----------------------------------------------------------------
+# Helix indents these 2-wide and does not format on save.
+[[language]]
+name = "c"
+auto-format = true
+indent = { tab-width = 4, unit = "    " }
+
+[[language]]
+name = "cpp"
+auto-format = true
+indent = { tab-width = 4, unit = "    " }
+
+# --- Odin -------------------------------------------------------------------
+# Helix indents Odin with tabs.
+[[language]]
+name = "odin"
+indent = { tab-width = 4, unit = "    " }
+
+# --- Bash -------------------------------------------------------------------
+[[language]]
+name = "bash"
+language-servers = ["bash-language-server"]
+
+# --- Java -------------------------------------------------------------------
+# Helix indents Java 2-wide.
+[[language]]
+name = "java"
+indent = { tab-width = 4, unit = "    " }
+
+# jdtls needs help on NixOS: it has to read documentation straight out of
+# read-only .jar files in the store, and decompile in-process rather than
+# shelling out to an external binary.
+[language-server.jdtls.config]
+extendedClientCapabilities = { classFileContentsSupport = true }
+
+[language-server.jdtls.config.contentProvider]
+preferred = "fernflower"
+
+[language-server.jdtls.config.maven]
+downloadSources = true
+downloadJavadoc = true
+
+[language-server.jdtls.config.gradle]
+enabled = true
+
+[language-server.jdtls.config.eclipse]
+downloadSources = true

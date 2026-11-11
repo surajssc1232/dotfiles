@@ -102,19 +102,6 @@ require("lazy").setup({
 		end,
 	},
 
-	-- Gemini-backed assistant. The key is read from the environment so it
-	-- stays out of this file (and out of the world-readable Nix store).
-	{
-		"surajssc1232/rover.nvim",
-		config = function()
-			require("rover").setup({
-				api_key = os.getenv("GEMINI_API_KEY"),
-				model = "gemini-2.5-flash",
-				window_width = 150,
-				window_height = 25,
-			})
-		end,
-	},
 
 	{
 		"nvim-telescope/telescope.nvim",

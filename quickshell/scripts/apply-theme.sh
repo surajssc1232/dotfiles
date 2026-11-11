@@ -116,7 +116,7 @@ done
 mkdir -p ~/.config/helix/themes
 cat > ~/.config/helix/themes/quickshell.toml <<EOT
 # Written by quickshell's apply-theme.sh on every theme change.
-"ui.background" = { bg = "bg" }
+"ui.background" = {}
 "ui.text" = "fg"
 "ui.text.focus" = { fg = "fg", bg = "bgAlt" }
 "ui.cursor" = { fg = "bg", bg = "dim" }
@@ -126,7 +126,7 @@ cat > ~/.config/helix/themes/quickshell.toml <<EOT
 "ui.selection" = { bg = "border" }
 "ui.linenr" = "dim"
 "ui.linenr.selected" = "accent"
-"ui.gutter" = { bg = "bg" }
+"ui.gutter" = {}
 "ui.statusline" = { fg = "fg", bg = "bgAlt" }
 "ui.statusline.inactive" = { fg = "dim", bg = "bgAlt" }
 "ui.statusline.normal" = { fg = "bg", bg = "accent", modifiers = ["bold"] }

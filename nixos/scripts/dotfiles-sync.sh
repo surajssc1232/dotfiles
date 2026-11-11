@@ -26,7 +26,7 @@ fi
 
 # Only files the repo already tracks: these directories also hold things that
 # should stay private or are just noise (history, fish_variables).
-for dir in alacritty fish foot fuzzel ghostty gtk-3.0 mango niri nushell; do
+for dir in alacritty fish foot fuzzel ghostty gtk-3.0 helix mango niri nushell wezterm; do
   while IFS= read -r -d '' file; do
     if [ "$file" != "fish/fish_variables" ] && [ -f "$live/$file" ]; then
       cp -fL "$live/$file" "$file"

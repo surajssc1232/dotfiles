@@ -41,6 +41,15 @@ local groups = {
 	["@string"] = { link = "String" }, ["@type"] = { link = "Type" }, ["@comment"] = { link = "Comment" },
 }
 for name, v in pairs(groups) do hl(name, v) end
+-- Leave the base background to the terminal: in foot that is the same theme
+-- colour, in a translucent terminal (wezterm) the wallpaper shows through.
+for _, name in ipairs({ "Normal", "NormalNC", "SignColumn", "EndOfBuffer", "FoldColumn" }) do
+	local v = vim.api.nvim_get_hl(0, { name = name })
+	v.bg = nil
+	if name == "EndOfBuffer" then v.fg = p.bgAlt end
+	hl(name, v)
+end
+vim.g.quickshell_glass = true
 vim.g.quickshell_bg = p.bg
 vim.g.quickshell_border = p.border
 vim.g.quickshell_accent = p.accent
