@@ -668,6 +668,27 @@ PanelWindow {
 								}
 							}
 
+							// A theme previews its own palette: background
+							// first, then accent and the four signal colours.
+							Row {
+								spacing: 4
+								visible: (entry.modelData.act?.swatches ?? []).length > 0
+								Repeater {
+									model: entry.modelData.act?.swatches ?? []
+									Rectangle {
+										required property string modelData
+										required property int index
+										width: index === 0 ? 18 : 12
+										height: width
+										radius: width / 2
+										anchors.verticalCenter: parent.verticalCenter
+										color: modelData
+										border.width: 1
+										border.color: Config.border
+									}
+								}
+							}
+
 							// ---- inline slider ----
 							Item {
 								id: track

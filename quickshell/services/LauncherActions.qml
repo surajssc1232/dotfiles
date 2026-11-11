@@ -173,7 +173,9 @@ Singleton {
 	readonly property var themes: Themes.list.map(t => ({
 		id: "theme:" + t.id,
 		name: "Theme: " + t.name,
-		detail: Config.themeId === t.id ? "Current" : "",
+		detail: (t.dark ? "Dark" : "Light") + (Config.themeId === t.id ? " · Current" : ""),
+		keywords: t.dark ? "dark" : "light",
+		swatches: [t.bg, t.accent, t.green, t.yellow, t.red, t.blue],
 		glyph: Config.themeId === t.id ? Config.icons.check : Config.icons.swatch,
 		run: () => Config.setTheme(t.id)
 	}))
