@@ -198,5 +198,5 @@ yellow = "#$yellow"
 red = "#$red"
 blue = "#$blue"
 EOT
-pkill -USR1 -x hx >/dev/null 2>&1
+pkill -USR1 -x '(\.)?hx(-wrapped)?' >/dev/null 2>&1
 exit 0
