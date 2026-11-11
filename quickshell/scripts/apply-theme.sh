@@ -110,4 +110,93 @@ EOT
 for sock in "${XDG_RUNTIME_DIR:-/run/user/$UID}"/nvim.*.0; do
 	[ -S "$sock" ] && nvim --server "$sock" --remote-send '<Cmd>colorscheme quickshell<CR>' >/dev/null 2>&1
 done
+
+# ---- helix: themes/quickshell.toml (config.toml sets theme = "quickshell"),
+# then SIGUSR1 makes running instances reload their config and theme. ----
+mkdir -p ~/.config/helix/themes
+cat > ~/.config/helix/themes/quickshell.toml <<EOT
+# Written by quickshell's apply-theme.sh on every theme change.
+"ui.background" = { bg = "bg" }
+"ui.text" = "fg"
+"ui.text.focus" = { fg = "fg", bg = "bgAlt" }
+"ui.cursor" = { fg = "bg", bg = "dim" }
+"ui.cursor.primary" = { fg = "bg", bg = "accent" }
+"ui.cursor.match" = { fg = "yellow", modifiers = ["bold"] }
+"ui.cursorline.primary" = { bg = "bgAlt" }
+"ui.selection" = { bg = "border" }
+"ui.linenr" = "dim"
+"ui.linenr.selected" = "accent"
+"ui.gutter" = { bg = "bg" }
+"ui.statusline" = { fg = "fg", bg = "bgAlt" }
+"ui.statusline.inactive" = { fg = "dim", bg = "bgAlt" }
+"ui.statusline.normal" = { fg = "bg", bg = "accent", modifiers = ["bold"] }
+"ui.statusline.insert" = { fg = "bg", bg = "green", modifiers = ["bold"] }
+"ui.statusline.select" = { fg = "bg", bg = "yellow", modifiers = ["bold"] }
+"ui.popup" = { fg = "fg", bg = "bgAlt" }
+"ui.window" = "border"
+"ui.help" = { fg = "fg", bg = "bgAlt" }
+"ui.menu" = { fg = "fg", bg = "bgAlt" }
+"ui.menu.selected" = { fg = "bg", bg = "accent" }
+"ui.bufferline" = { fg = "dim", bg = "bgAlt" }
+"ui.bufferline.active" = { fg = "fg", bg = "bg", modifiers = ["bold"] }
+"ui.virtual" = "border"
+"ui.virtual.inlay-hint" = "dim"
+"ui.virtual.ruler" = { bg = "bgAlt" }
+
+"comment" = { fg = "dim", modifiers = ["italic"] }
+"keyword" = "accent"
+"keyword.control" = "red"
+"function" = "blue"
+"function.macro" = "red"
+"type" = "yellow"
+"constructor" = "yellow"
+"constant" = "yellow"
+"string" = "green"
+"variable" = "fg"
+"variable.builtin" = "red"
+"variable.parameter" = "fg"
+"variable.other.member" = "blue"
+"attribute" = "yellow"
+"operator" = "blue"
+"punctuation" = "dim"
+"namespace" = "accent"
+"tag" = "red"
+"label" = "accent"
+"special" = "blue"
+
+"markup.heading" = { fg = "accent", modifiers = ["bold"] }
+"markup.bold" = { modifiers = ["bold"] }
+"markup.italic" = { modifiers = ["italic"] }
+"markup.link.url" = { fg = "blue", modifiers = ["underlined"] }
+"markup.link.text" = "accent"
+"markup.raw" = "green"
+"markup.list" = "red"
+"markup.quote" = "dim"
+
+"diff.plus" = "green"
+"diff.minus" = "red"
+"diff.delta" = "yellow"
+
+"error" = "red"
+"warning" = "yellow"
+"info" = "blue"
+"hint" = "dim"
+"diagnostic.error" = { underline = { color = "red", style = "curl" } }
+"diagnostic.warning" = { underline = { color = "yellow", style = "curl" } }
+"diagnostic.info" = { underline = { color = "blue", style = "curl" } }
+"diagnostic.hint" = { underline = { color = "dim", style = "curl" } }
+
+[palette]
+bg = "#$bg"
+bgAlt = "#$bgAlt"
+border = "#$border"
+fg = "#$fg"
+dim = "#$dim"
+accent = "#$accent"
+green = "#$green"
+yellow = "#$yellow"
+red = "#$red"
+blue = "#$blue"
+EOT
+pkill -USR1 -x hx >/dev/null 2>&1
 exit 0

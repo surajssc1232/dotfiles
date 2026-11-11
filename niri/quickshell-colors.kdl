@@ -1,12 +1,12 @@
 // Written by quickshell's apply-theme.sh on every theme change.
 layout {
     focus-ring {
-        active-color "#7aa2f7"
-        inactive-color "#414868"
+        active-color "#268bd2"
+        inactive-color "#d3cbb7"
     }
     border {
-        active-color "#7aa2f7"
-        inactive-color "#414868"
-        urgent-color "#f7768e"
+        active-color "#268bd2"
+        inactive-color "#d3cbb7"
+        urgent-color "#dc322f"
     }
 }
