@@ -25,3 +25,4 @@ a = "insert_mode"
 [keys.normal.space]
 w = ":write"
 q = ":quit!"
+e = "file_explorer_in_current_buffer_directory"

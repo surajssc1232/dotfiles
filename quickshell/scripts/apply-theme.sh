@@ -27,15 +27,15 @@ bright4=$blue
 bright5=$accent
 bright6=$blue
 bright7=$fg
-selection-foreground=$fg
-selection-background=$border
+selection-foreground=$bg
+selection-background=$fg
 EOT
 }
 { echo "[colors-dark]"; foot_colors; echo; echo "[colors-light]"; foot_colors; } > ~/.config/foot/theme.ini
 # foot never reloads its config, so recolor open windows by writing OSC
 # sequences to each one's pty (foot's children hold the slave end on stdin).
 # The [100] on the background resets any leftover transparency to opaque.
-printf -v osc '\033]10;#%s\033\\\033]11;[100]#%s\033\\\033]12;#%s\033\\' "$fg" "$bg" "$accent"
+printf -v osc '\033]10;#%s\033\\\033]11;[100]#%s\033\\\033]12;#%s\033\\\033]17;#%s\033\\\033]19;#%s\033\\' "$fg" "$bg" "$accent" "$fg" "$bg"
 i=0
 for c in $border $red $green $yellow $blue $accent $blue $fg $dim $red $green $yellow $blue $accent $blue $fg; do
 	printf -v seq '\033]4;%d;#%s\033\\' "$i" "$c"; osc+=$seq; i=$((i + 1))
