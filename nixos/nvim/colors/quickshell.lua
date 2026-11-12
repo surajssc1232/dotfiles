@@ -42,7 +42,7 @@ local groups = {
 }
 for name, v in pairs(groups) do hl(name, v) end
 -- Leave the base background to the terminal: in foot that is the same theme
--- colour, in a translucent terminal (wezterm) the wallpaper shows through.
+-- colour, in a translucent terminal (foot) the wallpaper shows through.
 for _, name in ipairs({ "Normal", "NormalNC", "SignColumn", "EndOfBuffer", "FoldColumn" }) do
 	local v = vim.api.nvim_get_hl(0, { name = name })
 	v.bg = nil

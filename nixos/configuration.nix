@@ -695,7 +695,6 @@
   environment.systemPackages = with pkgs; [
     acpi
     yt-dlp
-    wezterm
     foot
     nushell
     steam
