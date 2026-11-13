@@ -4,6 +4,8 @@
   inputs = {
 
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
+    # Separate pin so claude-code can be updated without touching the system.
+    nixpkgs-claude.url = "github:nixos/nixpkgs?ref=nixos-unstable";
     # zen-browser.url = "github:0xc000022070/zen-browser-flake";
     
     

@@ -335,7 +335,7 @@
   ];
 
   boot.consoleLogLevel = 0;
-  boot.initrd.verbose = false;
+  # boot.initrd.verbose = false;
   boot.initrd.kernelModules = [ "i915" ];
 
   # A splash from the moment the kernel can draw until the greeter maps.
@@ -786,7 +786,7 @@
       '';
     })
     streamlink
-    claude-code
+    (import inputs.nixpkgs-claude { system = pkgs.stdenv.hostPlatform.system; config.allowUnfree = true; }).claude-code
     efibootmgr
     efibooteditor
     ncdu
