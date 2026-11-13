@@ -485,9 +485,10 @@ binds {
     XF86AudioPrev allow-when-locked=true { spawn "playerctl" "previous"; }
     XF86AudioStop allow-when-locked=true { spawn "playerctl" "stop"; }
     // The wireless keyboard's launcher keys, by their printed icons.
-    XF86Tools      hotkey-overlay-title="Music" { spawn "foot" "ytermusic"; }
     XF86HomePage   hotkey-overlay-title="Browser" { spawn "helium"; }
     XF86Mail       hotkey-overlay-title="Mail" { spawn "helium" "https://mail.google.com"; }
+    F1             hotkey-overlay-title="YouTube" { spawn "helium" "https://www.youtube.com"; }
+    XF86Tools      hotkey-overlay-title="YouTube" { spawn "helium" "https://www.youtube.com"; }
     XF86Explorer   hotkey-overlay-title="Files" { spawn "nemo"; }
     XF86Calculator hotkey-overlay-title="Calculator" { spawn "gnome-calculator"; }
     XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
