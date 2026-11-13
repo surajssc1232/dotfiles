@@ -17,7 +17,7 @@ import qs.widgets
 //   · ctrl+scroll   lyrics sooner or later, for ones that are out of time
 //   · right-click   hide
 //   · drag          move it anywhere
-//   · right-drag    resize from the nearest edge, like GNOME; the text
+//   · super+right-drag resize from the nearest edge, like GNOME; the text
 //                   scales with the width, and taller shows more lines
 //                   (also the corner grip). A right-click that does not
 //                   move still hides it.
@@ -298,6 +298,8 @@ PanelWindow {
 			// Right button: a press that moves resizes, one that does not hides.
 			property point rightAt
 			property bool rightMoved: false
+			// Resizing only happens with Super held down.
+			property bool superHeld: false
 
 			// A press that moves is a drag; one that does not is still a
 			// click. Never while timing, where every press is a tap.
@@ -320,10 +322,11 @@ PanelWindow {
 				if (mouse.button === Qt.RightButton) {
 					grab.rightAt = Qt.point(mouse.x, mouse.y);
 					grab.rightMoved = false;
+					grab.superHeld = (mouse.modifiers & Qt.MetaModifier) !== 0;
 				}
 			}
 			onPositionChanged: mouse => {
-				if (Lyrics.timing || !(mouse.buttons & Qt.RightButton)) return;
+				if (Lyrics.timing || !(mouse.buttons & Qt.RightButton) || !grab.superHeld) return;
 				const p = grab.mapToItem(null, mouse.x, mouse.y);
 				if (!grab.rightMoved) {
 					if (Math.abs(mouse.x - grab.rightAt.x) < 6 && Math.abs(mouse.y - grab.rightAt.y) < 6) return;
@@ -341,7 +344,7 @@ PanelWindow {
 			onClicked: mouse => {
 				if (Lyrics.timing) return;
 				if (mouse.button === Qt.RightButton) {
-					if (!grab.rightMoved) Lyrics.toggle();
+					if (!grab.rightMoved && !grab.superHeld) Lyrics.toggle();
 					grab.rightMoved = false;
 				}
 				else if (mouse.button === Qt.MiddleButton) root.resetLayout();
