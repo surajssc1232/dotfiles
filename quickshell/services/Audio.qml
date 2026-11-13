@@ -37,12 +37,20 @@ Singleton {
 		objects: root.streams
 	}
 
-	// What to call an application. media.name is usually the nicest ("Spotify"
-	// rather than "spotify"), then the app name it registered, then the node.
+	// What to call an application: the name it registered under, then what it
+	// says it is playing where that adds anything. Most browsers call every
+	// stream "Playback", which on its own names nothing at all.
 	function streamLabel(node): string {
 		if (!node) return "Unknown";
 		const p = node.properties ?? ({});
-		return p["media.name"] || p["application.name"] || node.name || "Unknown";
+		const app = p["application.name"] || node.description || node.name || "";
+		const media = p["media.name"] || "";
+		if (!app) return media || "Unknown";
+
+		const generic = /^(playback|audio stream|audio-src|output|audio)$/i.test(media);
+		return media && !generic && media.toLowerCase() !== app.toLowerCase()
+			? app + " \u00b7 " + media
+			: app;
 	}
 
 	function label(node): string {

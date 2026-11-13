@@ -300,6 +300,9 @@ Singleton {
 		question: "\uf059",
 		rocket: "\uf135",
 		enter: "\uf090",       // sign-in
+		plane: "\uf072",
+		logout: "\uf08b",      // sign-out
+		sleep: "\uf236",       // bed
 		// Plain arrows for the launcher's key hints; the Nerd Font ones above
 		// are icon-weight and read as glyphs rather than as keys.
 		keyUp: "\u2191",
