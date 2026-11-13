@@ -261,6 +261,7 @@ layout {
 // This line starts waybar, a commonly used bar for Wayland compositors.
 
 spawn-at-startup "quickshell"
+spawn-at-startup "python3" "/home/suraj/.config/niri/auto-width.py"
 spawn-at-startup "./.config/mango/screen-rec.sh --clean"
 // spawn-at-startup "dunst"
 // spawn-at-startup "~/.config/waybar/scripts/battery-monitor.sh"
