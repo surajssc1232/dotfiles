@@ -821,10 +821,41 @@ PanelWindow {
 
 							Layout.fillWidth: true
 							Layout.leftMargin: modelData.kind === "def" || modelData.kind === "ex" ? 10 : 0
-							text: modelData.text
+							Layout.topMargin: modelData.kind === "sep" ? 4 : 0
+							Layout.bottomMargin: modelData.kind === "sep" ? 4 : 0
+							Layout.preferredHeight: modelData.kind === "sep" ? 1 : -1
+							text: modelData.kind === "sep" ? ""
+								: modelData.kind === "loading"
+									? modelData.text + "\u2009" + "\u2022".repeat(dots) + "\u2009".repeat(3 - dots)
+									: modelData.text
+
+							// "thinking" with dots that fill in, and a gentle pulse.
+							property int dots: 0
+							Timer {
+								running: parent.modelData.kind === "loading" && parent.visible
+								interval: 350
+								repeat: true
+								onTriggered: parent.dots = (parent.dots + 1) % 4
+							}
+							SequentialAnimation on opacity {
+								running: modelData.kind === "loading"
+								loops: Animation.Infinite
+								NumberAnimation { from: 1; to: 0.45; duration: 700; easing.type: Easing.InOutSine }
+								NumberAnimation { from: 0.45; to: 1; duration: 700; easing.type: Easing.InOutSine }
+							}
+
+							Rectangle {
+								visible: parent.modelData.kind === "sep"
+								anchors.left: parent.left
+								anchors.right: parent.right
+								anchors.verticalCenter: parent.verticalCenter
+								height: 1
+								color: Config.fgDim
+								opacity: 0.3
+							}
 							color: modelData.kind === "def" || modelData.kind === "body" ? Config.fg : Config.fgDim
 							font.italic: modelData.kind === "pos"
-							font.pixelSize: modelData.kind === "ex" || modelData.kind === "source"
+							font.pixelSize: modelData.kind === "ex" || modelData.kind === "source" || modelData.kind === "loading"
 								? Config.fontSize - 3 : Config.fontSize - 1
 							wrapMode: Text.WordWrap
 							maximumLineCount: modelData.lines ?? 2

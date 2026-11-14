@@ -369,6 +369,14 @@ Singleton {
 		// Never a dead end: if nothing here matches, the thing you typed is
 		// probably somewhere else.
 		if (rows.length === 0) rows.push(...root.webRows(root.term));
+		// Otherwise the web is still one arrow-press away at the bottom, so a
+		// stray fuzzy app match never hides it. A site shortcut goes first.
+		else {
+			const sp = root.term.indexOf(" ");
+			if (sp > 0 && root.webSites[root.term.slice(0, sp).toLowerCase()] && root.term.slice(sp + 1).trim())
+				rows.unshift(...root.webRows(root.term).filter(r => r.key.startsWith("site:")));
+			if (root.term.length >= 2) rows.push(root.webRow(root.term));
+		}
 
 		return rows;
 	}
@@ -697,12 +705,130 @@ Singleton {
 				iconName: "", glyph: Config.icons.arrowRight, url: url });
 		}
 
-		rows.push({
-			kind: "url", key: "web", name: term,
-			detail: "Search the web", iconName: "", glyph: Config.icons.search,
-			url: "https://www.google.com/search?q=" + encodeURIComponent(term)
-		});
+		// A site shortcut: "yt lofi", "gh quickshell", "w kyoto". Offered
+		// first, since naming the site is about as deliberate as it gets.
+		const sp = term.indexOf(" ");
+		const site = sp > 0 ? root.webSites[term.slice(0, sp).toLowerCase()] : null;
+		const rest = sp > 0 ? term.slice(sp + 1).trim() : "";
+		if (site && rest) {
+			rows.push({
+				kind: "url", key: "site:" + term.slice(0, sp).toLowerCase(), name: rest,
+				detail: "Search " + site.name, iconName: "", glyph: Config.icons.search,
+				url: site.url + encodeURIComponent(rest)
+			});
+		}
+
+		rows.push(root.webRow(term));
 		return rows;
+	}
+
+	function webRow(term: string): var {
+		const fixed = root.webFixTerm === term ? root.webFix : "";
+		const q = fixed || term;
+		return {
+			kind: "url", key: "web", name: term,
+			detail: fixed ? "Search the web for \u201c" + fixed + "\u201d" : "Search the web",
+			iconName: "", glyph: Config.icons.search,
+			url: "https://www.google.com/search?q=" + encodeURIComponent(q)
+		};
+	}
+
+	// Prefix word -> site search. The word plus a space triggers it.
+	readonly property var webSites: ({
+		yt: { name: "YouTube", url: "https://www.youtube.com/results?search_query=" },
+		gh: { name: "GitHub", url: "https://github.com/search?type=repositories&q=" },
+		w: { name: "Wikipedia", url: "https://en.wikipedia.org/w/index.php?search=" },
+		r: { name: "Reddit", url: "https://www.google.com/search?q=site%3Areddit.com+" },
+		aw: { name: "Arch Wiki", url: "https://wiki.archlinux.org/index.php?search=" },
+		nix: { name: "Nix packages", url: "https://search.nixos.org/packages?query=" },
+		maps: { name: "Maps", url: "https://www.google.com/maps/search/" },
+		img: { name: "Images", url: "https://www.google.com/search?tbm=isch&q=" },
+		ddg: { name: "DuckDuckGo", url: "https://duckduckgo.com/?q=" }
+	})
+
+	// ---- spelling fix ----
+	//
+	// The search engine's top suggestion, used only when it is the same query
+	// with a word or two respelled ("mening" -> "meaning"), never when it adds
+	// words of its own. Not shown as rows; it just feeds the search and preview.
+	property string webFix: ""
+	property string webFixTerm: ""
+
+	function fetchFix(term: string, seq: int, done) {
+		root.getJson("https://duckduckgo.com/ac/?type=list&q=" + encodeURIComponent(term), r => {
+			if (seq !== root.webSeq) return;
+			const list = Array.isArray(r?.[1]) ? r[1].filter(x => typeof x === "string") : [];
+			const a = term.toLowerCase().trim().split(/\s+/);
+			let fix = "";
+			if (!list.some(x => x.toLowerCase() === a.join(" "))) {
+				for (const cand of list) {
+					const b = cand.toLowerCase().trim().split(/\s+/);
+					if (b.length !== a.length) continue;
+					let changed = 0, ok = true;
+					for (let i = 0; i < a.length && ok; i++) {
+						if (a[i] === b[i]) continue;
+						changed++;
+						ok = root.editDistance(a[i], b[i]) <= (a[i].length > 5 ? 2 : 1);
+					}
+					if (ok && changed > 0) { fix = cand; break; }
+				}
+			}
+			if (fix) { root.webFix = fix; root.webFixTerm = term; done(fix); return; }
+			root.fixWords(term, seq, done);
+		});
+	}
+
+	// Long queries get no useful whole-query suggestion, so each longer word is
+	// checked alone: a word nothing is suggested to start with ("ython") takes
+	// the most suggested first word, if it is a near spelling ("python").
+	function fixWords(term: string, seq: int, done) {
+		const words = term.trim().split(/\s+/);
+		const check = [];
+		words.forEach((w, i) => { if (/^[a-z]{4,}$/i.test(w) && check.length < 6) check.push(i); });
+		if (check.length === 0) { done(term); return; }
+
+		let pending = check.length;
+		const out = words.slice();
+		for (const i of check) {
+			const w = words[i].toLowerCase();
+			root.getJson("https://duckduckgo.com/ac/?type=list&q=" + encodeURIComponent(w), r => {
+				if (seq !== root.webSeq) return;
+				const list = Array.isArray(r?.[1]) ? r[1].filter(x => typeof x === "string") : [];
+				const firsts = list.map(x => x.toLowerCase().split(/\s+/)[0]);
+				if (firsts.length > 0 && !firsts.some(f => f.startsWith(w))) {
+					const count = ({});
+					let best = "";
+					for (const f of firsts) {
+						count[f] = (count[f] ?? 0) + 1;
+						if (!best || count[f] > count[best]) best = f;
+					}
+					if (best && root.editDistance(w, best) <= (w.length > 5 ? 2 : 1) + 0) out[i] = best;
+				}
+				if (--pending > 0) return;
+				const fixed = out.join(" ");
+				if (fixed.toLowerCase() !== term.toLowerCase()) {
+					root.webFix = fixed;
+					root.webFixTerm = term;
+				}
+				done(fixed);
+			});
+		}
+	}
+
+	// Optimal string alignment: a swapped pair ("pyhton") is one edit.
+	function editDistance(x: string, y: string): int {
+		const d = [];
+		for (let i = 0; i <= x.length; i++) { d.push([i]); }
+		for (let j = 1; j <= y.length; j++) d[0].push(j);
+		for (let i = 1; i <= x.length; i++)
+			for (let j = 1; j <= y.length; j++) {
+				const c = x.charAt(i - 1) === y.charAt(j - 1) ? 0 : 1;
+				let v = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + c);
+				if (i > 1 && j > 1 && x.charAt(i - 1) === y.charAt(j - 2) && x.charAt(i - 2) === y.charAt(j - 1))
+					v = Math.min(v, d[i - 2][j - 2] + 1);
+				d[i][j] = v;
+			}
+		return d[x.length][y.length];
 	}
 
 	// ---- web preview ----
@@ -717,14 +843,26 @@ Singleton {
 	onTermChanged: {
 		root.webSeq++;
 		root.webInfo = null;
-		qaProc.running = false;
+		root.stopQa();
+		qaTimeout.stop();
+		root.webTop = null;
+		root.webFix = "";
+		root.webFixTerm = "";
 		if (root.mode === "app" && root.term.length >= 3) webTimer.restart();
 		else webTimer.stop();
 	}
 
+	// Arrowing down onto the web row fetches its preview then, rather than
+	// only when it happened to be on top while typing.
+	onSelectedChanged: {
+		if (root.selected?.key === "web" && root.webInfo === null
+				&& root.mode === "app" && root.term.length >= 3 && !webTimer.running)
+			webTimer.restart();
+	}
+
 	Timer {
 		id: webTimer
-		interval: 250
+		interval: 150
 		onTriggered: root.fetchWeb(root.term, root.webSeq)
 	}
 
@@ -792,10 +930,13 @@ Singleton {
 	// and otherwise the top web result written up as a card.
 	function fetchWeb(term: string, seq: int) {
 		if (root.selected?.key !== "web") return;
-		const next = () => root.fetchEntity(term, seq, () => root.fetchTopResult(term, seq));
-		const word = root.definitionWord(term);
-		if (word !== "") root.fetchDefinition(word, seq, next);
-		else next();
+		root.fetchFix(term, seq, q => {
+			root.fetchHits(q, seq);
+			const next = () => root.fetchEntity(q, seq, () => root.fetchTopResult(q, seq));
+			const word = root.definitionWord(q);
+			if (word !== "") root.fetchDefinition(word, seq, next);
+			else next();
+		});
 	}
 
 	function fetchEntity(term: string, seq: int, fallback) {
@@ -838,22 +979,48 @@ Singleton {
 		// Same heading the answer will have, so the card fills in rather
 		// than being swapped for a different one.
 		const q = term.replace(/\?$/, "");
-		root.webInfo = {
-			heading: q.charAt(0).toUpperCase() + q.slice(1), image: "", height: 74,
-			rows: [{ kind: "source", text: "Finding an answer\u2026" }]
-		};
-		if (root.answers[term.toLowerCase()]) { root.askModel(term, [], seq); return; }
+		root.showAnswer(term, "");
+		root.fetchHits(term, seq, hits => {
+			// The results are context for Claude only; they are not shown.
+			root.askModel(term, hits, seq);
+			root.showAnswer(term, "");
+		});
+	}
+
+	// DuckDuckGo results, fetched once per query and shared: started as soon as
+	// the query is known so they are ready when the earlier tiers fall through.
+	property var hitsCache: ({})
+	function fetchHits(term: string, seq: int, done) {
+		const key = term.toLowerCase();
+		let c = root.hitsCache[key];
+		if (c) {
+			if (done) { if (c.hits) done(c.hits); else c.waiters.push(done); }
+			return;
+		}
+		c = { hits: null, waiters: done ? [done] : [] };
+		const next = ({});
+		for (const k in root.hitsCache) next[k] = root.hitsCache[k];
+		next[key] = c;
+		root.hitsCache = next;
 
 		const xhr = new XMLHttpRequest();
 		xhr.onreadystatechange = () => {
-			if (xhr.readyState !== XMLHttpRequest.DONE || seq !== root.webSeq) return;
+			if (xhr.readyState !== XMLHttpRequest.DONE) return;
 			const re = /class="result__a"[^>]*>([\s\S]*?)<\/a>[\s\S]*?class="result__snippet"[^>]*>([\s\S]*?)<\/a>/g;
 			const hits = [];
 			let m;
 			if (xhr.status === 200)
 				while ((m = re.exec(xhr.responseText)) !== null && hits.length < 5)
 					hits.push({ title: root.stripTags(m[1]), text: root.stripTags(m[2]) });
-			root.askModel(term, hits, seq);
+			c.hits = hits;
+			if (hits.length === 0) {
+				// Do not cache a failure.
+				const n = ({});
+				for (const k in root.hitsCache) if (k !== key) n[k] = root.hitsCache[k];
+				root.hitsCache = n;
+			}
+			for (const w of c.waiters) if (seq === root.webSeq) w(hits);
+			c.waiters = [];
 		};
 		xhr.open("GET", "https://html.duckduckgo.com/html/?q=" + encodeURIComponent(term));
 		xhr.setRequestHeader("User-Agent", "Mozilla/5.0");
@@ -863,8 +1030,15 @@ Singleton {
 	property int askSeq: -1
 	property string askTerm: ""
 
+	// Killing a run still fires onExited, later, after the next run has
+	// started; without this flag that exit read as "no answer" for the new one.
+	property bool qaStopping: false
+	function stopQa() {
+		if (qaProc.running) { root.qaStopping = true; qaProc.running = false; }
+	}
+
 	function askModel(term: string, hits, seq: int) {
-		qaProc.running = false;
+		root.stopQa();
 		root.askSeq = seq;
 		root.askTerm = term;
 		root.askText = "";
@@ -873,29 +1047,80 @@ Singleton {
 
 		const context = hits.map(h => "- " + h.title + ": " + h.text).join("\n");
 		qaProc.command = [
-			Quickshell.env("HOME") + "/.local/bin/claude", "-p",
+			"claude", "-p",
 			"--model", "haiku", "--strict-mcp-config", "--disable-slash-commands",
 			"--tools", "", "--no-session-persistence", "--setting-sources", "",
 			"--output-format", "stream-json", "--verbose", "--include-partial-messages",
 			"--system-prompt",
-			"Answer the question in one or two short plain sentences, key fact first, using the web results. Say so briefly if they disagree or do not say. No markdown, no preamble.",
+			"Answer the question in one to three short plain sentences, key fact first. The question may contain typos; answer what was meant. Use the web results when they help and your own knowledge to fill gaps, without commenting on the results or where facts came from. Plain text only: no markdown, no backticks, no preamble.",
 			"Question: " + term + "\n\nWeb results:\n" + context
 		];
 		qaProc.running = true;
+		qaTimeout.restart();
+	}
+
+	// A process that never starts (or hangs) must not leave the card on
+	// "Finding an answer..." forever.
+	Timer {
+		id: qaTimeout
+		interval: 20000
+		onTriggered: {
+			if (root.askSeq !== root.webSeq || root.askText.trim() !== "") return;
+			root.stopQa();
+			root.showAnswer(root.askTerm, "", "Claude timed out");
+		}
 	}
 
 	property string askText: ""
 	property var answers: ({})
 
-	function showAnswer(term: string, answer: string) {
+	property var webTop: null
+
+	// The result that covers most of the query's words, ties to the higher
+	// rank; none at all if even the best one misses half of them.
+	function bestHit(term: string, hits): var {
+		const stop = ["the", "a", "an", "of", "in", "on", "to", "and", "is", "for", "how", "do",
+			"we", "i", "you", "what", "why", "does", "can", "with", "it", "are", "be"];
+		const tokens = term.toLowerCase().split(/[^a-z0-9+#]+/).filter(t => t && stop.indexOf(t) === -1);
+		if (tokens.length === 0) return hits[0] ?? null;
+		let best = null, bestScore = -1;
+		for (const h of hits) {
+			const hay = (h.title + " " + h.text).toLowerCase();
+			const n = tokens.filter(t => hay.indexOf(t) !== -1).length;
+			if (n > bestScore) { best = h; bestScore = n; }
+		}
+		return bestScore * 2 >= tokens.length ? best : null;
+	}
+	property string askModelName: ""
+
+	// "claude-haiku-4-5-20251001" -> "Claude Haiku 4.5"
+	function prettyModel(id: string): string {
+		const m = (id || "").replace(/^claude-/, "").replace(/-\d{8}$/, "").split("-");
+		if (!m[0]) return "Claude";
+		const name = m[0].charAt(0).toUpperCase() + m[0].slice(1);
+		const ver = m.slice(1).join(".");
+		return "Claude " + name + (ver ? " " + ver : "");
+	}
+
+	// Claude's answer, or an animated "thinking" line until it starts.
+	function showAnswer(term: string, answer: string, status) {
 		const q = term.replace(/\?$/, "");
+		const model = root.prettyModel(root.askModelName);
+		const rows = [];
+		let height = 40;
+		if (answer) {
+			rows.push({ kind: "body", lines: 6, text: answer });
+			height += Math.min(Math.ceil(answer.length / 62), 6) * 19;
+			rows.push({ kind: "source", text: status ?? model });
+		} else if (status) {
+			rows.push({ kind: "source", text: status });
+		} else {
+			rows.push({ kind: "loading", text: model + " is thinking" });
+		}
+		height += 22;
 		root.webInfo = {
 			heading: q.charAt(0).toUpperCase() + q.slice(1), image: "",
-			height: 40 + Math.ceil(answer.length / 62) * 19 + 22,
-			rows: [
-				{ kind: "body", lines: 6, text: answer },
-				{ kind: "source", text: "Claude  \u00b7  from web results" }
-			]
+			height: height, rows: rows
 		};
 	}
 
@@ -910,27 +1135,30 @@ Singleton {
 				if (root.askSeq !== root.webSeq) return;
 				let ev = null;
 				try { ev = JSON.parse(line); } catch (e) { return; }
+				const mid = ev?.event?.message?.model ?? ev?.message?.model;
+				if (mid && mid !== root.askModelName) {
+					root.askModelName = mid;
+					if (root.askText === "") root.showAnswer(root.askTerm, "");
+				}
 				const d = ev?.event?.delta;
 				if (ev?.type !== "stream_event" || d?.type !== "text_delta") return;
 				root.askText += d.text;
-				root.showAnswer(root.askTerm, root.askText.trim());
+				root.showAnswer(root.askTerm, root.askText.replace(/`/g, "").trim());
 			}
 		}
 
 		onExited: {
+			if (root.qaStopping) { root.qaStopping = false; return; }
+			qaTimeout.stop();
 			if (root.askSeq !== root.webSeq) return;
 			if (root.askText.trim() === "") {
-				// Nothing came back: quota, no network or a missing key.
-				const q = root.askTerm.replace(/\?$/, "");
-				root.webInfo = {
-					heading: q.charAt(0).toUpperCase() + q.slice(1), image: "", height: 74,
-					rows: [{ kind: "source", text: "No answer (is claude logged in?)" }]
-				};
+				// Nothing came back: quota, no network or not logged in.
+				root.showAnswer(root.askTerm, "", "No answer from Claude");
 				return;
 			}
 			const next = ({});
 			for (const k in root.answers) next[k] = root.answers[k];
-			next[root.askTerm.toLowerCase()] = root.askText.trim();
+			next[root.askTerm.toLowerCase()] = root.askText.replace(/`/g, "").trim();
 			root.answers = next;
 		}
 	}
