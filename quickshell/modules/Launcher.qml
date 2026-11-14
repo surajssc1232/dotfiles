@@ -24,7 +24,12 @@ PanelWindow {
 	readonly property int maxWidth: 620
 	readonly property int headerHeight: 30
 	readonly property int footerHeight: 18
-	readonly property int infoHeight: Launcher.webInfo ? Launcher.webInfo.height : 0
+	// A fitted card (Claude's answer) measures its content, capped so a long
+	// answer scrolls instead of growing past the screen.
+	readonly property int infoMax: 440
+	readonly property int infoHeight: !Launcher.webInfo ? 0
+		: Launcher.webInfo.fit ? Math.min(Math.ceil(infoBody.implicitHeight) + 6, root.infoMax)
+		: Launcher.webInfo.height
 	// Separator, with its margins above and below.
 	readonly property int ruleHeight: 13
 
@@ -798,11 +803,31 @@ PanelWindow {
 					asynchronous: true
 				}
 
-				ColumnLayout {
+				Flickable {
+					id: infoFlick
 					Layout.fillWidth: true
 					Layout.fillHeight: true
 					Layout.leftMargin: 8
-					spacing: 4
+					contentWidth: width
+					contentHeight: infoBody.implicitHeight
+					clip: true
+					boundsBehavior: Flickable.StopAtBounds
+					interactive: contentHeight > height
+
+					// Follow a streaming answer down, unless the user scrolled up.
+					property bool pinned: true
+					onMovementEnded: pinned = contentY >= contentHeight - height - 4
+					onContentHeightChanged: if (pinned && Launcher.webInfo?.fit)
+						contentY = Math.max(0, contentHeight - height)
+					Connections {
+						target: Launcher
+						function onTermChanged() { infoFlick.pinned = true; infoFlick.contentY = 0; }
+					}
+
+				ColumnLayout {
+					id: infoBody
+					width: infoFlick.width - 8
+					spacing: 6
 
 					Label {
 						Layout.fillWidth: true
@@ -816,54 +841,145 @@ PanelWindow {
 					Repeater {
 						model: Launcher.webInfo?.rows ?? []
 
-						Label {
+						Loader {
 							required property var modelData
-
 							Layout.fillWidth: true
-							Layout.leftMargin: modelData.kind === "def" || modelData.kind === "ex" ? 10 : 0
-							Layout.topMargin: modelData.kind === "sep" ? 4 : 0
-							Layout.bottomMargin: modelData.kind === "sep" ? 4 : 0
-							Layout.preferredHeight: modelData.kind === "sep" ? 1 : -1
-							text: modelData.kind === "sep" ? ""
-								: modelData.kind === "loading"
-									? modelData.text + "\u2009" + "\u2022".repeat(dots) + "\u2009".repeat(3 - dots)
-									: modelData.text
-
-							// "thinking" with dots that fill in, and a gentle pulse.
-							property int dots: 0
-							Timer {
-								running: parent.modelData.kind === "loading" && parent.visible
-								interval: 350
-								repeat: true
-								onTriggered: parent.dots = (parent.dots + 1) % 4
-							}
-							SequentialAnimation on opacity {
-								running: modelData.kind === "loading"
-								loops: Animation.Infinite
-								NumberAnimation { from: 1; to: 0.45; duration: 700; easing.type: Easing.InOutSine }
-								NumberAnimation { from: 0.45; to: 1; duration: 700; easing.type: Easing.InOutSine }
-							}
-
-							Rectangle {
-								visible: parent.modelData.kind === "sep"
-								anchors.left: parent.left
-								anchors.right: parent.right
-								anchors.verticalCenter: parent.verticalCenter
-								height: 1
-								color: Config.fgDim
-								opacity: 0.3
-							}
-							color: modelData.kind === "def" || modelData.kind === "body" ? Config.fg : Config.fgDim
-							font.italic: modelData.kind === "pos"
-							font.pixelSize: modelData.kind === "ex" || modelData.kind === "source" || modelData.kind === "loading"
-								? Config.fontSize - 3 : Config.fontSize - 1
-							wrapMode: Text.WordWrap
-							maximumLineCount: modelData.lines ?? 2
-							elide: Text.ElideRight
+							sourceComponent: modelData.kind === "code" ? codeBox : textRow
+							property var row: modelData
 						}
 					}
+				}
+				}
+			}
 
-					Item { Layout.fillHeight: true }
+			Component {
+				id: textRow
+
+				Label {
+					readonly property var modelData: parent.row
+					width: parent.width
+					leftPadding: modelData.kind === "def" || modelData.kind === "ex" ? 10 : 0
+					topPadding: modelData.kind === "sep" ? 4 : 0
+					textFormat: modelData.kind === "rich" ? Text.StyledText : Text.PlainText
+					text: modelData.kind === "sep" ? ""
+						: modelData.kind === "loading"
+							? modelData.text + "\u2009" + "\u2022".repeat(dots) + "\u2009".repeat(3 - dots)
+							: modelData.text
+
+					// "thinking" with dots that fill in, and a gentle pulse.
+					property int dots: 0
+					Timer {
+						running: parent.modelData.kind === "loading" && parent.visible
+						interval: 350
+						repeat: true
+						onTriggered: parent.dots = (parent.dots + 1) % 4
+					}
+					SequentialAnimation on opacity {
+						running: modelData.kind === "loading"
+						loops: Animation.Infinite
+						NumberAnimation { from: 1; to: 0.45; duration: 700; easing.type: Easing.InOutSine }
+						NumberAnimation { from: 0.45; to: 1; duration: 700; easing.type: Easing.InOutSine }
+					}
+
+					color: modelData.kind === "def" || modelData.kind === "body" || modelData.kind === "rich"
+						? Config.fg : Config.fgDim
+					font.italic: modelData.kind === "pos"
+					font.pixelSize: modelData.kind === "ex" || modelData.kind === "source" || modelData.kind === "loading"
+						? Config.fontSize - 3 : Config.fontSize - 1
+					wrapMode: Text.WordWrap
+					maximumLineCount: modelData.lines ?? 2
+					elide: Text.ElideRight
+				}
+			}
+
+			// A fenced block: language and copy button on top, then the code on
+			// a darker panel, unwrapped and scrollable sideways.
+			Component {
+				id: codeBox
+
+				Rectangle {
+					readonly property var modelData: parent.row
+					width: parent.width
+					implicitHeight: codeCol.implicitHeight
+					radius: 10
+					color: Config.surfaceGroup
+					border.color: Config.border
+					border.width: 1
+					clip: true
+
+					ColumnLayout {
+						id: codeCol
+						anchors.left: parent.left
+						anchors.right: parent.right
+						spacing: 0
+
+						RowLayout {
+							Layout.fillWidth: true
+							Layout.leftMargin: 12
+							Layout.rightMargin: 6
+							Layout.topMargin: 4
+							Layout.bottomMargin: 2
+
+							Label {
+								Layout.fillWidth: true
+								text: modelData.lang
+								color: Config.fgDim
+								font.pixelSize: Config.fontSize - 3
+							}
+
+							Label {
+								id: copyLabel
+								property bool done: false
+								text: done ? "copied" : Config.icons.clipboard + " copy"
+								color: copyArea.containsMouse ? Config.fg : Config.fgDim
+								font.pixelSize: Config.fontSize - 3
+								padding: 4
+
+								Timer { id: copyReset; interval: 1500; onTriggered: copyLabel.done = false }
+								MouseArea {
+									id: copyArea
+									anchors.fill: parent
+									hoverEnabled: true
+									cursorShape: Qt.PointingHandCursor
+									onClicked: {
+										Quickshell.execDetached({ command: ["wl-copy", "--", modelData.code] });
+										copyLabel.done = true;
+										copyReset.restart();
+									}
+								}
+							}
+						}
+
+						Rectangle {
+							Layout.fillWidth: true
+							Layout.preferredHeight: 1
+							color: Config.border
+						}
+
+						Flickable {
+							Layout.fillWidth: true
+							Layout.preferredHeight: codeText.implicitHeight + 16
+							contentWidth: codeText.implicitWidth + 24
+							contentHeight: height
+							flickableDirection: Flickable.HorizontalFlick
+							boundsBehavior: Flickable.StopAtBounds
+							interactive: contentWidth > width
+							clip: true
+
+							Text {
+								id: codeText
+								x: 12
+								y: 8
+								text: modelData.html
+								textFormat: Text.StyledText
+								color: Config.fg
+								font.family: Config.font
+								font.pixelSize: Config.fontSize - 2
+								lineHeight: 1.15
+								wrapMode: Text.NoWrap
+							}
+						}
+					}
 				}
 			}
 

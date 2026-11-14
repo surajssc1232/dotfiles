@@ -1052,7 +1052,7 @@ Singleton {
 			"--tools", "", "--no-session-persistence", "--setting-sources", "",
 			"--output-format", "stream-json", "--verbose", "--include-partial-messages",
 			"--system-prompt",
-			"Answer the question in one to three short plain sentences, key fact first. The question may contain typos; answer what was meant. Use the web results when they help and your own knowledge to fill gaps, without commenting on the results or where facts came from. Plain text only: no markdown, no backticks, no preamble.",
+			"Answer the question in one to three short plain sentences, key fact first. The question may contain typos; answer what was meant. Use the web results when they help and your own knowledge to fill gaps, without commenting on the results or where facts came from. No preamble. Plain text, except: when code helps, give short complete examples in fenced code blocks with a language tag (```python), one block per language, indented properly. Wrap inline identifiers in single backticks. No other markdown: no headings, bold or lists.",
 			"Question: " + term + "\n\nWeb results:\n" + context
 		];
 		qaProc.running = true;
@@ -1102,26 +1102,110 @@ Singleton {
 		return "Claude " + name + (ver ? " " + ver : "");
 	}
 
-	// Claude's answer, or an animated "thinking" line until it starts.
+	// Claude's answer, or an animated "thinking" line until it starts. The
+	// answer is split into prose and fenced code; the card sizes itself.
 	function showAnswer(term: string, answer: string, status) {
 		const q = term.replace(/\?$/, "");
 		const model = root.prettyModel(root.askModelName);
 		const rows = [];
-		let height = 40;
 		if (answer) {
-			rows.push({ kind: "body", lines: 6, text: answer });
-			height += Math.min(Math.ceil(answer.length / 62), 6) * 19;
+			rows.push(...root.answerRows(answer));
 			rows.push({ kind: "source", text: status ?? model });
 		} else if (status) {
 			rows.push({ kind: "source", text: status });
 		} else {
 			rows.push({ kind: "loading", text: model + " is thinking" });
 		}
-		height += 22;
 		root.webInfo = {
 			heading: q.charAt(0).toUpperCase() + q.slice(1), image: "",
-			height: height, rows: rows
+			height: 0, fit: true, rows: rows
 		};
+	}
+
+	// Prose and ```lang fenced blocks. A block still being streamed (no closing
+	// fence yet) is drawn as code already, so it does not flash as prose.
+	function answerRows(text: string): var {
+		const rows = [];
+		const re = /```([\w+#.-]*)[ \t]*\n?([\s\S]*?)(```|$)/g;
+		let at = 0, m;
+		while ((m = re.exec(text)) !== null) {
+			if (m.index === re.lastIndex) { re.lastIndex++; continue; }
+			root.pushProse(rows, text.slice(at, m.index));
+			const code = m[2].replace(/\n+$/, "");
+			if (code !== "" || m[1] !== "")
+				rows.push({ kind: "code", lang: (m[1] || "code").toLowerCase(), code: code,
+					html: root.highlightCode(code, (m[1] || "").toLowerCase()) });
+			at = re.lastIndex;
+			if (m[3] === "") break;
+		}
+		root.pushProse(rows, text.slice(at));
+		return rows;
+	}
+
+	function pushProse(rows, t: string) {
+		t = t.replace(/^\s+|\s+$/g, "");
+		if (t === "") return;
+		// Inline `code` in the accent colour, everything else escaped.
+		const html = root.escapeMarkup(t)
+			.replace(/`([^`\n]+)`/g, '<font color="' + Config.accent + '">$1</font>')
+			.replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>")
+			.replace(/\n/g, "<br>");
+		rows.push({ kind: "rich", text: html, lines: 40 });
+	}
+
+	// ---- code highlighting ----
+	//
+	// A small tokenizer, not a parser: comments, strings, numbers, keywords,
+	// types (Capitalised), function calls and punctuation. Enough to read a
+	// short answer at a glance in any of the common languages.
+	readonly property var codeKeywords: ({
+		common: "if else for while return break continue in as import from use fn def class struct enum impl trait pub let mut const static var function new this self Self super match case switch default try catch finally except raise throw async await yield with lambda not and or is pass del global nonlocal mod crate where type interface extends implements package func go defer chan select range map loop unsafe ref move dyn int float bool str char void true false True False None null nil undefined echo then fi do done elif esac local export i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64 long short double unsigned",
+	})
+
+	readonly property var codeKeywordSet: {
+		const set = ({});
+		for (const w of root.codeKeywords.common.split(" ")) set[w] = true;
+		return set;
+	}
+
+	function highlightCode(code: string, lang: string): string {
+		const col = {
+			comment: Config.fgDim, string: Config.green, number: Config.red,
+			keyword: Config.accent, type: Config.yellow, call: Config.blue, punct: Config.fgDim
+		};
+		const hashComment = /^(python|py|sh|bash|zsh|fish|shell|ruby|rb|nix|toml|ya?ml|perl|r|makefile|dockerfile|)$/.test(lang);
+		const slashComment = !/^(python|py|sh|bash|zsh|fish|shell|ruby|rb|toml|ya?ml)$/.test(lang);
+		const parts = [];
+		if (slashComment) parts.push("\\/\\/[^\\n]*", "\\/\\*[\\s\\S]*?\\*\\/");
+		if (hashComment) parts.push("#[^\\n]*");
+		parts.push('"""[\\s\\S]*?"""', '"(?:\\\\.|[^"\\\\\\n])*"', "'(?:\\\\.|[^'\\\\\\n])*'", "`[^`]*`",
+			"\\b\\d[\\d_]*(?:\\.\\d+)?(?:e[+-]?\\d+)?[a-z0-9]*\\b|\\b0x[0-9a-f]+\\b",
+			"[A-Za-z_][A-Za-z0-9_]*!?", "[()\\[\\]{}<>;:,.=+\\-*/%&|^!?@]");
+		const re = new RegExp(parts.join("|"), "gi");
+
+		const wrap = (t, c) => '<font color="' + c + '">' + root.escapeMarkup(t) + "</font>";
+		let out = "", at = 0, m;
+		while ((m = re.exec(code)) !== null) {
+			out += root.escapeMarkup(code.slice(at, m.index));
+			const t = m[0];
+			const ch = t.charAt(0);
+			const after = code.slice(re.lastIndex).match(/^\s*(.)/)?.[1] ?? "";
+			if (t.startsWith("//") || t.startsWith("/*") || (ch === "#" && hashComment)) out += wrap(t, col.comment);
+			else if (ch === '"' || ch === "'" || ch === "`") out += wrap(t, col.string);
+			else if (/[0-9]/.test(ch)) out += wrap(t, col.number);
+			else if (/[A-Za-z_]/.test(ch)) {
+				if (root.codeKeywordSet[t]) out += wrap(t, col.keyword);
+				else if (t.endsWith("!") || after === "(") out += wrap(t, col.call);
+				else if (/^[A-Z][a-z0-9]/.test(t) || /^[A-Z]$/.test(t)) out += wrap(t, col.type);
+				else out += root.escapeMarkup(t);
+			}
+			else out += wrap(t, col.punct);
+			at = re.lastIndex;
+		}
+		out += root.escapeMarkup(code.slice(at));
+		// Keep indentation and line breaks under rich text.
+		return out.replace(/\t/g, "    ").replace(/ /g, "&nbsp;").replace(/\n/g, "<br>")
+			.replace(/<font&nbsp;color=/g, "<font color=");
 	}
 
 	// The reply is streamed, so words appear as they are written instead of
@@ -1143,7 +1227,7 @@ Singleton {
 				const d = ev?.event?.delta;
 				if (ev?.type !== "stream_event" || d?.type !== "text_delta") return;
 				root.askText += d.text;
-				root.showAnswer(root.askTerm, root.askText.replace(/`/g, "").trim());
+				root.showAnswer(root.askTerm, root.askText.trim());
 			}
 		}
 
@@ -1158,7 +1242,7 @@ Singleton {
 			}
 			const next = ({});
 			for (const k in root.answers) next[k] = root.answers[k];
-			next[root.askTerm.toLowerCase()] = root.askText.replace(/`/g, "").trim();
+			next[root.askTerm.toLowerCase()] = root.askText.trim();
 			root.answers = next;
 		}
 	}
