@@ -13,7 +13,7 @@ Rectangle {
 	implicitWidth: 300
 	implicitHeight: column.implicitHeight + Config.inset * 2
 	radius: Config.radius
-	color: Qt.alpha(Config.bg, 0.55)
+	color: Qt.alpha(Config.bg, 0.9)
 	border.width: 1
 	border.color: Qt.alpha(Config.fg, 0.08)
 

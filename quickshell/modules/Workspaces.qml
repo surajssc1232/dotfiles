@@ -41,8 +41,16 @@ Pill {
 				NumberAnimation { duration: Config.animMed; easing.type: Easing.OutCubic }
 			}
 
-			HoverHandler { id: hover; cursorShape: Qt.PointingHandCursor }
-			TapHandler { onTapped: Niri.focus(chip.ws) }
+			// MouseAreas rather than TapHandlers: the icon's area takes the
+			// press, so clicking an app no longer also clicks its workspace.
+			MouseArea {
+				id: hover
+				readonly property bool hovered: containsMouse
+				anchors.fill: parent
+				hoverEnabled: true
+				cursorShape: Qt.PointingHandCursor
+				onClicked: Niri.focus(chip.ws)
+			}
 
 			Row {
 				id: row
@@ -99,7 +107,11 @@ Pill {
 							visible: app.modelData.is_focused
 						}
 
-						TapHandler { onTapped: Niri.focusWindow(app.modelData.id) }
+						MouseArea {
+							anchors.fill: parent
+							cursorShape: Qt.PointingHandCursor
+							onClicked: Niri.focusWindow(app.modelData.id)
+						}
 					}
 				}
 

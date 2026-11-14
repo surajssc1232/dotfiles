@@ -39,10 +39,13 @@ Singleton {
 	function focus(ws) {
 		// focus-workspace by index acts on the focused monitor, so on a
 		// second screen the monitor has to be focused first.
+		// focus-monitor also warps the pointer to that monitor's centre, so
+		// it is only sent when the workspace really is on another one.
 		const out = root.workspaces.find(w => w.id === ws.id)?.output ?? "";
+		const current = root.workspaces.find(w => w.is_focused)?.output ?? "";
 		Quickshell.execDetached({ command: ["sh", "-c",
 			'[ -n "$1" ] && niri msg action focus-monitor "$1"; niri msg action focus-workspace "$2"',
-			"sh", out, String(ws.idx)] });
+			"sh", out !== current ? out : "", String(ws.idx)] });
 	}
 
 	function focusWindow(id: int) {

@@ -126,7 +126,7 @@ window-rule {
 // Translucent foot; Mod+O toggles it off/on for the focused window.
 window-rule {
     match app-id="^foot$"
-    opacity 0.8
+    opacity 0.94
 }
 
 window-rule {
