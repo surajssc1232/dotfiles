@@ -196,6 +196,7 @@ binds {
     Mod+Alt+Right allow-when-locked=true hotkey-overlay-title="Next Track" { spawn "playerctl" "next"; }
     Mod+Alt+Left  allow-when-locked=true hotkey-overlay-title="Previous Track" { spawn "playerctl" "previous"; }
     Mod+Alt+Y hotkey-overlay-title="Toggle Lyrics" { spawn "qs" "ipc" "call" "lyrics" "toggle"; }
+    Mod+Shift+N hotkey-overlay-title="Toggle Notes" { spawn "qs" "ipc" "call" "notes" "toggle"; }
 
     // Brightness
     XF86MonBrightnessUp   allow-when-locked=true { spawn-sh "~/.config/quickshell/scripts/brightness.sh up"; }

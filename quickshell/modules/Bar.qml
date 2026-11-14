@@ -62,10 +62,15 @@ PanelWindow {
 			anchors.verticalCenter: parent.verticalCenter
 			spacing: Config.spacing
 
+			Workspaces {
+				id: workspaces
+			}
+
 			WindowTitle {
 				// Stop one padding short of the centered clock, so a long title
 				// elides instead of running underneath it.
 				Layout.maximumWidth: Math.max(0, centerSection.x - leftSection.x
+					- (workspaces.visible ? workspaces.width + Config.spacing : 0)
 					- Config.padding)
 			}
 		}
@@ -97,6 +102,7 @@ PanelWindow {
 			SysTray {}
 			NotificationCenter {}
 			NetSpeed {}
+			NixPill {}
 			Resources {}
 			Volume {}
 			Battery {}

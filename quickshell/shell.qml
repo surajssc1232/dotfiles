@@ -112,6 +112,13 @@ ShellRoot {
 		LayerNotch {}
 	}
 
+	// Scratchpad, toggled with Mod+Shift+N.
+	Variants {
+		model: Quickshell.screens
+
+		NotesPad {}
+	}
+
 	// Asked once a recording finishes.
 	Variants {
 		model: Quickshell.screens

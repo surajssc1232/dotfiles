@@ -91,6 +91,15 @@ PanelWindow {
 		onStatusChanged: if (status === Image.Ready && root.frontIsA) root.frontIsA = false
 	}
 
+	// Live system graphs, above the picture and under every window.
+	DesktopGraphs {
+		anchors.left: parent.left
+		anchors.bottom: parent.bottom
+		anchors.margins: 28
+		width: implicitWidth
+		height: implicitHeight
+	}
+
 	Component.onCompleted: {
 		imageA.source = root.source;
 		root.frontIsA = true;
