@@ -612,7 +612,7 @@
         # F1-F12 one toggle away. A specific id wins over "*", so this config
         # carries the shared layers too. k: keeps it off the receiver's mouse.
         wireless = {
-          ids = [ "k:32c2:0018" ];
+          ids = [ "k:32c2:0018" "k:32c2:6621" ];
           settings = layers // {
             main = main // {
               f1 = "config";
@@ -627,6 +627,19 @@
               f10 = "mail";
               f11 = "file";
               f12 = "calc";
+              # Fn+key sends the media code; swap it back to the real F-key.
+              config = "f1";
+              volumedown = "f2";
+              volumeup = "f3";
+              mute = "f4";
+              previoussong = "f5";
+              nextsong = "f6";
+              playpause = "f7";
+              stopcd = "f8";
+              homepage = "f9";
+              mail = "f10";
+              file = "f11";
+              calc = "f12";
             };
             # Ctrl+Caps (the caps key is Esc here) flips the row to real
             # F1-F12 and back. Fn+Caps can't: the keyboard sends it as a bare
