@@ -70,13 +70,13 @@
 "diagnostic.hint" = { underline = { color = "dim", style = "curl" } }
 
 [palette]
-bg = "#161821"
-bgAlt = "#1e2132"
-border = "#2a3158"
-fg = "#c6c8d1"
-dim = "#6b7089"
-accent = "#84a0c6"
-green = "#b5bf82"
-yellow = "#e2a478"
-red = "#e27878"
-blue = "#84a0c6"
+bg = "#080808"
+bgAlt = "#101010"
+border = "#2a2a2a"
+fg = "#deeeed"
+dim = "#7a7a7a"
+accent = "#7788aa"
+green = "#789978"
+yellow = "#cfb572"
+red = "#d70000"
+blue = "#7788aa"
