@@ -1766,8 +1766,11 @@ Singleton {
 	// it. DesktopEntry.execute() already does its own detaching, which is why
 	// only the paths that go through Process come through here.
 	function detach(argv, directory) {
+		// The shell runs with QV4_FORCE_INTERPRETER (see niri's config.kdl);
+		// apps started from here should get Qt's normal JIT.
 		Quickshell.execDetached({
 			command: argv,
+			environment: { QV4_FORCE_INTERPRETER: null },
 			workingDirectory: directory || Quickshell.env("HOME")
 		});
 	}

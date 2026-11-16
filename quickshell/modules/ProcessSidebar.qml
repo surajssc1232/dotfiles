@@ -169,8 +169,9 @@ PanelWindow {
 		}
 
 		const push = (history, value) => {
-			const next = history.concat([value]);
-			return next.length > root.points ? next.slice(next.length - root.points) : next;
+			const next = history.slice(Math.max(0, history.length + 1 - root.points));
+			next.push(value);
+			return next;
 		};
 		root.cpuHistory = push(root.cpuHistory, root.cpu);
 		root.memHistory = push(root.memHistory, root.mem);

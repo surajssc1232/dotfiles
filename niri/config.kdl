@@ -92,7 +92,9 @@ animations {
 }
 
 // ── Startup & environment ────────────────────────────────────────────────
-spawn-at-startup "quickshell"
+// QV4_FORCE_INTERPRETER: Qt's QML JIT has segfaulted the shell in the GC
+// (collectFromJSStack, Qt 6.11.2 and 6.12.0) while idle; the interpreter avoids it.
+spawn-sh-at-startup "QV4_FORCE_INTERPRETER=1 exec quickshell"
 spawn-sh-at-startup "~/.config/mango/screen-rec.sh --clean"
 
 environment {

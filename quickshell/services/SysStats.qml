@@ -21,9 +21,12 @@ Singleton {
 	property real lastRx: -1
 	property real lastTx: -1
 
+	// One new array per sample (not concat + slice): this runs every second
+	// forever, so it is most of the shell's garbage.
 	function push(list, value) {
-		const next = list.concat([value]);
-		return next.length > root.length ? next.slice(next.length - root.length) : next;
+		const next = list.slice(Math.max(0, list.length + 1 - root.length));
+		next.push(value);
+		return next;
 	}
 
 	function human(bytes: real): string {
