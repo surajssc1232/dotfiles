@@ -98,19 +98,42 @@ Item {
 		Rectangle {
 			id: level
 
+			// The newest reading, held until the meter has risen to it.
+			property real target: 0
+			// What is drawn, moved toward the target every frame: readings
+			// arrive 20 to 60 times a second, unevenly, and drawing them
+			// as they come is what looked choppy.
 			property real shown: 0
 
-			width: parent.width * Math.min(1, shown)
+			width: parent.width * Math.min(1, shown / root.max)
 			height: parent.height
 			radius: 1.5
-			color: shown > 0.9 ? Config.red : shown > 0.7 ? Config.yellow : Config.green
+			// On the cube-root scale, 0.96 is about -1 dBFS and 0.85 about -4.
+			color: shown > 0.96 ? Config.red : shown > 0.85 ? Config.yellow : Config.green
 			opacity: root.muted ? 0.3 : 0.9
 
 			Connections {
 				target: root
 				function onPeakChanged() {
 					const p = root.muted ? 0 : Math.max(0, root.peak);
-					level.shown = p > level.shown ? p : level.shown * 0.82 + p * 0.18;
+					// A peak is kept until drawn: a short one between two
+					// frames would otherwise never show.
+					level.target = Math.max(p, level.target * 0.5);
+				}
+			}
+
+			// Fast up and slow down, as a VU meter reads, at the display's
+			// own frame rate.
+			FrameAnimation {
+				running: root.visible && root.peak >= 0
+				onTriggered: {
+					const dt = Math.min(0.1, frameTime);
+					const t = level.target;
+					const rate = t > level.shown ? 28 : 5;
+					level.shown += (t - level.shown) * Math.min(1, dt * rate);
+					if (level.shown < 0.002 && t === 0) level.shown = 0;
+					// The held peak decays too, so silence reads as silence.
+					level.target = t * Math.pow(0.02, dt);
 				}
 			}
 		}

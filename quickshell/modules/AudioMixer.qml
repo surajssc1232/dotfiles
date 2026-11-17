@@ -29,7 +29,10 @@ Item {
 	implicitWidth: 460
 	implicitHeight: body.implicitHeight
 
-	onLiveChanged: if (live) Audio.refresh()
+	onLiveChanged: {
+		Audio.metering = live;
+		if (live) Audio.refresh();
+	}
 
 	ColumnLayout {
 		id: body

@@ -113,6 +113,44 @@ Singleton {
 		objects: root.outputs.concat(root.inputs, root.recorders)
 	}
 
+	// ---- level meters ----
+	// Quickshell's peak monitor reads an app's stream fine, but on a device it
+	// has two problems: it listens to the device's monitor, which is taken
+	// before the device's own volume (so the meter ignored the slider), and it
+	// reads nothing at all from a Pro Audio device, whose channels are aux0,
+	// aux1... rather than left and right. So an output's level is worked out
+	// from the apps playing into it, times its own volume; inputs are read by
+	// scripts/level-meter.py instead (see MixerRow).
+	//
+	// Every level is shown on the same cube-root scale as the volume sliders,
+	// so halving a slider halves its meter.
+	property bool metering: false
+
+	Instantiator {
+		id: streamMeters
+
+		model: ScriptModel { values: root.metering ? root.streams : [] }
+
+		delegate: PwNodePeakMonitor {
+			required property var modelData
+			node: modelData
+			enabled: true
+		}
+	}
+
+	function shown(peak: real): real { return Math.cbrt(Math.max(0, peak)); }
+
+	function outputLevel(sink): real {
+		if (!sink?.audio || sink.audio.muted) return 0;
+		let top = 0;
+		for (let i = 0; i < streamMeters.count; i++) {
+			const m = streamMeters.objectAt(i);
+			if (!m?.node || m.node.audio?.muted) continue;
+			if (root.deviceOf(m.node) === sink) top = Math.max(top, m.peak);
+		}
+		return root.shown(top) * sink.audio.volume;
+	}
+
 	// The device a stream is playing to, or recording from: the other end of
 	// its link.
 	function deviceOf(stream): var {

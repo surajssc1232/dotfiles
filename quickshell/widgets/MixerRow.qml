@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import Quickshell.Widgets
 import Quickshell.Services.Pipewire
 import qs
@@ -32,6 +33,14 @@ Item {
 	readonly property var portInfo: !isStream ? (Audio.ports[node?.name ?? ""] ?? null) : null
 	readonly property bool stereo: (audio?.volumes ?? []).length === 2
 
+	// The highest this row's volume has been, so its slider never loses
+	// range. Without it, an app sitting above 100% with boost off (Helium
+	// at 130%) got a track that ended at its volume; dragging it down shrank
+	// the track to 100%, and there was no way back up to where it had been.
+	property real reach: 1
+	onVolumeChanged: if (volume > reach) reach = Math.min(Config.volumeMax, volume)
+	Component.onCompleted: reach = Math.min(Config.volumeMax, Math.max(1, volume))
+
 	// Device picker (streams) or the balance and ports drawer (devices).
 	property bool open: false
 
@@ -39,11 +48,32 @@ Item {
 
 	implicitHeight: col.implicitHeight + 16
 
+	// An app's own stream: Quickshell reads its level directly, after the
+	// app's volume.
 	PwNodePeakMonitor {
 		id: meter
-		node: root.node
-		enabled: root.live && root.node !== null
+		node: root.isStream ? root.node : null
+		enabled: root.live && root.isStream && root.node !== null
 	}
+
+	// A microphone or other input, read by a small recorder that works with
+	// any profile (see scripts/level-meter.py).
+	property real inputPeak: 0
+
+	Process {
+		running: root.live && !root.isStream && root.node !== null && !root.node.isSink
+		command: ["python3", Quickshell.shellPath("scripts/level-meter.py"), root.node?.name ?? ""]
+		stdout: SplitParser {
+			onRead: line => root.inputPeak = Number(line) || 0
+		}
+		onRunningChanged: if (!running) root.inputPeak = 0
+	}
+
+	// What the meter under the slider shows, on the slider's own scale.
+	readonly property real level: !root.live ? -1
+		: root.isStream ? (root.muted ? 0 : Audio.shown(meter.peak))
+		: root.node?.isSink ? Audio.outputLevel(root.node)
+		: (root.muted ? 0 : Audio.shown(root.inputPeak))
 
 	Rectangle {
 		anchors.fill: parent
@@ -196,10 +226,10 @@ Item {
 		VolumeSlider {
 			Layout.fillWidth: true
 			value: root.volume
-			max: Math.max(root.max, root.volume)
+			max: Math.max(root.max, root.reach)
 			muted: root.muted
 			tone: root.isStream ? Config.blue : Config.accent
-			peak: root.live ? meter.peak : -1
+			peak: root.level
 			onMoved: v => {
 				if (!root.audio) return;
 				root.audio.muted = false;

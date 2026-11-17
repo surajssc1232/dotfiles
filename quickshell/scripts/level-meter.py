@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Live input level for the mixer: prints one peak (0..1) per line, ~20 a second.
+"""Live input level for the mixer: prints one peak (0..1) per line, ~40 a second.
 
 Usage: level-meter.py <pipewire node name>
 
@@ -12,24 +12,40 @@ The capture stream names itself quickshell-meter, which the shell knows to
 leave out of its list of apps using the microphone.
 """
 
+import ctypes
 import os
 import signal
 import subprocess
 import sys
 
+PR_SET_PDEATHSIG = 1
+
+
+def die_with_parent():
+    """Asks the kernel to end this process the moment its parent goes, so a
+    meter can never keep the microphone open after the shell has stopped."""
+    try:
+        ctypes.CDLL("libc.so.6", use_errno=True).prctl(PR_SET_PDEATHSIG, signal.SIGTERM)
+    except OSError:
+        pass
+
+
+die_with_parent()
+
 RATE = 16000
-CHUNK = RATE // 20  # samples per reading: 50 ms
+CHUNK = RATE // 40  # samples per reading: 25 ms, so ~40 readings a second
 
 target = sys.argv[1] if len(sys.argv) > 1 else ""
 cmd = ["pw-cat", "--record", "--raw", "--format", "s16", "--rate", str(RATE),
-       "--channels", "1", "--latency", "50ms",
+       "--channels", "1", "--latency", "20ms",
        "-P", "{ application.name = quickshell-meter node.name = quickshell-meter "
              "node.description = quickshell-meter media.role = Production }"]
 if target:
     cmd += ["--target", target]
 cmd.append("-")
 
-child = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+child = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                         preexec_fn=die_with_parent)
 
 
 def stop(*_):
@@ -51,10 +67,12 @@ try:
         peak = max(max(mv), -min(mv)) if len(mv) else 0
         sys.stdout.write("%.4f\n" % (peak / 32768))
         sys.stdout.flush()
-        # Quickshell gone: stop recording rather than run on unseen.
-        if os.getppid() == 1:
-            break
 except (BrokenPipeError, KeyboardInterrupt):
     pass
 finally:
     child.terminate()
+    # Nothing left to report to; quietly, rather than a traceback on exit.
+    try:
+        sys.stdout.close()
+    except Exception:
+        pass
