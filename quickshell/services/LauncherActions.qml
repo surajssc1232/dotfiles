@@ -110,6 +110,14 @@ Singleton {
 			run: () => Storage.show()
 		}),
 		({
+			id: "desktop-icons",
+			name: Desktop.enabled ? "Hide desktop icons" : "Show desktop icons",
+			detail: Desktop.items.length + " on the desktop · Ctrl+D on an app adds it",
+			keywords: "desktop icons shortcuts windows",
+			glyph: Config.icons.apps,
+			run: () => Desktop.toggle()
+		}),
+		({
 			id: "bt", when: Bt.available,
 			name: Bt.enabled ? "Turn Bluetooth off" : "Turn Bluetooth on",
 			detail: Bt.blocked ? "Blocked by rfkill"

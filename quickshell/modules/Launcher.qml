@@ -54,7 +54,9 @@ PanelWindow {
 	property point ctxAt: Qt.point(0, 0)
 
 	function openMenu(row, at) {
-		if (!row || row.kind !== "file" || !row.path) return;
+		if (!row) return;
+		const isApp = (row.kind === "app" || row.kind === "action") && row.entry;
+		if (!isApp && (row.kind !== "file" || !row.path)) return;
 		root.ctxRow = row;
 		root.ctxMode = "menu";
 		root.ctxAt = at;
@@ -67,6 +69,9 @@ PanelWindow {
 
 	// Menu entries. `prompt` ones swap the card for a text field.
 	function ctxItems(): var {
+		const row = root.ctxRow;
+		if (row && (row.kind === "app" || row.kind === "action") && row.entry) return root.appItems(row);
+
 		const path = root.ctxRow?.path ?? "";
 		const folder = FileSearch.folder(path);
 		return [
@@ -81,6 +86,31 @@ PanelWindow {
 			{ label: "Move to trash", glyph: Config.icons.trash, run: () => FileSearch.trash(path), keep: true },
 			{ label: "Delete permanently", glyph: Config.icons.trash, prompt: "delete", danger: true }
 		];
+	}
+
+	// For an application: open it, put it on the desktop or take it off, or
+	// go straight to one of its own actions ("New Window" and so on).
+	function appItems(row): var {
+		const entry = row.entry;
+		const id = entry.id;
+		const out = [{ label: "Open", glyph: Config.icons.arrowRight,
+			run: () => { Launcher.remember(id); Launcher.launch(entry, entry); } }];
+		out.push(Desktop.has(id)
+			? { label: "Remove from desktop", glyph: Config.icons.close, keep: true, run: () => Desktop.remove(id) }
+			: { label: "Add to desktop", glyph: Config.icons.pin, keep: true, run: () => Desktop.add(id) });
+		for (const a of (entry.actions ?? [])) {
+			const action = a;
+			out.push({ label: action.name, glyph: Config.icons.arrowRight,
+				run: () => Launcher.launch(entry, action) });
+		}
+		return out;
+	}
+
+	// Ctrl+D: the selected application onto the desktop, or off it again.
+	function toggleDesktop() {
+		const row = Launcher.selected;
+		if (!row || !(row.kind === "app" || row.kind === "action") || !row.entry) return;
+		Desktop.toggleApp(row.entry.id);
 	}
 
 	// Enter opens; with Ctrl it shows a file in its folder, with Shift it
@@ -300,6 +330,10 @@ PanelWindow {
 								? Launcher.selected.control : "";
 
 							switch (event.key) {
+							case Qt.Key_D:
+								if (!ctrl) return;
+								root.toggleDesktop();
+								break;
 							case Qt.Key_T:
 								if (!ctrl || Launcher.selected?.kind !== "file") return;
 								Launcher.fileAction("terminal");
@@ -673,6 +707,15 @@ PanelWindow {
 								}
 							}
 
+							// Already on the desktop.
+							Label {
+								visible: entry.modelData.kind === "app"
+									&& Desktop.has(entry.modelData.entry?.id ?? "")
+								text: Config.icons.pin
+								color: Config.fgDim
+								font.pixelSize: Config.fontSize - 2
+							}
+
 							// A theme previews itself as a strip: background,
 							// accent, foreground.
 							Rectangle {
@@ -1001,6 +1044,9 @@ PanelWindow {
 							: Config.icons.dot + "   Enter open   ")
 						+ (Launcher.selected?.kind === "file"
 							? Config.icons.dot + "   ^Enter show in folder   \u21e7Enter copy path   ^T terminal   " : "")
+						+ (Launcher.selected?.kind === "app"
+							? Config.icons.dot + "   ^D " + (Desktop.has(Launcher.selected.entry?.id ?? "") ? "off desktop" : "to desktop")
+								+ "   right-click more   " : "")
 						+ Config.icons.dot + "   Alt+n jump   "
 						+ (Launcher.mode === "clip" || Launcher.mode === "run"
 							? Config.icons.dot + "   Del forget   " : "")

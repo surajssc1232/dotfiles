@@ -166,7 +166,7 @@ Pill {
 			suspendTile, logoutTile, restartTile, shutdownTile,
 			wifiTile, btTile, dndTile, airTile, profileTile,
 			wallTile, themeTile, recTile, procTile,
-			clipTile, storageTile, lyricsTile, inboxTile,
+			clipTile, storageTile, iconsTile, lyricsTile, inboxTile,
 			nowPlaying, outSlider, inSlider];
 		for (let i = 0; i < streams.count; i++) list.push(streams.itemAt(i));
 		list.push(brightSlider, monitorSlider, nightSlider);
@@ -954,6 +954,18 @@ Pill {
 											root.dismiss();
 											Storage.show();
 										}
+									}
+
+									MiniTile {
+										id: iconsTile
+
+										Layout.fillHeight: true
+
+										icon: Config.icons.apps
+										label: "Icons"
+										on: Desktop.enabled
+										focused: root.cur === iconsTile
+										onTriggered: Desktop.toggle()
 									}
 
 									MiniTile {

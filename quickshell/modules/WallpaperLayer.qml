@@ -91,8 +91,27 @@ PanelWindow {
 		onStatusChanged: if (status === Image.Ready && root.frontIsA) root.frontIsA = false
 	}
 
+	// Desktop icons, on the first screen only, as on Windows. Clear of the bar
+	// at the top; the cells under the graphs are skipped.
+	DesktopIcons {
+		id: icons
+
+		anchors.fill: parent
+		anchors.topMargin: Config.barMargin * 2 + Config.barHeight + 8
+		anchors.leftMargin: 12
+		anchors.rightMargin: 12
+		anchors.bottomMargin: 12
+		screenName: root.modelData?.name ?? ""
+		// The graphs' corner, in the grid's own coordinates, with a margin.
+		avoid: Qt.rect(graphs.x - icons.x - 8, graphs.y - icons.y - 8,
+			graphs.width + 16, graphs.height + 16)
+		visible: Desktop.enabled && root.modelData === Quickshell.screens[0]
+	}
+
 	// Live system graphs, above the picture and under every window.
 	DesktopGraphs {
+		id: graphs
+
 		anchors.left: parent.left
 		anchors.bottom: parent.bottom
 		anchors.margins: 28

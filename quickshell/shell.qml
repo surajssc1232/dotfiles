@@ -84,6 +84,13 @@ ShellRoot {
 		StoragePanel {}
 	}
 
+	// Right-click menu for the desktop icons, mapped only while open.
+	Variants {
+		model: Quickshell.screens
+
+		DesktopMenu {}
+	}
+
 	// Alt-Tab overlay, mapped only while switching.
 	Variants {
 		model: Quickshell.screens
