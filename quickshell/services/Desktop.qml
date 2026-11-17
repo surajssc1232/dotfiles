@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Qt.labs.folderlistmodel
 import Quickshell
+import Quickshell.Io
 import qs
 import qs.services
 
@@ -28,8 +29,31 @@ Singleton {
 
 	readonly property string folder: Quickshell.env("HOME") + "/Desktop"
 
-	// The one icon drawn as selected, by key.
-	property string selected: ""
+	// Selected icons, as a set of keys: { key: true }. A click selects one,
+	// Ctrl+click adds or takes away, a drag across the desktop selects what
+	// the box touches.
+	property var selection: ({})
+	readonly property var selectedKeys: Object.keys(root.selection)
+	readonly property var selectedItems: root.items.filter(i => root.selection[i.key])
+
+	function isSelected(key: string): bool { return root.selection[key] === true; }
+
+	function select(keys) {
+		const next = ({});
+		for (const k of keys) next[k] = true;
+		root.selection = next;
+	}
+
+	function toggleSelected(key: string) {
+		const next = Object.assign({}, root.selection);
+		if (next[key]) delete next[key];
+		else next[key] = true;
+		root.selection = next;
+	}
+
+	function clearSelection() {
+		if (root.selectedKeys.length > 0) root.selection = ({});
+	}
 
 	function setEnabled(on: bool) {
 		root.enabled = on;
@@ -96,6 +120,53 @@ Singleton {
 		}
 		next[key] = { c: c, r: r };
 		root.setPositions(next);
+	}
+
+	// Several icons dragged together by one offset, in cells. A drop that
+	// would push any of them off the grid or onto the graphs is refused.
+	// Icons that were in the way move into the cells the dragged ones left,
+	// or failing that the first free cell, so nothing ends up stacked.
+	function moveMany(keys, dc: int, dr: int, cells, cols: int, rows: int, blocked) {
+		if (dc === 0 && dr === 0) return;
+		const moving = ({});
+		for (const k of keys) if (cells[k]) moving[k] = true;
+
+		const next = ({});
+		for (const k in cells) next[k] = { c: cells[k].c, r: cells[k].r };
+
+		const targets = ({});
+		for (const k in moving) {
+			const c = next[k].c + dc, r = next[k].r + dr;
+			if (c < 0 || r < 0 || c >= cols || r >= rows || blocked(c, r)) return;
+			targets[c + "," + r] = true;
+		}
+
+		const vacated = [];
+		for (const k in moving) {
+			const from = next[k];
+			if (!targets[from.c + "," + from.r]) vacated.push({ c: from.c, r: from.r });
+			next[k] = { c: from.c + dc, r: from.r + dr };
+		}
+
+		const taken = ({});
+		for (const k in next) if (!moving[k]) taken[next[k].c + "," + next[k].r] = k;
+		for (const t in targets) taken[t] = true;
+
+		for (const k in cells) {
+			if (moving[k] || !targets[cells[k].c + "," + cells[k].r]) continue;
+			let spot = vacated.shift();
+			if (!spot) {
+				for (let n = 0; n < cols * rows && !spot; n++) {
+					const c = Math.floor(n / rows), r = n % rows;
+					if (!taken[c + "," + r] && !blocked(c, r)) spot = { c: c, r: r };
+				}
+			}
+			if (!spot) return;
+			next[k] = spot;
+			taken[spot.c + "," + spot.r] = true;
+		}
+
+		root.setPositions(Object.assign({}, root.positions, next));
 	}
 
 	// Everything back into a column-first run, sorted by name: with no cells
@@ -210,6 +281,12 @@ Singleton {
 		root.forget(item.key);
 	}
 
+	// What a right-click menu acts on: every selected icon when the click was
+	// on one of them, otherwise just the icon clicked.
+	readonly property var menuTargets: !root.menuItem ? []
+		: root.isSelected(root.menuItem.key) && root.selectedItems.length > 1
+			? root.selectedItems : [root.menuItem]
+
 	// ---- context menu ----
 	// One menu at a time, on one screen. `menuItem` is the icon it is for, or
 	// null for the desktop itself.
@@ -225,6 +302,15 @@ Singleton {
 	}
 
 	function closeMenu() { root.menuOpen = false; }
+
+	IpcHandler {
+		target: "desktop"
+
+		function toggle(): void { root.toggle(); }
+		function add(id: string): void { root.add(id); }
+		function remove(id: string): void { root.remove(id); }
+		function sort(): void { root.sortByName(); }
+	}
 
 	// Read once here rather than as bindings: Persist parses its file on the
 	// first get(), and doing that inside a binding is a binding loop.

@@ -57,6 +57,24 @@ PanelWindow {
 			];
 		}
 
+		// Several selected: one entry per thing that can be done to all of them.
+		const targets = Desktop.menuTargets;
+		if (targets.length > 1) {
+			const pinned = targets.filter(t => t.id);
+			const files = targets.filter(t => t.path);
+			const many = [{ label: "Open " + targets.length + " items", glyph: Config.icons.arrowRight, bold: true,
+				run: () => targets.forEach(t => Desktop.open(t)) }];
+			if (files.length > 0) many.push({ label: "Copy " + files.length + " paths", glyph: Config.icons.clipboard,
+				run: () => Clipboard.copy(files.map(f => f.path).join("\n")) });
+			if (pinned.length > 0) many.push({ label: "Remove " + pinned.length + " from desktop",
+				glyph: Config.icons.close, danger: true,
+				run: () => { pinned.forEach(t => Desktop.remove(t.id)); Desktop.clearSelection(); } });
+			if (files.length > 0) many.push({ label: "Move " + files.length + " to trash",
+				glyph: Config.icons.trash, danger: true,
+				run: () => { files.forEach(t => Desktop.trash(t)); Desktop.clearSelection(); } });
+			return many;
+		}
+
 		const out = [{ label: "Open", glyph: Config.icons.arrowRight, bold: true, run: () => Desktop.open(it) }];
 
 		// "New Window", "New Private Window" and the like, straight from the icon.
@@ -118,7 +136,8 @@ PanelWindow {
 					height: card.headerHeight
 					leftPadding: 8
 					verticalAlignment: Text.AlignVCenter
-					text: root.item?.name ?? ""
+					text: Desktop.menuTargets.length > 1
+						? Desktop.menuTargets.length + " items selected" : (root.item?.name ?? "")
 					color: Config.fgDim
 					font.pixelSize: Config.fontSize - 2
 					elide: Text.ElideRight
