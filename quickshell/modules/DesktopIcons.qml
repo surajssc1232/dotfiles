@@ -39,8 +39,32 @@ Item {
 
 	// Every icon's cell, { key: { c, r } }: remembered cells first, as long as
 	// they are on this screen and not taken; the rest fill the gaps in order.
+	// Every cell an icon may use, in fill order: down each column, then the
+	// next, skipping the graphs.
+	readonly property var slots: {
+		const out = [];
+		for (let n = 0; n < root.cols * root.rows; n++) {
+			const c = Math.floor(n / root.rows), r = n % root.rows;
+			if (!root.blocked(c, r)) out.push({ c: c, r: r });
+		}
+		return out.length > 0 ? out : [{ c: 0, r: 0 }];
+	}
+
+	function slotIndex(c: int, r: int): int {
+		return root.slots.findIndex(s => s.c === c && s.r === r);
+	}
+
 	readonly property var cells: {
 		const out = ({});
+
+		// Auto arrange: packed in order, no gaps, nothing remembered by cell.
+		if (Desktop.autoArrange) {
+			const list = Desktop.ordered();
+			const last = root.slots.length - 1;
+			list.forEach((it, i) => out[it.key] = root.slots[Math.min(i, last)]);
+			return out;
+		}
+
 		const used = ({});
 		const pos = Desktop.positions;
 		const items = Desktop.items;
@@ -73,10 +97,26 @@ Item {
 	property real dragDx: 0
 	property real dragDy: 0
 
+	// The icon under the pointer while dragging, which says where the drop is.
+	property string dragKey: ""
+
 	function drop() {
 		const dc = Math.round(root.dragDx / root.cellW);
 		const dr = Math.round(root.dragDy / root.cellH);
 		root.dragging = false;
+
+		if (Desktop.autoArrange) {
+			// Dropped on a slot: the selection goes in at that point in the
+			// run. Past the last icon, or off the grid, it goes to the end.
+			const from = root.cells[root.dragKey];
+			const at = from ? root.slotIndex(from.c + dc, from.r + dr) : -1;
+			if (dc !== 0 || dr !== 0)
+				Desktop.reorder(Desktop.selectedKeys, at < 0 ? Desktop.items.length : at);
+			root.dragDx = 0;
+			root.dragDy = 0;
+			return;
+		}
+
 		Desktop.moveMany(Desktop.selectedKeys, dc, dr, root.cells, root.cols, root.rows,
 			(c, r) => root.blocked(c, r));
 		root.dragDx = 0;
@@ -219,6 +259,7 @@ Item {
 						if (icon.ctrlPress) Desktop.toggleSelected(modelData.key);
 						else Desktop.select([modelData.key]);
 					}
+					root.dragKey = modelData.key;
 					root.dragging = true;
 				}
 				icon.moved = true;

@@ -38,9 +38,45 @@ PanelWindow {
 	readonly property int listHeight: Math.max(root.rowHeight,
 		Math.min(Launcher.results.length, root.maxRows) * root.rowHeight)
 
-	// Opens under wherever the pointer happens to be resting, so hover only
-	// takes over the selection once the pointer has actually moved.
-	property bool hoverArmed: false
+	// ---- who owns the selection: keyboard or mouse ----
+	// The keyboard always does, until the pointer is really moved: a few
+	// pixels of travel from where it was when the keyboard last acted. Then
+	// hovering a row selects it, and the next key press takes the selection
+	// straight back. A pointer merely resting over the card — where it lands
+	// when the launcher opens, or with rows sliding under it while you type —
+	// never counts as moving, because only the pointer's own position is
+	// compared, never which row happens to be beneath it.
+	property bool mouseDriven: false
+	// Where the pointer was when the keyboard last took over; unset (x < 0)
+	// until the first hover report after opening.
+	property point mouseAnchor: Qt.point(-1, -1)
+	readonly property int mouseSlop: 6
+	// The pointer's last reported position, in window coordinates.
+	property point lastPointer: Qt.point(-1, -1)
+
+	function keyboardTakesOver() {
+		root.mouseDriven = false;
+		root.mouseAnchor = root.lastPointer;
+	}
+
+	// Called from the list's hover handler and from every row with the
+	// pointer's window position; whichever reports first, the answer is the
+	// same, because only that position is compared.
+	function pointerMoved(scene: point, local: point) {
+		root.lastPointer = scene;
+		if (root.mouseAnchor.x < 0) {
+			root.mouseAnchor = scene;
+			return;
+		}
+		if (!root.mouseDriven) {
+			if (Math.abs(scene.x - root.mouseAnchor.x) + Math.abs(scene.y - root.mouseAnchor.y) < root.mouseSlop)
+				return;
+			root.mouseDriven = true;
+		}
+		const p = list.mapFromItem(listArea, local.x, local.y);
+		const i = list.indexAt(p.x + list.contentX, p.y + list.contentY);
+		if (i >= 0 && i !== Launcher.index) Launcher.index = i;
+	}
 
 	// True while Alt is held, which is what puts the row numbers on screen.
 	property bool numbering: false
@@ -123,14 +159,6 @@ PanelWindow {
 		event.accepted = true;
 	}
 
-	// Where the pointer was when a row last claimed the selection, in screen
-	// coordinates. Rebuilding the list under a stationary pointer creates new
-	// rows beneath it, and each one reports a position change on the way in —
-	// which silently moved the selection onto whatever landed under the mouse
-	// every time the query changed. Comparing against this tells a real move
-	// from a row arriving.
-	property point lastMouse: Qt.point(-1, -1)
-
 	readonly property string emptyText: {
 		switch (Launcher.mode) {
 		case "run": return "Type a command";
@@ -162,18 +190,12 @@ PanelWindow {
 	WlrLayershell.namespace: "quickshell-launcher"
 
 	onVisibleChanged: {
-		root.hoverArmed = false;
-		root.lastMouse = Qt.point(-1, -1);
+		root.mouseDriven = false;
+		root.mouseAnchor = Qt.point(-1, -1);
 		if (!root.visible) return;
 		field.text = Launcher.query;
 		field.forceActiveFocus();
 		intro.restart();
-	}
-
-	Timer {
-		interval: 250
-		running: root.visible
-		onTriggered: root.hoverArmed = true
 	}
 
 	// Dimmed backdrop; clicking anywhere outside the card closes.
@@ -294,6 +316,7 @@ PanelWindow {
 						}
 
 						Keys.onPressed: event => {
+							root.keyboardTakesOver();
 							const ctrl = (event.modifiers & Qt.ControlModifier) !== 0;
 							const alt = (event.modifiers & Qt.AltModifier) !== 0;
 							root.numbering = alt;
@@ -434,6 +457,14 @@ PanelWindow {
 				Layout.fillWidth: true
 				Layout.preferredHeight: root.listHeight
 
+				// Passive: reports the pointer without taking hover or clicks
+				// from the rows. Fires on the pointer's movement only.
+				HoverHandler {
+					id: hover
+
+					onPointChanged: if (hovered) root.pointerMoved(point.scenePosition, point.position)
+				}
+
 				Label {
 					anchors.centerIn: parent
 					visible: Launcher.results.length === 0
@@ -496,17 +527,27 @@ PanelWindow {
 								return;
 							}
 
+							// The wheel scrolls the list, a row per notch, and
+							// whatever row ends up under the pointer is the
+							// selection — the mouse is plainly in charge now.
+							// Moving the selection instead (as this used to)
+							// left the pointer over one row and the highlight
+							// on another, with the list jumping to follow it.
 							wheelAccumulator += wheel.angleDelta.y;
+							let rows = 0;
+							while (wheelAccumulator >= 120) { rows--; wheelAccumulator -= 120; }
+							while (wheelAccumulator <= -120) { rows++; wheelAccumulator += 120; }
 
-							while (wheelAccumulator >= 120) {
-								Launcher.step(-1);
-								wheelAccumulator -= 120;
+							root.mouseDriven = true;
+							if (rows !== 0) {
+								const top = list.originY;
+								const bottom = Math.max(top, top + list.contentHeight - list.height);
+								list.contentY = Math.max(top, Math.min(bottom,
+									list.contentY + rows * root.rowHeight));
 							}
 
-							while (wheelAccumulator <= -120) {
-								Launcher.step(1);
-								wheelAccumulator += 120;
-							}
+							const i = list.indexAt(wheel.x + list.contentX, wheel.y + list.contentY);
+							if (i >= 0 && i !== Launcher.index) Launcher.index = i;
 						}
 					}
 
@@ -563,17 +604,12 @@ PanelWindow {
 						acceptedButtons: Qt.LeftButton | Qt.RightButton
 						cursorShape: Qt.PointingHandCursor
 
-						// Movement, not mere presence.
-						onPositionChanged: mouse => {
-							if (!root.hoverArmed) return;
-
-							const at = entry.mapToItem(null, mouse.x, mouse.y);
-							if (at.x === root.lastMouse.x && at.y === root.lastMouse.y)
-								return;
-
-							root.lastMouse = at;
-							Launcher.index = entry.index;
-						}
+						// Hover selection is decided once for the whole list —
+						// see mouseDriven at the top — not per row, so a row
+						// arriving under a still pointer cannot claim it.
+						onPositionChanged: mouse => root.pointerMoved(
+							entry.mapToItem(null, mouse.x, mouse.y),
+							entry.mapToItem(listArea, mouse.x, mouse.y))
 
 						onClicked: mouse => {
 							Launcher.index = entry.index;
@@ -588,9 +624,11 @@ PanelWindow {
 							anchors.fill: parent
 							anchors.rightMargin: 2
 							radius: Config.radius - 4
-							color: entry.current ? Config.bgAlt
-								: entry.containsMouse ? Qt.alpha(Config.bgAlt, 0.5)
-								: "transparent"
+							// One highlight only, and it is always what Enter
+							// launches: hovering a row selects it once the
+							// pointer moves, so a separate hover tint would
+							// only ever show a second, disagreeing row.
+							color: entry.current ? Config.bgAlt : "transparent"
 
 							Behavior on color {
 								ColorAnimation { duration: 90 }

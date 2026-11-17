@@ -68,7 +68,11 @@ Pill {
 
 				Repeater {
 					// Capped so a busy workspace does not swallow the bar.
-					model: chip.ws.windows.slice(0, 5)
+					// Windows with neither an app id nor a title are left out:
+					// those are X11 programs' invisible helper windows, which
+					// xwayland-satellite hands to niri like any other, and
+					// all they could ever show is a "?".
+					model: chip.ws.windows.filter(w => w.app_id || w.title).slice(0, 5)
 
 					Item {
 						id: app
@@ -92,7 +96,7 @@ Pill {
 						Label {
 							anchors.centerIn: parent
 							visible: app.icon === ""
-							text: (app.modelData.app_id || "?").charAt(0).toUpperCase()
+							text: (app.modelData.app_id || app.modelData.title || "?").charAt(0).toUpperCase()
 							font.pixelSize: Config.fontSize - 2
 							font.bold: true
 							color: Config.fg
@@ -117,8 +121,8 @@ Pill {
 
 				Label {
 					anchors.verticalCenter: parent.verticalCenter
-					visible: chip.ws.windows.length > 5
-					text: "+" + (chip.ws.windows.length - 5)
+					visible: chip.ws.windows.filter(w => w.app_id || w.title).length > 5
+					text: "+" + (chip.ws.windows.filter(w => w.app_id || w.title).length - 5)
 					color: Config.fgDim
 					font.pixelSize: Config.fontSize - 3
 				}

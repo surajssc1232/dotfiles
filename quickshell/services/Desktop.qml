@@ -169,6 +169,44 @@ Singleton {
 		root.setPositions(Object.assign({}, root.positions, next));
 	}
 
+	// ---- auto arrange ----
+	// As on Windows: icons stay packed down the left edge in order, filling
+	// any gap the moment one opens up, and dragging one reorders the run
+	// instead of leaving a hole. `order` is that run, by key; icons not in it
+	// yet follow on in the order of `items`.
+	property bool autoArrange: true
+	property var order: []
+
+	function setAutoArrange(on: bool) {
+		root.autoArrange = on;
+		Persist.set("desktopAutoArrange", on);
+	}
+
+	function ordered(): var {
+		const rank = ({});
+		root.order.forEach((k, i) => rank[k] = i);
+		const known = root.items.filter(i => rank[i.key] !== undefined)
+			.sort((a, b) => rank[a.key] - rank[b.key]);
+		return known.concat(root.items.filter(i => rank[i.key] === undefined));
+	}
+
+	function setOrder(keys) {
+		root.order = keys;
+		Persist.set("desktopOrder", keys);
+	}
+
+	// Takes the dragged icons out of the run and puts them back, in their
+	// own order, starting at slot `at`.
+	function reorder(keys, at: int) {
+		const moving = ({});
+		for (const k of keys) moving[k] = true;
+		const all = root.ordered().map(i => i.key);
+		const picked = all.filter(k => moving[k]);
+		const rest = all.filter(k => !moving[k]);
+		const i = Math.max(0, Math.min(at, rest.length));
+		root.setOrder(rest.slice(0, i).concat(picked, rest.slice(i)));
+	}
+
 	// Everything back into a column-first run, sorted by name: with no cells
 	// remembered, the grid fills itself in the order of `items`.
 	property bool sorted: false
@@ -177,6 +215,7 @@ Singleton {
 		root.sorted = true;
 		Persist.set("desktopSorted", true);
 		root.setPositions(({}));
+		root.setOrder([]);
 	}
 
 	// ---- what is on it ----
@@ -310,6 +349,7 @@ Singleton {
 		function add(id: string): void { root.add(id); }
 		function remove(id: string): void { root.remove(id); }
 		function sort(): void { root.sortByName(); }
+		function autoArrange(on: bool): void { root.setAutoArrange(on); }
 	}
 
 	// Read once here rather than as bindings: Persist parses its file on the
@@ -322,5 +362,8 @@ Singleton {
 		const pos = Persist.get("desktopPositions", ({}));
 		root.positions = pos && typeof pos === "object" ? pos : ({});
 		root.sorted = Persist.get("desktopSorted", false);
+		root.autoArrange = Persist.get("desktopAutoArrange", true);
+		const order = Persist.get("desktopOrder", []);
+		root.order = Array.isArray(order) ? order : [];
 	}
 }

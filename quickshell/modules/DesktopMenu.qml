@@ -44,6 +44,8 @@ PanelWindow {
 		if (!it) {
 			return [
 				{ label: "Open launcher", glyph: Config.icons.apps, run: () => Launcher.show("") },
+				{ label: "Auto arrange icons", glyph: Desktop.autoArrange ? Config.icons.check : "",
+					run: () => Desktop.setAutoArrange(!Desktop.autoArrange) },
 				{ label: "Sort icons by name", glyph: Config.icons.sort,
 					run: () => Desktop.sortByName() },
 				{ label: "Open Desktop folder", glyph: "",
