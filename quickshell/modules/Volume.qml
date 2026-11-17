@@ -1,8 +1,8 @@
 import QtQuick
 import Quickshell
-import Quickshell.Io
 import Quickshell.Services.Pipewire
 import qs
+import qs.services
 import qs.widgets
 
 // Scroll to change volume, click to mute, right-click opens the mixer.
@@ -24,7 +24,7 @@ Pill {
 
 	onClicked: event => {
 		if (!audio) return;
-		if (event.button === Qt.RightButton) mixer.startDetached();
+		if (event.button === Qt.RightButton) layer.open = !layer.open;
 		else audio.muted = !audio.muted;
 	}
 
@@ -38,9 +38,34 @@ Pill {
 		audio.volume = Math.max(0, Math.min(1, audio.volume + step));
 	}
 
-	Process {
-		id: mixer
-		command: ["pavucontrol"]
+	// Over IPC, only the bar on the first screen answers, so one mixer opens.
+	Connections {
+		target: Audio
+		function onMixerToggleRequested() {
+			if (root.QsWindow.window?.screen === Quickshell.screens[0]) layer.open = !layer.open;
+		}
+	}
+
+	// The mixer: apps, devices, ports, profiles. See modules/AudioMixer.qml.
+	PopupLayer {
+		id: layer
+
+		anchorItem: root
+		keyboardFocus: true
+		contentWidth: mixer.implicitWidth + Config.inset * 2
+		contentHeight: mixer.implicitHeight + Config.inset * 2
+
+		Panel {
+			anchors.fill: parent
+
+			AudioMixer {
+				id: mixer
+
+				anchors.fill: parent
+				anchors.margins: Config.inset
+				live: layer.open
+			}
+		}
 	}
 
 	Label {

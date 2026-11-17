@@ -374,3 +374,5 @@ recent-windows {
 }
 
 include "quickshell-colors.kdl"
+// Apps set to open floating from the launcher (right-click → Always open floating).
+include "quickshell-floating.kdl"

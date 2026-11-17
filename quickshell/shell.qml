@@ -26,6 +26,10 @@ ShellRoot {
 		// bar pill is its only user. Naming it here means it starts fetching
 		// at login rather than when something first looks at it.
 		Services.Weather.refresh();
+
+		// Writes niri's floating-app rules, which config.kdl includes, so the
+		// file is there from login on even if the launcher is never opened.
+		Services.Floating.write();
 	}
 
 	// Painted under everything else, one per monitor.

@@ -818,10 +818,8 @@
     winetricks
     quickshell
     playerctl
-    gnome-calculator
     gcc
     gdb
-    zig
     rustup
     wireplumber
     btop
@@ -835,7 +833,6 @@
     unzip
     cmake
     jq
-    pavucontrol
     lutris
     gnumake
     xwayland

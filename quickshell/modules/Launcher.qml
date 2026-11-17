@@ -134,6 +134,9 @@ PanelWindow {
 		out.push(Desktop.has(id)
 			? { label: "Remove from desktop", glyph: Config.icons.close, keep: true, run: () => Desktop.remove(id) }
 			: { label: "Add to desktop", glyph: Config.icons.pin, keep: true, run: () => Desktop.add(id) });
+		out.push(Floating.has(id)
+			? { label: "Open tiled again", glyph: Config.icons.apps, keep: true, run: () => Floating.setFloating(id, false) }
+			: { label: "Always open floating", glyph: Config.icons.window, keep: true, run: () => Floating.setFloating(id, true) });
 		for (const a of (entry.actions ?? [])) {
 			const action = a;
 			out.push({ label: action.name, glyph: Config.icons.arrowRight,

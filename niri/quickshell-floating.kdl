@@ -1,0 +1,8 @@
+// Written by quickshell (services/Floating.qml): apps chosen to open
+// floating from the launcher. Edits here are overwritten; use the
+// launcher's right-click menu instead.
+
+window-rule {
+    match app-id=r#"(?i)^(org\.gnome\.Calculator|Calculator)$"#
+    open-floating true
+}
