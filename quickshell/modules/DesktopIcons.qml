@@ -352,8 +352,13 @@ Item {
 			Text {
 				id: halo
 
-				anchors.fill: caption
-				anchors.topMargin: 1
+				// Same box as the caption, one pixel lower. Not anchors.fill with
+				// a top margin: that makes it a pixel shorter, the second line no
+				// longer fits, and the shadow elides to "Name…" on one line that
+				// doesn't match the text above it.
+				x: caption.x
+				y: caption.y + 1
+				width: caption.width
 				horizontalAlignment: caption.horizontalAlignment
 				text: caption.text
 				color: "black"
@@ -362,12 +367,18 @@ Item {
 				maximumLineCount: caption.maximumLineCount
 				elide: caption.elide
 
+				// Filtered and supersampled, with the radius spread over more blur
+				// levels, for a smoother falloff.
 				layer.enabled: true
+				layer.smooth: true
+				layer.mipmap: true
+				layer.textureSize: Qt.size(Math.ceil(width * 2), Math.ceil(height * 2))
 				layer.effect: MultiEffect {
+					autoPaddingEnabled: true
 					blurEnabled: true
-					blur: 0.6
-					blurMax: 8
-					opacity: 0.95
+					blurMax: 16
+					blur: 0.32
+					opacity: 0.9
 				}
 			}
 
