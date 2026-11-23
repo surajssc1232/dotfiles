@@ -708,7 +708,16 @@
   environment.systemPackages = with pkgs; [
     acpi
     yt-dlp
-    chiaki-ng
+    # chiaki-ng's Qt Quick UI treats QT_STYLE_OVERRIDE (adwaita-dark, set in
+    # home.nix) as a Qt Quick style, fails to find it and shows no window.
+    (symlinkJoin {
+      name = "chiaki-ng";
+      paths = [ chiaki-ng ];
+      nativeBuildInputs = [ makeWrapper ];
+      postBuild = ''
+        wrapProgram $out/bin/chiaki --unset QT_STYLE_OVERRIDE
+      '';
+    })
     foot
     nushell
     steam
