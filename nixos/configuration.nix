@@ -708,6 +708,7 @@
   environment.systemPackages = with pkgs; [
     acpi
     yt-dlp
+    chiaki-ng
     foot
     nushell
     steam
