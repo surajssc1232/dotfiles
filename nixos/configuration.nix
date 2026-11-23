@@ -937,6 +937,9 @@
   services.openssh.enable = false;
 
   # Open ports in the firewall.
+  # chiaki-ng console discovery: the PS5 answers the broadcast search on the
+  # port chiaki bound (9303 upward), and conntrack can't match broadcast replies.
+  networking.firewall.allowedUDPPortRanges = [ { from = 9303; to = 9310; } ];
   # networking.firewall.allowedTCPPorts = [ ... ];
   # networking.firewall.allowedUDPPorts = [ ... ];
   # Or disable the firewall altogether.

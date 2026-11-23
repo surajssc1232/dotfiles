@@ -49,8 +49,11 @@ Singleton {
 			|| root.label(a).localeCompare(root.label(b)));
 	}
 
+	// Trusted alone is not enough: activate() trusts a device before pairing,
+	// so a failed pair left it "known" and every later click went to
+	// connect(), which an unpaired HID device (e.g. a DualSense) refuses.
 	function isKnown(device): bool {
-		return device.paired || device.bonded || device.trusted;
+		return device.paired || device.bonded;
 	}
 
 	function label(device): string {
