@@ -922,6 +922,26 @@
     };
   };
 
+  # Keyboard/mouse -> virtual gamepad, so chiaki-ng (PS5 Remote Play) gets
+  # mouse aiming on the right stick. Runs the root daemon and ships the GUI.
+  services.input-remapper.enable = true;
+
+  # niri ships no polkit authentication agent, so anything using pkexec
+  # (input-remapper-gtk starting its reader service, for one) failed silently
+  # with "Error creating textual authentication agent". This one shows the
+  # password prompt as a window.
+  systemd.user.services.polkit-gnome-authentication-agent-1 = {
+    description = "polkit authentication agent";
+    wantedBy = [ "graphical-session.target" ];
+    partOf = [ "graphical-session.target" ];
+    after = [ "graphical-session.target" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.polkit_gnome}/libexec/polkit-gnome-authentication-agent-1";
+      Restart = "on-failure";
+      RestartSec = 1;
+    };
+  };
+
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;
