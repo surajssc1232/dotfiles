@@ -191,14 +191,20 @@
   boot.loader.systemd-boot.enable = false;
   boot.loader.grub.enable = false;
   boot.loader.efi.canTouchEfiVariables = false;
-  # The boot menu counts down before it picks the default, and the NixOS
-  # default for that countdown is 5 seconds — which is essentially the whole
-  # 6.06s systemd attributes to "loader". One second still lets a keypress
-  # catch the menu, which is what matters on NixOS: booting a previous
-  # generation is the way back when a rebuild breaks the desktop.
+  # Boot the newest generation instantly, with no menu countdown.
   #
-  # Set this to 0 for an instant boot with no way into the menu.
-  boot.loader.timeout = 1;
+  # This was 1 second, but the laptop is usually docked with the lid shut.
+  # The firmware only draws the boot menu on the internal panel, and closing
+  # the lid during the countdown stopped the timer (most likely the lid
+  # pressing a key, since any keypress cancels it). The machine then sat on
+  # a menu nobody could see.
+  #
+  # The menu is still reachable when a rebuild breaks something. Limine reads
+  # systemd's one-shot menu timeout, so this shows the menu for 30s on the
+  # next boot only:
+  #   systemctl reboot --boot-loader-menu=30
+  # From a TTY, `sudo nixos-rebuild switch --rollback` also works.
+  boot.loader.timeout = 0;
 
   boot.loader.limine = {
     enable = true;
