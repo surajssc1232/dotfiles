@@ -137,6 +137,14 @@ window-rule {
     open-floating true
 }
 
+// Steam games (app-id "steam_app_<id>"): open fullscreen instead of a half-width
+// tiled column, otherwise the game renders into only part of the screen.
+window-rule {
+    match app-id="^steam_app_"
+    open-fullscreen true
+    variable-refresh-rate true
+}
+
 window-rule {
     match app-id="nix-search"
     open-floating true
