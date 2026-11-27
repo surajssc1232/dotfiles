@@ -36,6 +36,7 @@
 
         modules = [
           ./configuration.nix
+          inputs.rex.nixosModules.default
           home-manager.nixosModules.home-manager
 
           {
