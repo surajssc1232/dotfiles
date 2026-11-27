@@ -7,6 +7,7 @@
     # Separate pin so claude-code can be updated without touching the system.
     nixpkgs-claude.url = "github:nixos/nixpkgs?ref=nixos-unstable";
     # zen-browser.url = "github:0xc000022070/zen-browser-flake";
+    rex.url = "https://pkgs.superlogical.com/rex/nix/snapshot.tar.gz";
     
     
     nur = {

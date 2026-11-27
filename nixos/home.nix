@@ -16,6 +16,7 @@
       adwaita-qt6
     ];
 
+
     sessionVariables = {
       QT_STYLE_OVERRIDE = lib.mkForce "adwaita-dark";
       QT_QPA_PLATFORMTHEME = lib.mkForce "adwaita";

@@ -217,6 +217,7 @@
 
   services.libinput.enable = true;
   services.displayManager.defaultSession = "niri";
+  services.rex.enable = true;
 
   # Login is the shell's own screen rather than ly's TUI: greetd starts a bare
   # niri whose only job is to hold one layer-shell surface, and that surface is
